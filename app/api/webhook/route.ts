@@ -6,7 +6,7 @@ import { sendTelegramAlert } from "@/lib/telegram";
 const PAGE_TOKEN = process.env.FB_PAGE_TOKEN!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
 
-// Söhbət tarixçəsi (yaddaşda saxlayır)
+// Söhbət tarixçəsi
 const conversations = new Map<string, { role: "user" | "assistant"; content: string }[]>();
 
 // Webhook doğrulama (GET)
@@ -26,42 +26,53 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
+  // Facebook Messenger
   if (body.object === "page") {
     for (const entry of body.entry) {
       for (const event of entry.messaging || []) {
         if (!event.message?.text) continue;
+        await handleMessage("Facebook", event.sender.id, event.message.text);
+      }
+    }
+  }
 
-        const senderId = event.sender.id;
-        const userMessage = event.message.text;
-
-        // Söhbət tarixçəsini al
-        const history = conversations.get(senderId) || [];
-
-        // AI cavab al
-        const { message: aiMessage, customerData } = await getAIResponse(
-          userMessage,
-          history
-        );
-
-        // Tarixçəni yenilə
-        history.push({ role: "user", content: userMessage });
-        history.push({ role: "assistant", content: aiMessage });
-        if (history.length > 20) history.splice(0, 2); // Son 10 mesaj
-        conversations.set(senderId, history);
-
-        // Facebook-a cavab göndər
-        await sendFBMessage(senderId, aiMessage);
-
-        // Müştəri məlumatı varsa saxla
-        if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
-          await addCustomerToSheet("Facebook", senderId, customerData, userMessage);
-          await sendTelegramAlert("Facebook", userMessage, customerData);
-        }
+  // Instagram DM
+  if (body.object === "instagram") {
+    for (const entry of body.entry) {
+      for (const event of entry.messaging || []) {
+        if (!event.message?.text) continue;
+        await handleMessage("Instagram", event.sender.id, event.message.text);
       }
     }
   }
 
   return NextResponse.json({ status: "ok" });
+}
+
+async function handleMessage(platform: string, senderId: string, userMessage: string) {
+  // Söhbət tarixçəsini al
+  const historyKey = `${platform}_${senderId}`;
+  const history = conversations.get(historyKey) || [];
+
+  // AI cavab al
+  const { message: aiMessage, customerData } = await getAIResponse(userMessage, history);
+
+  // Tarixçəni yenilə
+  history.push({ role: "user", content: userMessage });
+  history.push({ role: "assistant", content: aiMessage });
+  if (history.length > 20) history.splice(0, 2);
+  conversations.set(historyKey, history);
+
+  // Cavab göndər
+  if (platform === "Facebook" || platform === "Instagram") {
+    await sendFBMessage(senderId, aiMessage);
+  }
+
+  // Müştəri məlumatı varsa saxla
+  if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
+    await addCustomerToSheet(platform, senderId, customerData, userMessage);
+    await sendTelegramAlert(platform, userMessage, customerData);
+  }
 }
 
 async function sendFBMessage(recipientId: string, message: string) {
