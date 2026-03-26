@@ -1,7 +1,9 @@
+import { CustomerData } from "@/lib/ai-agent";
+
 export async function sendTelegramAlert(
   platform: string,
   message: string,
-  customerData: Record<string, string | undefined>
+  customerData: CustomerData
 ) {
   // Telegram bildirişi hələlik deaktivdir
   return;
