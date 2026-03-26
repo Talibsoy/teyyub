@@ -51,11 +51,9 @@ export async function POST(req: NextRequest) {
               const mimeType = msg.video?.mime_type || "video/mp4";
               const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "video") : undefined;
               await handleWhatsApp(from, "", media);
-            } else if (msg.type === "audio") {
-              const mediaId = msg.audio?.id;
-              const mimeType = msg.audio?.mime_type || "audio/ogg";
-              const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "ses") : undefined;
-              await handleWhatsApp(from, "", media);
+            } else if (msg.type === "audio" || msg.type === "voice") {
+              // Claude audio anlaya bilmir — mətn kimi işlə
+              await handleWhatsApp(from, "", { type: "base64", data: "", mimeType: "audio/ogg", mediaType: "ses" });
             } else if (msg.type === "document") {
               const mediaId = msg.document?.id;
               const mimeType = msg.document?.mime_type || "application/pdf";

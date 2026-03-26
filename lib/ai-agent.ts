@@ -136,9 +136,10 @@ export async function getAIResponse(
           },
           { type: "text", text: textPrompt },
         ];
+      } else if (media.mimeType?.startsWith("audio") || media.mimeType?.startsWith("video")) {
+        userContent = `Müştəri bir ${mediaLabel} göndərdi. Mən ${mediaLabel} fayllarını oxuya bilmirəm. Müştəriyə mehriban şəkildə cavab ver: mətn yazaraq sualını bildirsin, kömək etməyə hazırsan.`;
       } else {
-        // video/audio/fayl — şəkil göndər deyə bilmərik, mətn kimi işlə
-        userContent = `Müştəri bir ${mediaLabel} göndərdi (format: ${media.mimeType}). Bunu qeyd et və sual ver.`;
+        userContent = `Müştəri bir ${mediaLabel} göndərdi. Bunu qeyd edib müştəriyə sualını mətnlə bildirməsini xahiş et.`;
       }
     } else {
       userContent = textPrompt;
