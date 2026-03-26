@@ -3,11 +3,11 @@ import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { addCustomerToSheet } from "@/lib/google-sheets";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
+import { getHistory, saveHistory } from "@/lib/conversation-store";
+import { saveLead } from "@/lib/crm";
 
 const PAGE_TOKEN = process.env.FB_PAGE_TOKEN!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
-
-const conversations = new Map<string, { role: "user" | "assistant"; content: string }[]>();
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -134,20 +134,22 @@ async function resolveFBAttachment(
 
 async function handleMessage(platform: string, senderId: string, userMessage: string, media?: MediaInput) {
   const historyKey = `${platform}_${senderId}`;
-  const history = conversations.get(historyKey) || [];
+  const history = await getHistory(historyKey);
 
   const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media);
 
   const mediaLabel = media?.mediaType || "media";
   history.push({ role: "user", content: userMessage || `[${mediaLabel}]` });
   history.push({ role: "assistant", content: aiMessage });
-  if (history.length > 20) history.splice(0, 2);
-  conversations.set(historyKey, history);
+  await saveHistory(historyKey, history);
 
   await sendFBMessage(senderId, aiMessage);
 
   if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
-    await addCustomerToSheet(platform, senderId, customerData, userMessage);
+    await Promise.all([
+      addCustomerToSheet(platform, senderId, customerData, userMessage),
+      saveLead(platform, senderId, customerData, userMessage),
+    ]);
   }
   await sendTelegramAlert(platform, userMessage || `[${mediaLabel} göndərdi]`, customerData);
 }

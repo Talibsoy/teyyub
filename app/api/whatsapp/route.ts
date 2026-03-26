@@ -3,12 +3,12 @@ import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { addCustomerToSheet } from "@/lib/google-sheets";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
+import { getHistory, saveHistory } from "@/lib/conversation-store";
+import { saveLead } from "@/lib/crm";
 
 const WA_TOKEN = process.env.WA_ACCESS_TOKEN!;
 const WA_PHONE_ID = process.env.WA_PHONE_NUMBER_ID!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
-
-const conversations = new Map<string, { role: "user" | "assistant"; content: string }[]>();
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -125,20 +125,23 @@ async function fetchWAMedia(
 }
 
 async function handleWhatsApp(from: string, userMessage: string, media?: MediaInput) {
-  const history = conversations.get(from) || [];
+  const historyKey = `WA_${from}`;
+  const history = await getHistory(historyKey);
 
   const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media);
 
   const mediaLabel = media?.mediaType || "media";
   history.push({ role: "user", content: userMessage || `[${mediaLabel}]` });
   history.push({ role: "assistant", content: aiMessage });
-  if (history.length > 20) history.splice(0, 2);
-  conversations.set(from, history);
+  await saveHistory(historyKey, history);
 
   await sendWhatsAppMessage(from, aiMessage);
 
   if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
-    await addCustomerToSheet("WhatsApp", from, customerData, userMessage);
+    await Promise.all([
+      addCustomerToSheet("WhatsApp", from, customerData, userMessage),
+      saveLead("WhatsApp", from, customerData, userMessage),
+    ]);
   }
   await sendTelegramAlert("WhatsApp", userMessage || `[${mediaLabel} göndərdi]`, customerData);
 }
