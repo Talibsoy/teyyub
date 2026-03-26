@@ -7,6 +7,7 @@ const navLinks = [
   { href: "/turlar", label: "Turlar" },
   { href: "/haqqimizda", label: "Haqqımızda" },
   { href: "/elaqe", label: "Əlaqə" },
+  { href: "/privacy-policy", label: "Gizlilik Siyasəti" },
 ];
 
 export default function Navbar() {
