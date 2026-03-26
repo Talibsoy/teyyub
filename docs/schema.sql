@@ -192,3 +192,24 @@ create policy "authenticated_all" on staff for all using (auth.role() = 'authent
 create policy "service_all" on customers for all using (auth.role() = 'service_role');
 create policy "service_all" on leads for all using (auth.role() = 'service_role');
 create policy "service_all" on messages for all using (auth.role() = 'service_role');
+
+-- ============================================
+-- AI EXAMPLES (Uğurlu söhbət nümunələri)
+-- ============================================
+create table if not exists ai_examples (
+  id uuid primary key default gen_random_uuid(),
+  platform text not null,
+  sender_id text not null,
+  conversation jsonb not null,
+  outcome text not null check (outcome in ('booking', 'manual')),
+  destination text,
+  created_at timestamptz default now()
+);
+
+-- RLS
+alter table ai_examples enable row level security;
+
+create policy "Service role full access to ai_examples"
+  on ai_examples for all
+  using (true)
+  with check (true);

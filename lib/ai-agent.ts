@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { getToursContext } from "./rag";
+import { getExamples, formatExamplesForPrompt } from "./ai-memory";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -260,16 +261,23 @@ export async function getAIResponse(
   ];
 
   // Real tur məlumatlarını system prompt-a inject et (smart filter ilə)
-  const toursContext = await getToursContext(typeof userContent === "string" ? userContent : userMessage);
+  const msgText = typeof userContent === "string" ? userContent : userMessage;
+  const toursContext = await getToursContext(msgText);
   const systemWithTours = SYSTEM_PROMPT.replace(
     "{TOURS_CONTEXT}",
     toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur."
   );
 
+  // Uğurlu satış nümunələrini əlavə et
+  const destinationMatch = msgText.match(/antalya|dubai|bali|paris|rome|roma|istanbul|istanbul|maldiv|türkiy|ərəb|avropa/i);
+  const detectedDest = destinationMatch ? destinationMatch[0] : null;
+  const examples = await getExamples(detectedDest);
+  const systemFinal = systemWithTours + formatExamplesForPrompt(examples);
+
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1024,
-    system: systemWithTours,
+    system: systemFinal,
     messages,
   });
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, Send, X } from "lucide-react";
+import { Search, Send, X, Star } from "lucide-react";
 import { logActivity } from "@/lib/activity";
 
 interface Lead {
@@ -49,6 +49,8 @@ export default function LeadsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [updating, setUpdating] = useState<string | null>(null);
+  const [marking, setMarking] = useState<string | null>(null);
+  const [markResult, setMarkResult] = useState<Record<string, "ok" | "err">>({});
 
   // Mesaj göndər modal
   const [msgModal, setMsgModal] = useState<Lead | null>(null);
@@ -117,6 +119,27 @@ export default function LeadsPage() {
       setTimeout(() => { setMsgModal(null); setSendResult(null); }, 1000);
     }
     setSending(false);
+  }
+
+  async function markAsExample(lead: Lead) {
+    setMarking(lead.id);
+    try {
+      const res = await fetch("/api/crm/mark-example", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: lead.platform,
+          senderId: lead.sender_id,
+          destination: lead.destination,
+        }),
+      });
+      const data = await res.json();
+      setMarkResult((prev) => ({ ...prev, [lead.id]: data.success ? "ok" : "err" }));
+      setTimeout(() => setMarkResult((prev) => { const n = { ...prev }; delete n[lead.id]; return n; }), 2000);
+    } catch {
+      setMarkResult((prev) => ({ ...prev, [lead.id]: "err" }));
+    }
+    setMarking(null);
   }
 
   function formatDate(d: string) {
@@ -205,12 +228,28 @@ export default function LeadsPage() {
                       </select>
                     </td>
                     <td className="px-4 py-3">
-                      {lead.platform === "whatsapp" && (
-                        <button onClick={() => { setMsgModal(lead); setMsgText(""); setSendResult(null); }}
-                          className="flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 bg-green-900/30 hover:bg-green-900/50 px-2.5 py-1.5 rounded-lg transition-colors">
-                          <Send size={12} /> Mesaj
+                      <div className="flex items-center gap-2">
+                        {lead.platform === "whatsapp" && (
+                          <button onClick={() => { setMsgModal(lead); setMsgText(""); setSendResult(null); }}
+                            className="flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 bg-green-900/30 hover:bg-green-900/50 px-2.5 py-1.5 rounded-lg transition-colors">
+                            <Send size={12} /> Mesaj
+                          </button>
+                        )}
+                        <button
+                          onClick={() => markAsExample(lead)}
+                          disabled={marking === lead.id}
+                          title="Uğurlu nümunə kimi işarələ"
+                          className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg transition-colors ${
+                            markResult[lead.id] === "ok"
+                              ? "text-yellow-300 bg-yellow-900/50"
+                              : markResult[lead.id] === "err"
+                              ? "text-red-400 bg-red-900/30"
+                              : "text-gray-500 hover:text-yellow-400 hover:bg-yellow-900/20"
+                          }`}>
+                          <Star size={12} />
+                          {markResult[lead.id] === "ok" ? "Saxlandı" : markResult[lead.id] === "err" ? "Xəta" : ""}
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}
