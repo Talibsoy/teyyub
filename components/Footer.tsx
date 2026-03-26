@@ -75,6 +75,7 @@ export default function Footer() {
         <span>© {new Date().getFullYear()} FlyNaToure. Bütün hüquqlar qorunur.</span>
         <div className="flex items-center gap-4">
           <Link href="/privacy-policy" className="hover:text-gray-300 transition-colors">Gizlilik Siyasəti</Link>
+          <Link href="/terms-of-service" className="hover:text-gray-300 transition-colors">İstifadə Şərtləri</Link>
           <Link href="/elaqe" className="hover:text-gray-300 transition-colors">Əlaqə</Link>
         </div>
       </div>
