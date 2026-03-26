@@ -13,7 +13,7 @@ export default function Footer() {
             Bakı mərkəzli turizm şirkəti. 2018-ci ildən Türkiyə, Ərəb ölkələri və Avropa istiqamətlərində keyfiyyətli turlar.
           </p>
           <div className="flex items-center gap-3">
-            <a href="https://www.facebook.com/Natoure.az" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.facebook.com/profile.php?id=61563875994345" target="_blank" rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity text-white text-sm font-bold">
               f
             </a>
