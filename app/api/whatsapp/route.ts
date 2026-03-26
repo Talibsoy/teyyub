@@ -5,6 +5,7 @@ import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const WA_TOKEN = process.env.WA_ACCESS_TOKEN!;
 const WA_PHONE_ID = process.env.WA_PHONE_NUMBER_ID!;
@@ -37,6 +38,10 @@ export async function POST(req: NextRequest) {
           const messages = change.value?.messages || [];
           for (const msg of messages) {
             const from = msg.from;
+
+            // Rate limit yoxla
+            const allowed = await checkRateLimit(`wa:${from}`);
+            if (!allowed) continue;
 
             if (msg.type === "text") {
               const text = msg.text?.body;

@@ -5,6 +5,7 @@ import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const PAGE_TOKEN = process.env.FB_PAGE_TOKEN!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
@@ -36,6 +37,10 @@ export async function POST(req: NextRequest) {
           if (event.message?.is_echo) continue;
           if (event.sender?.id === process.env.FB_PAGE_ID) continue;
 
+          // Rate limit yoxla
+          const allowed = await checkRateLimit(`fb:${event.sender.id}`);
+          if (!allowed) continue;
+
           // Get Started düyməsi və ya digər postback-lər
           if (event.postback) {
             await handleMessage("Facebook", event.sender.id, "Salam", undefined);
@@ -62,6 +67,10 @@ export async function POST(req: NextRequest) {
         for (const event of entry.messaging || []) {
           if (event.message?.is_echo) continue;
           if (!event.message) continue;
+
+          // Rate limit yoxla
+          const igAllowed = await checkRateLimit(`ig:${event.sender.id}`);
+          if (!igAllowed) continue;
 
           const text = event.message.text;
           const { userMessage: mediaText, media } = await resolveFBAttachment(event.message.attachments?.[0]);
