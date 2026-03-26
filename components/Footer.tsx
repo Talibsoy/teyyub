@@ -21,7 +21,7 @@ export default function Footer() {
               className="w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center hover:opacity-80 transition-opacity text-white text-xs">
               WA
             </a>
-            <a href="https://instagram.com/natoure.az" target="_blank" rel="noopener noreferrer"
+            <a href="https://instagram.com/natoure.fly" target="_blank" rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f09433] via-[#e6683c] to-[#bc1888] flex items-center justify-center hover:opacity-80 transition-opacity text-white text-xs">
               IG
             </a>
