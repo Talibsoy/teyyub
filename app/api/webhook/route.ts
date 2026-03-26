@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { addCustomerToSheet } from "@/lib/google-sheets";
 import { sendTelegramAlert } from "@/lib/telegram";
+import { analyzeMedia } from "@/lib/media-analyzer";
 
 const PAGE_TOKEN = process.env.FB_PAGE_TOKEN!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
@@ -37,14 +38,14 @@ export async function POST(req: NextRequest) {
           if (!event.message) continue;
 
           const text = event.message.text;
-          const media = extractFBMedia(event.message.attachments?.[0]);
+          const { userMessage: mediaText, media } = await resolveFBAttachment(event.message.attachments?.[0]);
 
-          if (!text && !media) {
+          if (!text && !mediaText && !media) {
             await sendFBMessage(event.sender.id, "Zəhmət olmasa mətn, şəkil, video və ya ses göndərin! 🙏");
             continue;
           }
 
-          await handleMessage("Facebook", event.sender.id, text || "", media);
+          await handleMessage("Facebook", event.sender.id, text || mediaText || "", media);
         }
       }
     }
@@ -56,14 +57,14 @@ export async function POST(req: NextRequest) {
           if (!event.message) continue;
 
           const text = event.message.text;
-          const media = extractFBMedia(event.message.attachments?.[0]);
+          const { userMessage: mediaText, media } = await resolveFBAttachment(event.message.attachments?.[0]);
 
-          if (!text && !media) {
+          if (!text && !mediaText && !media) {
             await sendFBMessage(event.sender.id, "Zəhmət olmasa mətn, şəkil, video və ya ses göndərin! 🙏");
             continue;
           }
 
-          await handleMessage("Instagram", event.sender.id, text || "", media);
+          await handleMessage("Instagram", event.sender.id, text || mediaText || "", media);
         }
       }
     }
@@ -75,15 +76,60 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function extractFBMedia(attachment: { type: string; payload?: { url?: string } } | undefined): MediaInput | undefined {
-  if (!attachment?.payload?.url) return undefined;
+async function resolveFBAttachment(
+  attachment: { type: string; payload?: { url?: string } } | undefined
+): Promise<{ userMessage?: string; media?: MediaInput }> {
+  if (!attachment?.payload?.url) return {};
   const url = attachment.payload.url;
 
-  if (attachment.type === "image") return { type: "url", url, mediaType: "şəkil" };
-  if (attachment.type === "video") return { type: "url", url, mediaType: "video" };
-  if (attachment.type === "audio") return { type: "url", url, mediaType: "ses" };
-  if (attachment.type === "file") return { type: "url", url, mediaType: "fayl" };
-  return undefined;
+  if (attachment.type === "image") {
+    // Şəkili binary yüklə, Gemini ilə analiz et
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const buffer = await res.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        const mimeType = res.headers.get("content-type") || "image/jpeg";
+        return { media: { type: "base64", data: base64, mimeType, mediaType: "şəkil" } };
+      }
+    } catch {}
+    // Fallback: URL ilə
+    return { media: { type: "url", url, mediaType: "şəkil" } };
+  }
+
+  if (attachment.type === "audio") {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const buffer = await res.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        const mimeType = res.headers.get("content-type") || "audio/mpeg";
+        const transcript = await analyzeMedia(base64, mimeType, "ses");
+        return { userMessage: transcript };
+      }
+    } catch {}
+    return { userMessage: "[Müştəri səs mesajı göndərdi, transkript alınmadı]" };
+  }
+
+  if (attachment.type === "video") {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const buffer = await res.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        const mimeType = res.headers.get("content-type") || "video/mp4";
+        const description = await analyzeMedia(base64, mimeType, "video");
+        return { userMessage: `[Müştəri video göndərdi. Gemini təsviri: ${description}]` };
+      }
+    } catch {}
+    return { userMessage: "[Müştəri video göndərdi]" };
+  }
+
+  if (attachment.type === "file") {
+    return { media: { type: "url", url, mediaType: "fayl" } };
+  }
+
+  return {};
 }
 
 async function handleMessage(platform: string, senderId: string, userMessage: string, media?: MediaInput) {

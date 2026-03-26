@@ -11,15 +11,19 @@ export async function sendTelegramAlert(
     destination: string | null;
   }
 ) {
+  const hasData = customerData.name || customerData.phone || customerData.email || customerData.destination;
+  const icon = hasData ? "🔥" : "💬";
+  const title = hasData ? "Yeni Lead" : "Yeni Mesaj";
+
   const text = `
-🔔 *Yeni Müştəri — ${platform}*
+${icon} *${title} — ${platform}*
 
-👤 Ad: ${customerData.name || "Məlum deyil"}
-📞 Telefon: ${customerData.phone || "Məlum deyil"}
-📧 Email: ${customerData.email || "Məlum deyil"}
-✈️ İstiqamət: ${customerData.destination || "Məlum deyil"}
+👤 Ad: ${customerData.name || "—"}
+📞 Telefon: ${customerData.phone || "—"}
+📧 Email: ${customerData.email || "—"}
+✈️ İstiqamət: ${customerData.destination || "—"}
 
-💬 Mesaj: ${message.substring(0, 300)}
+💬 _${message.substring(0, 300)}_
   `.trim();
 
   try {

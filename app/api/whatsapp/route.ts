@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { addCustomerToSheet } from "@/lib/google-sheets";
 import { sendTelegramAlert } from "@/lib/telegram";
+import { analyzeMedia } from "@/lib/media-analyzer";
 
 const WA_TOKEN = process.env.WA_ACCESS_TOKEN!;
 const WA_PHONE_ID = process.env.WA_PHONE_NUMBER_ID!;
@@ -49,11 +50,27 @@ export async function POST(req: NextRequest) {
             } else if (msg.type === "video") {
               const mediaId = msg.video?.id;
               const mimeType = msg.video?.mime_type || "video/mp4";
-              const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "video") : undefined;
-              await handleWhatsApp(from, "", media);
+              if (mediaId) {
+                const fetched = await fetchWAMedia(mediaId, mimeType, "video");
+                if (fetched?.data) {
+                  const description = await analyzeMedia(fetched.data, mimeType, "video");
+                  await handleWhatsApp(from, `[Müştəri video göndərdi. Gemini təsviri: ${description}]`);
+                } else {
+                  await handleWhatsApp(from, "[Müştəri video göndərdi]");
+                }
+              }
             } else if (msg.type === "audio" || msg.type === "voice") {
-              // Claude audio anlaya bilmir — mətn kimi işlə
-              await handleWhatsApp(from, "", { type: "base64", data: "", mimeType: "audio/ogg", mediaType: "ses" });
+              const mediaId = msg.audio?.id || msg.voice?.id;
+              const mimeType = msg.audio?.mime_type || msg.voice?.mime_type || "audio/ogg";
+              if (mediaId) {
+                const fetched = await fetchWAMedia(mediaId, mimeType, "ses");
+                if (fetched?.data) {
+                  const transcript = await analyzeMedia(fetched.data, mimeType, "ses");
+                  await handleWhatsApp(from, transcript);
+                } else {
+                  await handleWhatsApp(from, "[Müştəri ses mesajı göndərdi, transkript alınmadı]");
+                }
+              }
             } else if (msg.type === "document") {
               const mediaId = msg.document?.id;
               const mimeType = msg.document?.mime_type || "application/pdf";
