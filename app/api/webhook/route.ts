@@ -35,6 +35,13 @@ export async function POST(req: NextRequest) {
         for (const event of entry.messaging || []) {
           if (event.message?.is_echo) continue;
           if (event.sender?.id === process.env.FB_PAGE_ID) continue;
+
+          // Get Started düyməsi və ya digər postback-lər
+          if (event.postback) {
+            await handleMessage("Facebook", event.sender.id, "Salam", undefined);
+            continue;
+          }
+
           if (!event.message) continue;
 
           const text = event.message.text;
