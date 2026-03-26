@@ -31,19 +31,30 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    if (body.object === "page") {
+    if (body.object === "page" || body.object === "instagram") {
       for (const entry of body.entry) {
+        // Instagram mesajları entry.messaging-də gəlir
         for (const event of entry.messaging || []) {
           if (event.message?.is_echo) continue;
-          if (event.sender?.id === process.env.FB_PAGE_ID) continue;
+
+          // Facebook Səhifəsinin öz ID-si ilə gələn mesajları atla
+          const isFBPage = event.sender?.id === process.env.FB_PAGE_ID;
+          // Instagram hesabının IGSID-si ilə gələn mesajları atla
+          const isIGSelf = event.sender?.id === process.env.IG_USER_ID;
+          if (isFBPage || isIGSelf) continue;
+
+          // Platformu müəyyən et
+          const isInstagram = body.object === "instagram" ||
+            (entry.id && entry.id === process.env.IG_PAGE_ID);
+          const platform = isInstagram ? "Instagram" : "Facebook";
 
           // Rate limit yoxla
-          const allowed = await checkRateLimit(`fb:${event.sender.id}`);
+          const allowed = await checkRateLimit(`${platform.toLowerCase()}:${event.sender.id}`);
           if (!allowed) continue;
 
-          // Get Started düyməsi və ya digər postback-lər
+          // Postback (Get Started və s.)
           if (event.postback) {
-            await handleMessage("Facebook", event.sender.id, "Salam", undefined);
+            await handleMessage(platform, event.sender.id, "Salam", undefined);
             continue;
           }
 
@@ -57,30 +68,7 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
-          await handleMessage("Facebook", event.sender.id, text || mediaText || "", media);
-        }
-      }
-    }
-
-    if (body.object === "instagram") {
-      for (const entry of body.entry) {
-        for (const event of entry.messaging || []) {
-          if (event.message?.is_echo) continue;
-          if (!event.message) continue;
-
-          // Rate limit yoxla
-          const igAllowed = await checkRateLimit(`ig:${event.sender.id}`);
-          if (!igAllowed) continue;
-
-          const text = event.message.text;
-          const { userMessage: mediaText, media } = await resolveFBAttachment(event.message.attachments?.[0]);
-
-          if (!text && !mediaText && !media) {
-            await sendFBMessage(event.sender.id, "Zəhmət olmasa mətn, şəkil, video və ya ses göndərin! 🙏");
-            continue;
-          }
-
-          await handleMessage("Instagram", event.sender.id, text || mediaText || "", media);
+          await handleMessage(platform, event.sender.id, text || mediaText || "", media);
         }
       }
     }
