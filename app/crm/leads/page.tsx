@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, Send, X, Star } from "lucide-react";
+import { Search, Send, X, Star, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { logActivity } from "@/lib/activity";
+
+const PAGE_SIZE = 20;
 
 interface Lead {
   id: string;
@@ -51,6 +53,7 @@ export default function LeadsPage() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [marking, setMarking] = useState<string | null>(null);
   const [markResult, setMarkResult] = useState<Record<string, "ok" | "err">>({});
+  const [page, setPage] = useState(1);
 
   // Mesaj göndər modal
   const [msgModal, setMsgModal] = useState<Lead | null>(null);
@@ -75,6 +78,7 @@ export default function LeadsPage() {
     if (statusFilter !== "all") data = data.filter((l) => l.status === statusFilter);
     if (platformFilter !== "all") data = data.filter((l) => l.platform === platformFilter);
     setFiltered(data);
+    setPage(1);
   }, [leads, search, statusFilter, platformFilter]);
 
   async function loadLeads() {
@@ -142,6 +146,28 @@ export default function LeadsPage() {
     setMarking(null);
   }
 
+  function exportCSV() {
+    const headers = ["Ad", "Telefon", "Email", "Platform", "Destinasiya", "Mesaj", "Status", "Tarix"];
+    const rows = filtered.map((l) => [
+      l.name || "",
+      l.phone || "",
+      l.email || "",
+      l.platform,
+      l.destination || "",
+      (l.message || "").replace(/,/g, " "),
+      STATUS_AZ[l.status] || l.status,
+      formatDate(l.created_at),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function formatDate(d: string) {
     return new Date(d).toLocaleDateString("az-AZ", {
       day: "2-digit", month: "2-digit", year: "numeric",
@@ -153,7 +179,13 @@ export default function LeadsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Leadlər</h2>
-        <span className="text-sm text-gray-500">{filtered.length} nəticə</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{filtered.length} nəticə</span>
+          <button onClick={exportCSV}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors">
+            <Download size={13} /> CSV
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -202,7 +234,7 @@ export default function LeadsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((lead) => (
+                {filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((lead) => (
                   <tr key={lead.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="text-white font-medium">{lead.name || "—"}</div>
@@ -258,6 +290,26 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-500">
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+              className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-300 transition-colors">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-sm text-gray-400">{page} / {Math.ceil(filtered.length / PAGE_SIZE)}</span>
+            <button onClick={() => setPage((p) => Math.min(Math.ceil(filtered.length / PAGE_SIZE), p + 1))} disabled={page >= Math.ceil(filtered.length / PAGE_SIZE)}
+              className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-300 transition-colors">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Send Message Modal */}
       {msgModal && (

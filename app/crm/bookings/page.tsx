@@ -124,14 +124,42 @@ export default function BookingsPage() {
     setForm({ ...form, tour_id: tourId, total_price: tour ? String(tour.price_azn) : "" });
   }
 
+  function exportCSV() {
+    const headers = ["Nömrə", "Müştəri", "Telefon", "Tur", "Məbləğ", "Valyuta", "Status", "Tarix"];
+    const rows = filtered.map((b) => [
+      b.booking_number,
+      b.customers ? `${b.customers.first_name} ${b.customers.last_name || ""}`.trim() : "",
+      b.customers?.phone || "",
+      b.tours?.name || "",
+      b.total_price,
+      b.currency,
+      STATUS_AZ[b.status] || b.status,
+      new Date(b.created_at).toLocaleDateString("az-AZ"),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bookings_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Rezervasiyalar</h2>
-        <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          <Plus size={16} /> Yeni rezervasiya
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={exportCSV}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors">
+            <FileDown size={13} /> CSV
+          </button>
+          <button onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            <Plus size={16} /> Yeni rezervasiya
+          </button>
+        </div>
       </div>
 
       <div className="relative">
