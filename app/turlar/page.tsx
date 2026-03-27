@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { waLink } from "@/lib/whatsapp";
 import { supabase } from "@/lib/supabase";
 
 interface Tour {
@@ -8,7 +9,6 @@ interface Tour {
   name: string;
   destination: string;
   price_azn: number;
-  price_usd: number | null;
   start_date: string | null;
   end_date: string | null;
   max_seats: number;
@@ -17,43 +17,34 @@ interface Tour {
   description: string | null;
 }
 
-const DEST_MAP: Record<string, { label: string; flag: string; category: string }> = {
-  "Türkiyə":    { label: "Türkiyə",      flag: "🇹🇷", category: "turkiye" },
-  "Istanbul":   { label: "Türkiyə",      flag: "🇹🇷", category: "turkiye" },
-  "Antalya":    { label: "Türkiyə",      flag: "🇹🇷", category: "turkiye" },
-  "Dubai":      { label: "BƏƏ",          flag: "🇦🇪", category: "ereb" },
-  "BƏƏ":        { label: "BƏƏ",          flag: "🇦🇪", category: "ereb" },
-  "Misir":      { label: "Misir",        flag: "🇪🇬", category: "ereb" },
-  "Ərəbistan":  { label: "Ərəbistan",    flag: "🇸🇦", category: "ereb" },
-  "Fransa":     { label: "Fransa",       flag: "🇫🇷", category: "avropa" },
-  "İtaliya":    { label: "İtaliya",      flag: "🇮🇹", category: "avropa" },
-  "İspaniya":   { label: "İspaniya",     flag: "🇪🇸", category: "avropa" },
-  "Yunanıstan": { label: "Yunanıstan",   flag: "🇬🇷", category: "avropa" },
-  "Avstriya":   { label: "Avstriya",     flag: "🇦🇹", category: "avropa" },
-  "Hollandiya": { label: "Hollandiya",   flag: "🇳🇱", category: "avropa" },
-};
-
-function getDestInfo(destination: string) {
-  const key = Object.keys(DEST_MAP).find((k) =>
-    destination.toLowerCase().includes(k.toLowerCase())
-  );
-  return key ? DEST_MAP[key] : { label: destination, flag: "✈️", category: "diger" };
-}
-
 function getDuration(start: string | null, end: string | null): string {
   if (!start || !end) return "";
-  const s = new Date(start);
-  const e = new Date(end);
-  const days = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+  const days = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
   return `${days} gün / ${days - 1} gecə`;
 }
 
 const categories = [
   { id: "hamisi",  label: "Hamısı" },
   { id: "turkiye", label: "🇹🇷 Türkiyə" },
-  { id: "ereb",    label: "🇦🇪 Ərəb Ölkələri" },
+  { id: "ereb",    label: "🇦🇪 Ərəb" },
+  { id: "misir",   label: "🇪🇬 Misir" },
   { id: "avropa",  label: "🇪🇺 Avropa" },
 ];
+
+const DEST_CATEGORY: Record<string, string> = {
+  "türkiyə": "turkiye", "istanbul": "turkiye", "antalya": "turkiye", "bodrum": "turkiye",
+  "dubai": "ereb", "bəə": "ereb", "ərəb": "ereb", "əbu": "ereb",
+  "misir": "misir", "şarm": "misir", "hurqada": "misir",
+  "fransa": "avropa", "italiya": "avropa", "ispaniya": "avropa", "avropa": "avropa",
+};
+
+function getCategory(destination: string): string {
+  const d = destination.toLowerCase();
+  for (const [key, cat] of Object.entries(DEST_CATEGORY)) {
+    if (d.includes(key)) return cat;
+  }
+  return "diger";
+}
 
 export default function TurlarPage() {
   const [active, setActive] = useState("hamisi");
@@ -61,104 +52,72 @@ export default function TurlarPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("tours")
-      .select("*")
-      .eq("is_active", true)
+    supabase.from("tours").select("*").eq("is_active", true)
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setTours(data || []);
-        setLoading(false);
-      });
+      .then(({ data }) => { setTours(data || []); setLoading(false); });
   }, []);
 
-  const filtered = tours.filter((t) => {
-    if (active === "hamisi") return true;
-    const info = getDestInfo(t.destination);
-    return info.category === active;
-  });
+  const filtered = active === "hamisi" ? tours : tours.filter(t => getCategory(t.destination) === active);
 
   return (
-    <div className="min-h-screen">
+    <div style={{ background: "#0b0b0b", color: "#fff", minHeight: "100vh" }}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#0057A8] to-[#004a90] text-white py-16 px-4 text-center">
-        <h1 className="text-4xl font-bold mb-3">Bütün Turlar</h1>
-        <p className="text-blue-200 max-w-xl mx-auto">Türkiyə, Ərəb ölkələri və Avropa istiqamətlərindəki bütün tur paketlərimiz</p>
+      <div className="px-4 py-12 md:py-16 text-center" style={{ background: "#0d0d0d", borderBottom: "1px solid #1a1a1a" }}>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Bütün Turlar</h1>
+        <p className="text-sm" style={{ color: "#666" }}>Türkiyə, Ərəb ölkələri, Misir və Avropa istiqamətlərindəki bütün tur paketlərimiz</p>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
         {/* Filter */}
-        <div className="flex flex-wrap gap-3 justify-center mb-10">
+        <div className="flex flex-wrap gap-2 justify-center mb-8">
           {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActive(cat.id)}
-              className={`px-5 py-2 rounded-full font-medium text-sm transition-all ${
-                active === cat.id
-                  ? "bg-[#0057A8] text-white shadow-md"
-                  : "bg-white text-gray-600 border border-gray-200 hover:border-[#0057A8]"
-              }`}
-            >
+            <button key={cat.id} onClick={() => setActive(cat.id)}
+              className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+              style={active === cat.id
+                ? { background: "#D4AF37", color: "#000" }
+                : { background: "#111", color: "#aaa", border: "1px solid #1a1a1a" }}>
               {cat.label}
             </button>
           ))}
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="text-center py-20 text-gray-400">Turlar yüklənir...</div>
-        )}
-
-        {/* Empty */}
+        {loading && <div className="text-center py-16" style={{ color: "#555" }}>Yüklənir...</div>}
         {!loading && filtered.length === 0 && (
-          <div className="text-center py-20 text-gray-400">
-            Bu kateqoriyada hal-hazırda aktiv tur yoxdur.
-          </div>
+          <div className="text-center py-16" style={{ color: "#555" }}>Bu kateqoriyada aktiv tur yoxdur.</div>
         )}
 
-        {/* Tours Grid */}
         {!loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((tour) => {
-              const info = getDestInfo(tour.destination);
               const duration = getDuration(tour.start_date, tour.end_date);
               const seatsLeft = tour.max_seats - tour.booked_seats;
-              const isAlmostFull = seatsLeft <= 3 && seatsLeft > 0;
-
+              const almostFull = seatsLeft <= 3 && seatsLeft > 0;
               return (
-                <div key={tour.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                  {isAlmostFull ? (
-                    <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 text-center">
+                <div key={tour.id} className="rounded-xl flex flex-col overflow-hidden" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
+                  {almostFull && (
+                    <div className="text-xs font-bold text-center py-1.5" style={{ background: "#ef4444", color: "#fff" }}>
                       Son {seatsLeft} yer!
                     </div>
-                  ) : (
-                    <div className="h-1 bg-gradient-to-r from-[#0057A8] to-[#009B77]" />
                   )}
-                  <div className="p-5">
-                    <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-2">
-                      <span>{info.flag}</span>
-                      <span>{tour.destination}</span>
+                  <div className="p-4 flex-1">
+                    <p className="text-xs mb-1" style={{ color: "#666" }}>{tour.destination}</p>
+                    <h3 className="font-bold text-white text-base mb-1">{tour.name}</h3>
+                    {duration && <p className="text-xs mb-2" style={{ color: "#555" }}>⏱ {duration}</p>}
+                    {tour.hotel && <p className="text-xs mb-2" style={{ color: "#666" }}>🏨 {tour.hotel}</p>}
+                    {tour.description && <p className="text-xs leading-relaxed mb-3 line-clamp-2" style={{ color: "#666" }}>{tour.description}</p>}
+                  </div>
+                  <div className="p-4 pt-0">
+                    <div className="flex items-center justify-between mb-3 pt-3" style={{ borderTop: "1px solid #1a1a1a" }}>
+                      <span className="text-lg font-bold" style={{ color: "#D4AF37" }}>{tour.price_azn} AZN</span>
+                      <span className="text-xs" style={{ color: "#555" }}>/nəfər</span>
                     </div>
-                    <h3 className="font-bold text-[#1a1a2e] text-lg mb-1">{tour.name}</h3>
-                    {duration && <p className="text-sm text-gray-400 mb-2">⏱ {duration}</p>}
-                    {tour.hotel && (
-                      <p className="text-xs text-gray-500 mb-3">🏨 {tour.hotel}</p>
-                    )}
-                    {tour.description && (
-                      <p className="text-xs text-gray-500 mb-4 line-clamp-2">{tour.description}</p>
-                    )}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                      <div>
-                        <span className="text-xl font-bold text-[#0057A8]">{tour.price_azn} AZN</span>
-                        <span className="text-xs text-gray-400 ml-1">/nəfər</span>
-                      </div>
-                      <Link
-                        href="/elaqe"
-                        className="bg-[#0057A8] text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-[#004a90] transition-colors"
-                      >
-                        Sifariş Et
-                      </Link>
-                    </div>
+                    <a href={waLink(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`)}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-lg hover:opacity-90 transition-opacity text-xs font-semibold"
+                      style={{ background: "#25D366", color: "#fff" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      WhatsApp-da Sifariş Et
+                    </a>
                   </div>
                 </div>
               );
@@ -166,13 +125,16 @@ export default function TurlarPage() {
           </div>
         )}
 
-        {/* Bottom CTA */}
-        <div className="mt-16 bg-gradient-to-r from-[#0057A8] to-[#009B77] rounded-2xl p-10 text-center text-white">
-          <h3 className="text-2xl font-bold mb-3">İstədiyiniz Turu Tapmadınız?</h3>
-          <p className="text-blue-100 mb-6">Fərdi tur paketləri də hazırlayırıq. Bizimlə əlaqə saxlayın.</p>
-          <Link href="/elaqe" className="inline-block bg-[#D4AF37] text-[#0057A8] font-bold px-8 py-3 rounded-full hover:bg-yellow-400 transition-colors">
+        {/* CTA */}
+        <div className="mt-12 rounded-2xl p-8 md:p-10 text-center" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
+          <h3 className="text-xl md:text-2xl font-bold text-white mb-2">İstədiyiniz Turu Tapmadınız?</h3>
+          <p className="text-sm mb-5" style={{ color: "#666" }}>Fərdi tur paketləri də hazırlayırıq. WhatsApp-da yazın.</p>
+          <a href={waLink("Salam, fərdi tur paketi haqqında məlumat almaq istəyirəm")}
+            target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity text-sm font-bold py-3 px-6 rounded-xl"
+            style={{ background: "#25D366", color: "#fff" }}>
             Fərdi Tur Sifariş Et
-          </Link>
+          </a>
         </div>
       </div>
     </div>
