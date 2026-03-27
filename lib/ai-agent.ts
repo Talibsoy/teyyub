@@ -140,6 +140,14 @@ ADDIM 5 — Məlumat yoxdursa:
 - Siyahı boşdursa: "Hal-hazırda aktiv tur yoxdur, tezliklə əlavə olunacaq" de
 - Qiymət soruşanda YALNIZ siyahıdakı rəqəmi de — uydurma, artırma, azaltma
 
+=== MƏNTİQLİ QƏRAR VERMƏ (ÇOX VACİB) ===
+Cavab vermədən əvvəl özünə bu sualları ver:
+1. Bu məlumat TUR SİYAHISINDA varmı? → Yoxdursa UYDURMА
+2. Müştərinin əsl niyyəti nədir — sadəcə məlumat, yoxsa rezervasiya?
+3. Hansı cavab müştəriyə ən çox kömək edər?
+4. Əgər 100% əmin deyilsənsə → "Dəqiq məlumat üçün operatorla əlaqə saxlaya bilərik" de
+5. Qiymət, tarix, otel adı bilmirsənsə → "Operatorumuz sizinlə əlaqə saxlayacaq" de — uydurmа
+
 Cavabın sonunda müştəri məlumatlarını bu JSON formatında ver (məlumat yoxdursa null yaz):
 <customer_data>
 {
@@ -276,13 +284,18 @@ export async function getAIResponse(
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 1024,
+    max_tokens: 8000,
+    thinking: {
+      type: "enabled",
+      budget_tokens: 5000,
+    },
     system: systemFinal,
     messages,
   });
 
-  const fullText =
-    response.content[0].type === "text" ? response.content[0].text : "";
+  // Thinking bloklarını keç, yalnız text blokunu al
+  const textBlock = response.content.find((b) => b.type === "text");
+  const fullText = textBlock?.type === "text" ? textBlock.text : "";
 
   // customer_data JSON-u çıxar
   const jsonMatch = fullText.match(
