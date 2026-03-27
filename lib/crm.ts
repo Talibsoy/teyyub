@@ -1,6 +1,8 @@
 import { CustomerData } from "./ai-agent";
 import { getSupabaseAdmin } from "./supabase";
 import { runWorkflows } from "./workflow-engine";
+import { saveExample } from "./ai-memory";
+import { getHistory } from "./conversation-store";
 
 export async function saveLead(
   platform: string,
@@ -56,5 +58,22 @@ export async function saveLead(
     }
   } catch (error) {
     console.error("CRM lead save xətası:", error);
+  }
+}
+
+// Booking yarandıqda söhbəti avtomatik nümunə kimi saxla
+export async function saveBookingExample(
+  platform: string,
+  senderId: string,
+  destination?: string | null
+) {
+  try {
+    const historyKey = `${platform}_${senderId}`;
+    const history = await getHistory(historyKey);
+    if (history.length >= 2) {
+      await saveExample(platform, senderId, history, "booking", destination);
+    }
+  } catch {
+    // Xəta əsas axını dayandırmasın
   }
 }

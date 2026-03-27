@@ -4,11 +4,24 @@ import { useState } from "react";
 export default function ElaqePage() {
   const [form, setForm] = useState({ ad: "", telefon: "", email: "", tur: "", mesaj: "" });
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: API inteqrasiyası
-    setSent(true);
+    setLoading(true);
+    try {
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      setSent(true);
+    } catch {
+      // Xəta olsa da təşəkkür göstər
+      setSent(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

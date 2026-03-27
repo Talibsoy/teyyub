@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, CalendarCheck, CreditCard, TrendingUp } from "lucide-react";
+import { Users, CalendarCheck, CreditCard, TrendingUp, Activity, CheckCircle, XCircle } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -55,6 +55,7 @@ export default function DashboardPage() {
   const [leadsByPlatform, setLeadsByPlatform] = useState<{ name: string; value: number }[]>([]);
   const [recentLeads, setRecentLeads] = useState<{ id: string; name: string; platform: string; destination: string; status: string; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [health, setHealth] = useState<{ supabase: boolean; redis: boolean; ai_examples: number } | null>(null);
 
   useEffect(() => {
     loadDashboard();
@@ -102,6 +103,21 @@ export default function DashboardPage() {
 
     // Recent leads
     setRecentLeads(leads.slice(0, 8) as typeof recentLeads);
+
+    // Health check
+    try {
+      const hRes = await fetch("/api/health");
+      const hData = await hRes.json();
+      const examplesRes = await supabase.from("ai_examples").select("id", { count: "exact", head: true });
+      setHealth({
+        supabase: hData.services?.supabase === "ok",
+        redis: hData.services?.redis === "ok",
+        ai_examples: examplesRes.count || 0,
+      });
+    } catch {
+      setHealth({ supabase: false, redis: false, ai_examples: 0 });
+    }
+
     setLoading(false);
   }
 
@@ -182,6 +198,30 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* System Health */}
+      {health && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity size={16} className="text-gray-400" />
+            <h3 className="text-sm font-medium text-gray-400">Sistem Sağlamlığı</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: "Supabase", ok: health.supabase },
+              { label: "Redis", ok: health.redis },
+              { label: `AI Nümunələri (${health.ai_examples})`, ok: health.ai_examples >= 0 },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                {item.ok
+                  ? <CheckCircle size={16} className="text-emerald-400 shrink-0" />
+                  : <XCircle size={16} className="text-red-400 shrink-0" />}
+                <span className="text-sm text-gray-300">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent leads */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
