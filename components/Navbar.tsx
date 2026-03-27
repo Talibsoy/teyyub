@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const navLinks = [
   { href: "/", label: "Ana Səhifə" },
@@ -17,9 +18,9 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-[#0057A8] text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <span className="text-[#D4AF37] text-2xl">✈</span>
-          <span>FlyNaToure</span>
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo.png" alt="Natoure" width={40} height={40} className="object-contain" />
+          <span className="font-bold text-xl tracking-tight">Natoure</span>
         </Link>
 
         {/* Desktop Nav */}

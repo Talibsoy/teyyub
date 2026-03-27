@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -6,9 +7,10 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         {/* Brand */}
         <div className="md:col-span-1">
-          <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
-            <span className="text-[#D4AF37]">✈</span> FlyNaToure
-          </h3>
+          <div className="flex items-center gap-2 mb-3">
+            <Image src="/logo.png" alt="Natoure" width={36} height={36} className="object-contain" />
+            <h3 className="text-white font-bold text-lg">Natoure</h3>
+          </div>
           <p className="text-sm leading-relaxed mb-4">
             Bakı mərkəzli turizm şirkəti. 2018-ci ildən Türkiyə, Ərəb ölkələri və Avropa istiqamətlərində keyfiyyətli turlar.
           </p>
