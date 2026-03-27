@@ -4,74 +4,48 @@ import Link from "next/link";
 import Image from "next/image";
 
 const navLinks = [
-  { href: "/", label: "Ana Səhifə" },
   { href: "/turlar", label: "Turlar" },
   { href: "/haqqimizda", label: "Haqqımızda" },
   { href: "/elaqe", label: "Əlaqə" },
-  { href: "/privacy-policy", label: "Gizlilik Siyasəti" },
 ];
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0057A8] text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Logo */}
+    <header style={{ background: "#0b0b0b", borderBottom: "1px solid #1a1a1a" }} className="sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="Natoure" width={40} height={40} className="object-contain" />
-          <span className="font-bold text-xl tracking-tight">Natoure</span>
+          <Image src="/logo.png" alt="Natoure" width={36} height={36} className="object-contain" />
+          <span className="font-bold text-xl text-white tracking-tight">Natoure</span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="hover:text-[#D4AF37] transition-colors"
-            >
+            <Link key={link.href} href={link.href} className="text-[#aaa] hover:text-white transition-colors">
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/elaqe"
-            className="bg-[#D4AF37] text-[#0057A8] font-bold px-4 py-2 rounded-full hover:bg-yellow-400 transition-colors"
-          >
+          <Link href="/elaqe" style={{ background: "#00c2ff", color: "#000" }} className="font-semibold px-5 py-2 rounded-lg hover:opacity-90 transition-opacity">
             Rezervasiya Et
           </Link>
         </nav>
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden flex flex-col gap-1.5 p-2"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Menyu"
-        >
+        <button className="md:hidden flex flex-col gap-1.5 p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menyu">
           <span className={`block w-6 h-0.5 bg-white transition-all ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
           <span className={`block w-6 h-0.5 bg-white transition-all ${menuOpen ? "opacity-0" : ""}`} />
           <span className={`block w-6 h-0.5 bg-white transition-all ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <nav className="md:hidden bg-[#004a90] px-4 pb-4 flex flex-col gap-3 text-sm font-medium">
+        <nav style={{ background: "#111", borderTop: "1px solid #1a1a1a" }} className="md:hidden px-6 pb-4 flex flex-col gap-4 text-sm font-medium">
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="py-2 border-b border-[#0057A8] hover:text-[#D4AF37] transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
+            <Link key={link.href} href={link.href} className="py-2 text-[#aaa] hover:text-white transition-colors border-b border-[#1a1a1a]" onClick={() => setMenuOpen(false)}>
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/elaqe"
-            className="mt-2 text-center bg-[#D4AF37] text-[#0057A8] font-bold px-4 py-2 rounded-full"
-            onClick={() => setMenuOpen(false)}
-          >
+          <Link href="/elaqe" style={{ background: "#00c2ff", color: "#000" }} className="mt-2 text-center font-semibold px-5 py-2 rounded-lg" onClick={() => setMenuOpen(false)}>
             Rezervasiya Et
           </Link>
         </nav>
