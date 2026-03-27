@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, X } from "lucide-react";
+import { Plus, X, CreditCard, ExternalLink } from "lucide-react";
 
 interface Payment {
   id: string;
@@ -48,8 +48,31 @@ export default function PaymentsPage() {
     payment_method: "cash",
   });
 
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [creatingLink, setCreatingLink] = useState<string | null>(null);
+
   const totalPaid = payments.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
   const totalPending = payments.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0);
+
+  async function createPayriffLink(payment: Payment) {
+    setCreatingLink(payment.id);
+    try {
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: payment.bookings?.booking_number,
+          amount: payment.amount,
+          description: `${payment.bookings?.tours?.name || "Tur"} — ${payment.bookings?.customers?.first_name || ""}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.paymentUrl) setPaymentLink(data.paymentUrl);
+    } catch {
+      alert("Ödəniş linki yaradıla bilmədi");
+    }
+    setCreatingLink(null);
+  }
 
   useEffect(() => { loadAll(); }, []);
 
@@ -128,6 +151,7 @@ export default function PaymentsPage() {
                   <th className="text-left px-4 py-3 font-medium">Üsul</th>
                   <th className="text-left px-4 py-3 font-medium">Tarix</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-left px-4 py-3 font-medium">Əməliyyat</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,6 +174,18 @@ export default function PaymentsPage() {
                         {STATUS_AZ[p.status] || p.status}
                       </span>
                     </td>
+                    <td className="px-4 py-3">
+                      {p.status === "pending" && (
+                        <button
+                          onClick={() => createPayriffLink(p)}
+                          disabled={creatingLink === p.id}
+                          className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-2 py-1 rounded-lg transition-colors"
+                        >
+                          <CreditCard size={12} />
+                          {creatingLink === p.id ? "..." : "Ödəniş linki"}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -157,6 +193,30 @@ export default function PaymentsPage() {
           </div>
         )}
       </div>
+
+      {/* Payment Link Modal */}
+      {paymentLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Ödəniş Linki</h3>
+              <button onClick={() => setPaymentLink(null)}><X size={20} className="text-gray-400" /></button>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">Bu linki müştəriyə göndərin:</p>
+            <div className="bg-gray-800 rounded-lg px-3 py-2 text-xs text-blue-400 break-all mb-4">{paymentLink}</div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { navigator.clipboard.writeText(paymentLink); }}
+                className="flex-1 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm transition-colors"
+              >Kopyala</button>
+              <a href={paymentLink} target="_blank" rel="noopener noreferrer"
+                className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium text-center transition-colors flex items-center justify-center gap-1">
+                <ExternalLink size={14} /> Aç
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Payment Modal */}
       {showModal && (
