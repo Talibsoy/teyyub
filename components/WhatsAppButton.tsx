@@ -1,12 +1,6 @@
 "use client";
 import Link from "next/link";
-
-const WA_NUMBER = "994517769632";
-const WA_MESSAGE = "Salam, tur haqqında təklif almaq istəyirəm";
-
-export function waLink(msg?: string) {
-  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg || WA_MESSAGE)}`;
-}
+import { waLink } from "@/lib/whatsapp";
 
 export default function WhatsAppButton() {
   return (

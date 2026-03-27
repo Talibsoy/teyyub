@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { waLink } from "@/components/WhatsAppButton";
+import { waLink } from "@/lib/whatsapp";
 
 const WA_GENERAL = waLink();
 
