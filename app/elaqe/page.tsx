@@ -40,8 +40,8 @@ export default function ElaqePage() {
           <div className="space-y-6">
             {[
               { icon: "📍", title: "Ünvan", lines: ["Bakı şəhəri, Nizami küçəsi 10", "Azərbaycan"] },
-              { icon: "📞", title: "Telefon", lines: ["+994 12 000 00 00", "+994 50 000 00 00 (WhatsApp)"] },
-              { icon: "✉️", title: "Email", lines: ["info@flynatoure.com", "rezervasiya@flynatoure.com"] },
+              { icon: "📞", title: "Telefon / WhatsApp", lines: ["+994 51 776 96 32"] },
+              { icon: "✉️", title: "Email", lines: ["info@natourefly.com"] },
               { icon: "🕐", title: "İş Saatları", lines: ["Bazar ertəsi – Şənbə: 09:00 – 18:00", "Bazar: Qapalı"] },
             ].map((item) => (
               <div key={item.title} className="flex gap-4">
@@ -62,10 +62,15 @@ export default function ElaqePage() {
           <div className="mt-10">
             <h3 className="font-semibold text-[#1a1a2e] mb-4 text-sm">Sosial Media</h3>
             <div className="flex gap-3">
-              {["Instagram", "Facebook", "WhatsApp", "TikTok"].map((s) => (
-                <button key={s} className="text-xs bg-gray-100 hover:bg-[#0057A8] hover:text-white px-3 py-1.5 rounded-full transition-colors text-gray-600">
-                  {s}
-                </button>
+              {[
+                { label: "Instagram", href: "https://instagram.com/natoure.fly" },
+                { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61563875994345" },
+                { label: "WhatsApp", href: "https://wa.me/994517769632" },
+              ].map((s) => (
+                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                  className="text-xs bg-gray-100 hover:bg-[#0057A8] hover:text-white px-3 py-1.5 rounded-full transition-colors text-gray-600">
+                  {s.label}
+                </a>
               ))}
             </div>
           </div>

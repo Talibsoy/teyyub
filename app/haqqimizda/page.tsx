@@ -1,20 +1,47 @@
 import Link from "next/link";
 
-const team = [
-  { name: "Nicat Məmmədov", role: "Baş Direktor", emoji: "👨‍💼" },
-  { name: "Aytən Hüseynova", role: "Tur Meneceri", emoji: "👩‍💼" },
-  { name: "Rauf Əliyev", role: "Müştəri Xidmətləri", emoji: "👨‍💼" },
-  { name: "Günel Qasımova", role: "Viza Mütəxəssisi", emoji: "👩‍💼" },
+const services = [
+  {
+    flag: "🇪🇺", title: "Avropa Turları",
+    items: ["İtaliya, Fransa, Almaniya və digər Şengen ölkələri", "Şəhər turları + mədəni təcrübələr", "Viza dəstəyi ilə paketlər"],
+  },
+  {
+    flag: "🇹🇷", title: "Türkiyə Turları",
+    items: ["Antalya, Bodrum, İstanbul", "Ailəvi və premium resort paketləri", "Hər büdcəyə uyğun seçimlər"],
+  },
+  {
+    flag: "🇪🇬", title: "Misir Turları",
+    items: ["Şarm El-Şeyx, Hurqada", "All-inclusive otellər", "Dəniz və istirahət fokuslu paketlər"],
+  },
+  {
+    flag: "🇦🇪", title: "Dubay Turları",
+    items: ["Lüks və premium tətil paketləri", "Şəhər + əyləncə kombinasiyaları", "Shopping və experience turları"],
+  },
+  {
+    flag: "🧳", title: "Fərdi Planlama",
+    items: ["Müştəriyə xüsusi itinerary hazırlanması", "Büdcəyə uyğun optimizasiya", "Full service (bilet + hotel + transfer + plan)"],
+  },
 ];
 
-const milestones = [
-  { year: "2018", text: "FlyNaToure Bakıda quruldu" },
-  { year: "2019", text: "Türkiyə turları istiqaməti açıldı" },
-  { year: "2020", text: "Çətin dövrdə müştərilərimizə dəstək verdik" },
-  { year: "2021", text: "Ərəb ölkələri istiqaməti əlavə edildi" },
-  { year: "2022", text: "1000+ məmnun turist hədəfinə çatdıq" },
-  { year: "2023", text: "Avropa turları proqramı başladıldı" },
-  { year: "2024", text: "5000+ turistə xidmət göstərdik" },
+const portfolio = [
+  { flag: "🇦🇪", dest: "Dubay", desc: "Lüks və şəhər təcrübəsi paketləri" },
+  { flag: "🇹🇷", dest: "Türkiyə", desc: "Ailəvi və resort turları" },
+  { flag: "🇪🇬", dest: "Misir", desc: "Dəniz və istirahət paketləri" },
+  { flag: "🇪🇺", dest: "Avropa", desc: "Fərdi və Şengen əsaslı səyahətlər" },
+];
+
+const usps = [
+  { icon: "⚡", title: "AI əsaslı satış sistemi", desc: "Müştəri ilə chatbot danışır, tələbatı analiz edir, avtomatik uyğun paket təklif edir." },
+  { icon: "🔄", title: "Avtomatlaşdırılmış sistem", desc: "Lead-lər avtomatik toplanır, CRM inteqrasiyası, satış prosesi optimallaşdırılır." },
+  { icon: "🎯", title: "Fərdi yanaşma", desc: "Hər müştəri üçün xüsusi plan. Büdcəyə uyğun maksimum dəyər." },
+  { icon: "📈", title: "Satış yönümlü yanaşma", desc: "Sadəcə məlumat verilmir — müştəri qərar mərhələsinə gətirilir." },
+];
+
+const partners = [
+  { icon: "✈️", label: "Aviaşirkətlər" },
+  { icon: "🏨", label: "Otellər və resortlar" },
+  { icon: "🌍", label: "Beynəlxalq tur operatorları" },
+  { icon: "🚐", label: "Transfer və lokal xidmət təminatçıları" },
 ];
 
 export default function HaqqimızdaPage() {
@@ -23,33 +50,31 @@ export default function HaqqimızdaPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-[#0057A8] to-[#004a90] text-white py-16 px-4 text-center">
         <h1 className="text-4xl font-bold mb-3">Haqqımızda</h1>
-        <p className="text-blue-200 max-w-xl mx-auto">Bakıdan dünyaya — etibarlı turizm tərəfdaşınız</p>
+        <p className="text-blue-200 max-w-xl mx-auto">AI + avtomatlaşdırma + satış psixologiyası üzərində qurulmuş müasir turizm platforması</p>
       </div>
 
-      {/* Story */}
+      {/* What is Natoure */}
       <section className="max-w-5xl mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl font-bold text-[#1a1a2e] mb-6">Bizim Hekayəmiz</h2>
+            <h2 className="text-3xl font-bold text-[#1a1a2e] mb-6">Natoure Nədir?</h2>
             <p className="text-gray-600 leading-relaxed mb-4">
-              FlyNaToure 2018-ci ildə Bakıda, turizm həvəskarları tərəfindən qurulmuşdur. Şirkətimizin əsas məqsədi
-              Azərbaycan sakinlərinə yüksək keyfiyyətli, sərfəli və etibarlı tur xidmətləri göstərməkdir.
+              Natoure — müasir yanaşma ilə fəaliyyət göstərən, fərdi və korporativ müştərilər üçün optimallaşdırılmış turizm və travel xidmətləri təqdim edən platformadır.
             </p>
             <p className="text-gray-600 leading-relaxed mb-4">
-              Türkiyə, Ərəb ölkələri (BƏƏ, Misir, Səudiyyə Ərəbistanı) və Avropa (Fransa, İtaliya, İspaniya, Çexiya
-              və s.) istiqamətlərində geniş tur paketi portfelinə sahibik.
+              Bizim əsas məqsədimiz standart tur paketləri satmaq yox — müştəriyə uyğun <strong>fərdi təcrübə</strong> yaratmaqdır.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Hər ilin 5000-dən artıq turistinə xidmət göstərən komandamız, müştəri məmnuniyyətini hər şeydən üstün tutur.
+              Natoure, klassik turizm agentliyi deyil — <strong>AI + avtomatlaşdırma + satış psixologiyası</strong> üzərində qurulmuş sistemdir.
             </p>
           </div>
           <div className="bg-gradient-to-br from-[#0057A8] to-[#009B77] rounded-2xl p-8 text-white">
             <div className="grid grid-cols-2 gap-6">
               {[
-                { num: "2018", label: "Quruluş ili" },
-                { num: "70+", label: "Aktiv tur" },
-                { num: "5000+", label: "Turist/il" },
-                { num: "3", label: "İstiqamət" },
+                { num: "5", label: "İstiqamət" },
+                { num: "100%", label: "Fərdi yanaşma" },
+                { num: "AI", label: "Dəstəkli sistem" },
+                { num: "24/7", label: "Chatbot dəstəyi" },
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <div className="text-3xl font-bold text-[#D4AF37]">{s.num}</div>
@@ -61,64 +86,110 @@ export default function HaqqimızdaPage() {
         </div>
       </section>
 
-      {/* Timeline */}
+      {/* Services */}
       <section className="bg-gray-50 py-16 px-4">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#1a1a2e] text-center mb-12">Tariximiz</h2>
-          <div className="space-y-6">
-            {milestones.map((m, i) => (
-              <div key={i} className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-16 text-right">
-                  <span className="text-[#0057A8] font-bold text-sm">{m.year}</span>
-                </div>
-                <div className="flex-shrink-0 w-3 h-3 rounded-full bg-[#0057A8] mt-1 ring-4 ring-[#0057A8]/20" />
-                <p className="text-gray-600 text-sm leading-relaxed">{m.text}</p>
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-[#1a1a2e] text-center mb-12">Xidmətlərimiz</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {services.map((s) => (
+              <div key={s.title} className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-3">{s.flag}</div>
+                <h3 className="font-bold text-[#1a1a2e] text-lg mb-3">{s.title}</h3>
+                <ul className="space-y-2">
+                  {s.items.map((item) => (
+                    <li key={item} className="text-sm text-gray-500 flex items-start gap-2">
+                      <span className="text-[#009B77] mt-0.5">✓</span> {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Team */}
+      {/* Portfolio */}
       <section className="max-w-5xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-[#1a1a2e] text-center mb-12">Komandamız</h2>
+        <h2 className="text-3xl font-bold text-[#1a1a2e] text-center mb-4">Keçirilmiş Turlar</h2>
+        <p className="text-gray-500 text-center mb-12 max-w-xl mx-auto">Aşağıdakı istiqamətlər üzrə uğurlu turlar təşkil etmişik</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {team.map((member) => (
-            <div key={member.name} className="text-center p-6 rounded-2xl border border-gray-100 hover:border-[#0057A8]/30 hover:shadow-md transition-all">
-              <div className="text-5xl mb-4">{member.emoji}</div>
-              <h3 className="font-bold text-[#1a1a2e] text-sm">{member.name}</h3>
-              <p className="text-xs text-gray-400 mt-1">{member.role}</p>
+          {portfolio.map((p) => (
+            <div key={p.dest} className="text-center p-6 rounded-2xl border border-gray-100 hover:border-[#0057A8]/30 hover:shadow-md transition-all">
+              <div className="text-4xl mb-3">{p.flag}</div>
+              <h3 className="font-bold text-[#1a1a2e] mb-1">{p.dest}</h3>
+              <p className="text-xs text-gray-400">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 bg-gradient-to-r from-[#0057A8]/10 to-[#009B77]/10 rounded-2xl p-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          {[
+            { icon: "⭐", text: "Yüksək müştəri məmnuniyyəti" },
+            { icon: "🔄", text: "Təkrar alış edən müştərilər" },
+            { icon: "👥", text: "Referal üzərindən gələn satışlar" },
+          ].map((r) => (
+            <div key={r.text} className="flex items-center justify-center gap-3">
+              <span className="text-2xl">{r.icon}</span>
+              <span className="text-sm font-medium text-[#1a1a2e]">{r.text}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Values */}
+      {/* USP */}
       <section className="bg-[#1a1a2e] text-white py-16 px-4">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Dəyərlərimiz</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: "🤝", title: "Etibar", desc: "Müştərilərimizlə şəffaf və dürüst münasibətlər qururuq. Verdiyimiz sözü tutururuq." },
-              { icon: "⭐", title: "Keyfiyyət", desc: "Hər tur paketini ən yüksək standartlara uyğun hazırlayırıq. Keyfiyyətsizlik qəbul edilmir." },
-              { icon: "❤️", title: "Müştəri Məmnuniyyəti", desc: "Sizin məmnuniyyətiniz bizim uğurumuzun ölçüsüdür. Hər müştəriyə fərdi yanaşırıq." },
-            ].map((v) => (
-              <div key={v.title} className="text-center">
-                <div className="text-4xl mb-4">{v.icon}</div>
-                <h3 className="font-bold text-[#D4AF37] mb-3">{v.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{v.desc}</p>
+          <h2 className="text-3xl font-bold text-center mb-4">Digər Şirkətlərdən Fərqimiz</h2>
+          <p className="text-gray-400 text-center mb-12 max-w-xl mx-auto">Niyə Natoure? Çünki biz sadəcə tur satmırıq — müştəriyə ən uyğun həll yaradırıq.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {usps.map((u) => (
+              <div key={u.title} className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center text-2xl">
+                  {u.icon}
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#D4AF37] mb-2">{u.title}</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">{u.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 px-4 text-center">
-        <h2 className="text-2xl font-bold text-[#1a1a2e] mb-4">Bizimlə Səyahətə Çıxın</h2>
-        <p className="text-gray-500 mb-8 max-w-md mx-auto">Suallarınız varsa, əlaqə saxlayın. Komandamız sizin üçün ən yaxşı turu seçməkdən məmnun olar.</p>
+      {/* Partners */}
+      <section className="bg-gray-50 py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-[#1a1a2e] text-center mb-4">Tərəfdaşlarımız</h2>
+          <p className="text-gray-500 text-center mb-12 max-w-xl mx-auto">Xarici turizm agentlikləri ilə B2B əməkdaşlıq, incoming tərəfdaşlıqlar, korporativ travel xidmətləri</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {partners.map((p) => (
+              <div key={p.label} className="bg-white rounded-2xl p-6 text-center border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-3">{p.icon}</div>
+                <p className="text-sm font-medium text-[#1a1a2e]">{p.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Natoure */}
+      <section className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <h2 className="text-3xl font-bold text-[#1a1a2e] mb-8">Niyə Natoure?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mb-12">
+          {[
+            "Araşdırma etməyə vaxt itirmirsən",
+            "Sənə uyğun ən optimal variant təqdim olunur",
+            "Sürətli və rahat qərar prosesi",
+            "Minimum risk, maksimum rahatlıq",
+          ].map((item) => (
+            <div key={item} className="flex items-center gap-3 bg-[#0057A8]/5 rounded-xl p-4">
+              <span className="text-[#009B77] text-xl">✓</span>
+              <span className="text-sm text-gray-700">{item}</span>
+            </div>
+          ))}
+        </div>
         <Link href="/elaqe" className="inline-block bg-[#0057A8] text-white font-bold px-8 py-3 rounded-full hover:bg-[#004a90] transition-colors">
-          Əlaqə Saxla
+          Pulsuz Məsləhət Al
         </Link>
       </section>
     </div>
