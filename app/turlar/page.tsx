@@ -1,36 +1,82 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
-const allTours = [
-  // Türkiyə
-  { id: 1, name: "İstanbul Klassik", destination: "turkiye", flag: "🇹🇷", country: "Türkiyə", price: 499, duration: "4 gün / 3 gecə", includes: ["Uçuş", "Otel", "Gəzintilər"], badge: "Ən Populyar" },
-  { id: 2, name: "Antalya Dəniz & Günəş", destination: "turkiye", flag: "🇹🇷", country: "Türkiyə", price: 549, duration: "7 gün / 6 gecə", includes: ["Uçuş", "5★ Otel", "Transferlər", "All Inclusive"], badge: "" },
-  { id: 3, name: "Kapadokiya Balonu", destination: "turkiye", flag: "🇹🇷", country: "Türkiyə", price: 699, duration: "5 gün / 4 gecə", includes: ["Uçuş", "Otel", "Balon uçuşu", "Turlar"], badge: "Unikal" },
-  { id: 4, name: "İzmir & Efes", destination: "turkiye", flag: "🇹🇷", country: "Türkiyə", price: 479, duration: "4 gün / 3 gecə", includes: ["Uçuş", "Otel", "Turlar"], badge: "" },
-  // Ərəb
-  { id: 5, name: "Dubai Lüks", destination: "ereb", flag: "🇦🇪", country: "BƏƏ", price: 799, duration: "6 gün / 5 gecə", includes: ["Uçuş", "5★ Otel", "Turlar", "Transfer"], badge: "Lüks" },
-  { id: 6, name: "Abu Dhabi Möcüzəsi", destination: "ereb", flag: "🇦🇪", country: "BƏƏ", price: 749, duration: "5 gün / 4 gecə", includes: ["Uçuş", "Otel", "Louvre", "Transfer"], badge: "" },
-  { id: 7, name: "Qahirə & Piramidalar", destination: "ereb", flag: "🇪🇬", country: "Misir", price: 649, duration: "6 gün / 5 gecə", includes: ["Uçuş", "Otel", "Bələdçi", "Turlar"], badge: "Tarixi" },
-  { id: 8, name: "Şarm-əl-Şeyx Dəniz", destination: "ereb", flag: "🇪🇬", country: "Misir", price: 599, duration: "7 gün / 6 gecə", includes: ["Uçuş", "4★ Otel", "All Inclusive"], badge: "" },
-  // Avropa
-  { id: 9, name: "Paris Romantik", destination: "avropa", flag: "🇫🇷", country: "Fransa", price: 999, duration: "5 gün / 4 gecə", includes: ["Uçuş", "Otel", "Gəzintilər", "Sığorta"], badge: "Romantik" },
-  { id: 10, name: "Roma Əbədi Şəhər", destination: "avropa", flag: "🇮🇹", country: "İtaliya", price: 899, duration: "5 gün / 4 gecə", includes: ["Uçuş", "Otel", "Turlar", "Sığorta"], badge: "" },
-  { id: 11, name: "Barselona & Prag", destination: "avropa", flag: "🇪🇸", country: "İspaniya/Çexiya", price: 1199, duration: "8 gün / 7 gecə", includes: ["Uçuşlar", "Otellər", "Gəzintilər", "Sığorta"], badge: "İkili Tur" },
-  { id: 12, name: "Amsterdam & Brüssel", destination: "avropa", flag: "🇳🇱", country: "Hollandiya/Belçika", price: 1099, duration: "7 gün / 6 gecə", includes: ["Uçuşlar", "Otellər", "Turlar", "Sığorta"], badge: "" },
-];
+interface Tour {
+  id: string;
+  name: string;
+  destination: string;
+  price_azn: number;
+  price_usd: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  max_seats: number;
+  booked_seats: number;
+  hotel: string | null;
+  description: string | null;
+}
+
+const DEST_MAP: Record<string, { label: string; flag: string; category: string }> = {
+  "Türkiyə":    { label: "Türkiyə",      flag: "🇹🇷", category: "turkiye" },
+  "Istanbul":   { label: "Türkiyə",      flag: "🇹🇷", category: "turkiye" },
+  "Antalya":    { label: "Türkiyə",      flag: "🇹🇷", category: "turkiye" },
+  "Dubai":      { label: "BƏƏ",          flag: "🇦🇪", category: "ereb" },
+  "BƏƏ":        { label: "BƏƏ",          flag: "🇦🇪", category: "ereb" },
+  "Misir":      { label: "Misir",        flag: "🇪🇬", category: "ereb" },
+  "Ərəbistan":  { label: "Ərəbistan",    flag: "🇸🇦", category: "ereb" },
+  "Fransa":     { label: "Fransa",       flag: "🇫🇷", category: "avropa" },
+  "İtaliya":    { label: "İtaliya",      flag: "🇮🇹", category: "avropa" },
+  "İspaniya":   { label: "İspaniya",     flag: "🇪🇸", category: "avropa" },
+  "Yunanıstan": { label: "Yunanıstan",   flag: "🇬🇷", category: "avropa" },
+  "Avstriya":   { label: "Avstriya",     flag: "🇦🇹", category: "avropa" },
+  "Hollandiya": { label: "Hollandiya",   flag: "🇳🇱", category: "avropa" },
+};
+
+function getDestInfo(destination: string) {
+  const key = Object.keys(DEST_MAP).find((k) =>
+    destination.toLowerCase().includes(k.toLowerCase())
+  );
+  return key ? DEST_MAP[key] : { label: destination, flag: "✈️", category: "diger" };
+}
+
+function getDuration(start: string | null, end: string | null): string {
+  if (!start || !end) return "";
+  const s = new Date(start);
+  const e = new Date(end);
+  const days = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+  return `${days} gün / ${days - 1} gecə`;
+}
 
 const categories = [
-  { id: "hamisi", label: "Hamısı" },
+  { id: "hamisi",  label: "Hamısı" },
   { id: "turkiye", label: "🇹🇷 Türkiyə" },
-  { id: "ereb", label: "🇦🇪 Ərəb Ölkələri" },
-  { id: "avropa", label: "🇪🇺 Avropa" },
+  { id: "ereb",    label: "🇦🇪 Ərəb Ölkələri" },
+  { id: "avropa",  label: "🇪🇺 Avropa" },
 ];
 
 export default function TurlarPage() {
   const [active, setActive] = useState("hamisi");
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = active === "hamisi" ? allTours : allTours.filter((t) => t.destination === active);
+  useEffect(() => {
+    supabase
+      .from("tours")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setTours(data || []);
+        setLoading(false);
+      });
+  }, []);
+
+  const filtered = tours.filter((t) => {
+    if (active === "hamisi") return true;
+    const info = getDestInfo(t.destination);
+    return info.category === active;
+  });
 
   return (
     <div className="min-h-screen">
@@ -58,43 +104,67 @@ export default function TurlarPage() {
           ))}
         </div>
 
+        {/* Loading */}
+        {loading && (
+          <div className="text-center py-20 text-gray-400">Turlar yüklənir...</div>
+        )}
+
+        {/* Empty */}
+        {!loading && filtered.length === 0 && (
+          <div className="text-center py-20 text-gray-400">
+            Bu kateqoriyada hal-hazırda aktiv tur yoxdur.
+          </div>
+        )}
+
         {/* Tours Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filtered.map((tour) => (
-            <div key={tour.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-              {tour.badge && (
-                <div className="bg-[#D4AF37] text-[#0057A8] text-xs font-bold px-3 py-1 text-center">
-                  {tour.badge}
-                </div>
-              )}
-              {!tour.badge && <div className="h-1 bg-gradient-to-r from-[#0057A8] to-[#009B77]" />}
-              <div className="p-5">
-                <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-2">
-                  <span>{tour.flag}</span>
-                  <span>{tour.country}</span>
-                </div>
-                <h3 className="font-bold text-[#1a1a2e] text-lg mb-1">{tour.name}</h3>
-                <p className="text-sm text-gray-400 mb-4">⏱ {tour.duration}</p>
-                <ul className="space-y-1 mb-5">
-                  {tour.includes.map((item) => (
-                    <li key={item} className="text-xs text-gray-600 flex items-center gap-1.5">
-                      <span className="text-[#009B77]">✓</span> {item}
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <div>
-                    <span className="text-xl font-bold text-[#0057A8]">{tour.price}$</span>
-                    <span className="text-xs text-gray-400 ml-1">/nəfər</span>
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filtered.map((tour) => {
+              const info = getDestInfo(tour.destination);
+              const duration = getDuration(tour.start_date, tour.end_date);
+              const seatsLeft = tour.max_seats - tour.booked_seats;
+              const isAlmostFull = seatsLeft <= 3 && seatsLeft > 0;
+
+              return (
+                <div key={tour.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
+                  {isAlmostFull ? (
+                    <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 text-center">
+                      Son {seatsLeft} yer!
+                    </div>
+                  ) : (
+                    <div className="h-1 bg-gradient-to-r from-[#0057A8] to-[#009B77]" />
+                  )}
+                  <div className="p-5">
+                    <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-2">
+                      <span>{info.flag}</span>
+                      <span>{tour.destination}</span>
+                    </div>
+                    <h3 className="font-bold text-[#1a1a2e] text-lg mb-1">{tour.name}</h3>
+                    {duration && <p className="text-sm text-gray-400 mb-2">⏱ {duration}</p>}
+                    {tour.hotel && (
+                      <p className="text-xs text-gray-500 mb-3">🏨 {tour.hotel}</p>
+                    )}
+                    {tour.description && (
+                      <p className="text-xs text-gray-500 mb-4 line-clamp-2">{tour.description}</p>
+                    )}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div>
+                        <span className="text-xl font-bold text-[#0057A8]">{tour.price_azn} AZN</span>
+                        <span className="text-xs text-gray-400 ml-1">/nəfər</span>
+                      </div>
+                      <Link
+                        href="/elaqe"
+                        className="bg-[#0057A8] text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-[#004a90] transition-colors"
+                      >
+                        Sifariş Et
+                      </Link>
+                    </div>
                   </div>
-                  <Link href="/elaqe" className="bg-[#0057A8] text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-[#004a90] transition-colors">
-                    Sifariş Et
-                  </Link>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Bottom CTA */}
         <div className="mt-16 bg-gradient-to-r from-[#0057A8] to-[#009B77] rounded-2xl p-10 text-center text-white">
