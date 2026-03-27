@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { verifyPayriffWebhook } from "@/lib/payriff";
 
 // Payriff webhook → ödəniş statusunu yenilə
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
+    const signature = req.headers.get("x-payriff-signature") || "";
+
+    if (signature && !verifyPayriffWebhook(signature, rawBody)) {
+      console.warn("[Payriff Webhook] İmza yanlışdır");
+      return NextResponse.json({ ok: false }, { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody);
     console.log("[Payriff Webhook]", JSON.stringify(body));
 
     const orderId = body?.payload?.orderId || body?.orderId;

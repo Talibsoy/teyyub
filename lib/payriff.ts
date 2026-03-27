@@ -1,5 +1,17 @@
 const PAYRIFF_API_URL = "https://api.payriff.com/api/v2";
 const PAYRIFF_API_KEY = process.env.PAYRIFF_API_KEY || "";
+const PAYRIFF_SECRET_KEY = process.env.PAYRIFF_SECRET_KEY || "";
+
+export function verifyPayriffWebhook(signature: string, body: string): boolean {
+  // Payriff webhook imzasını yoxla
+  if (!PAYRIFF_SECRET_KEY) return true; // dev modda keç
+  const crypto = require("crypto");
+  const expected = crypto
+    .createHmac("sha256", PAYRIFF_SECRET_KEY)
+    .update(body)
+    .digest("hex");
+  return signature === expected;
+}
 
 export interface PayriffOrderResult {
   orderId: string;
