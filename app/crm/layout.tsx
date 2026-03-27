@@ -17,6 +17,7 @@ import {
   UsersRound,
   Activity,
   Zap,
+  BarChart2,
 } from "lucide-react";
 
 const nav = [
@@ -28,6 +29,7 @@ const nav = [
   { href: "/crm/payments", label: "Ödənişlər", icon: CreditCard },
   { href: "/crm/staff", label: "İşçilər", icon: UsersRound },
   { href: "/crm/workflows", label: "Workflowlar", icon: Zap },
+  { href: "/crm/reports", label: "Hesabatlar", icon: BarChart2 },
   { href: "/crm/activity", label: "Fəaliyyət loqu", icon: Activity },
 ];
 
