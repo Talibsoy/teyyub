@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ReviewForm from "./ReviewForm";
+import { getSupabase } from "@/lib/supabase";
 
 interface Review {
   id: string;
@@ -37,9 +38,13 @@ export default function ReviewsSection() {
 
   async function load() {
     try {
-      const res = await fetch("/api/reviews");
-      const data = await res.json();
-      setReviews(data.reviews?.length ? data.reviews : STATIC);
+      const { data } = await getSupabase()
+        .from("reviews")
+        .select("id, name, destination, rating, message, image_urls, created_at")
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      setReviews(data && data.length > 0 ? data : STATIC);
     } catch {
       setReviews(STATIC);
     } finally {
