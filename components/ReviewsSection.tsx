@@ -9,6 +9,7 @@ interface Review {
   destination: string | null;
   rating: number;
   message: string;
+  image_urls?: string[];
   created_at: string;
 }
 
@@ -86,15 +87,29 @@ export default function ReviewsSection() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {reviews.map((r) => (
-              <div key={r.id} className="rounded-xl p-5" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
-                <Stars n={r.rating} />
-                <p className="my-3 text-sm leading-relaxed" style={{ color: "#aaa" }}>
-                  &ldquo;{r.message}&rdquo;
-                </p>
-                <div className="font-semibold text-white text-sm">{r.name}</div>
-                {r.destination && (
-                  <div className="text-xs mt-0.5" style={{ color: "#555" }}>{r.destination} səfəri</div>
+              <div key={r.id} className="rounded-xl" style={{ background: "#111", border: "1px solid #1a1a1a", overflow: "hidden" }}>
+                {/* Images */}
+                {r.image_urls && r.image_urls.length > 0 && (
+                  <div style={{ display: "flex", gap: 2, height: 140 }}>
+                    {r.image_urls.slice(0, 3).map((url, i) => (
+                      <img key={i} src={url} alt=""
+                        style={{
+                          flex: 1, objectFit: "cover", minWidth: 0,
+                          borderRadius: i === 0 && r.image_urls!.length === 1 ? "0" : "0",
+                        }} />
+                    ))}
+                  </div>
                 )}
+                <div className="p-5">
+                  <Stars n={r.rating} />
+                  <p className="my-3 text-sm leading-relaxed" style={{ color: "#aaa" }}>
+                    &ldquo;{r.message}&rdquo;
+                  </p>
+                  <div className="font-semibold text-white text-sm">{r.name}</div>
+                  {r.destination && (
+                    <div className="text-xs mt-0.5" style={{ color: "#555" }}>{r.destination} səfəri</div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -10,6 +10,7 @@ interface Review {
   destination: string | null;
   rating: number;
   message: string;
+  image_urls?: string[];
   is_approved: boolean;
   created_at: string;
 }
@@ -125,6 +126,18 @@ export default function ReviewsPage() {
                 <p style={{ color: "#aaa", fontSize: 13, lineHeight: 1.7, marginBottom: 8 }}>
                   {r.message}
                 </p>
+                {r.image_urls && r.image_urls.length > 0 && (
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                    {r.image_urls.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                        <img src={url} alt="" style={{
+                          width: 64, height: 64, objectFit: "cover",
+                          borderRadius: 6, border: "1px solid #2a2a2a",
+                        }} />
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <span style={{ color: "#444", fontSize: 11 }}>
                   {new Date(r.created_at).toLocaleString("az-AZ")}
                 </span>

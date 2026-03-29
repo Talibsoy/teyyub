@@ -7,7 +7,7 @@ export async function GET() {
   const db = getSupabaseAdmin();
   const { data, error } = await db
     .from("reviews")
-    .select("id, name, destination, rating, message, created_at")
+    .select("id, name, destination, rating, message, image_urls, created_at")
     .eq("is_approved", true)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, destination, rating, message } = body;
+  const { name, destination, rating, message, image_urls } = body;
 
   if (!name || !rating || !message) {
     return NextResponse.json({ error: "Ad, reytinq və mesaj mütləqdir" }, { status: 400 });
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     destination: destination?.trim().slice(0, 100) || null,
     rating,
     message: message.trim(),
+    image_urls: Array.isArray(image_urls) ? image_urls.slice(0, 4) : [],
     is_approved: false,
   });
 
