@@ -44,6 +44,16 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const client = getSupabase();
 
+    // Mövcud session-u dərhal yoxla
+    client.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        setUser(data.session.user);
+      } else {
+        router.replace("/login");
+      }
+    });
+
+    // Auth dəyişikliklərini izlə (logout, token refresh)
     const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         router.replace("/login");
