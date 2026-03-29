@@ -44,12 +44,23 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) {
-        router.push("/login");
+        router.replace("/login");
       } else {
         setUser(data.session.user);
       }
     });
-  }, [router]);
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.replace("/login");
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
