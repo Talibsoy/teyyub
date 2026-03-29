@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { waLink } from "@/lib/whatsapp";
+import ReviewsSection from "@/components/ReviewsSection";
 
 const WA_GENERAL = waLink();
 
@@ -172,25 +173,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ── */}
-      <section className="px-4 py-12 md:py-16 md:px-12">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">Müştərilərimiz Nə Deyir?</h2>
-            <p className="text-sm" style={{ color: "#666" }}>500+ məmnun turistin rəyi</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {testimonials.map((t) => (
-              <div key={t.name} className="rounded-xl p-5" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
-                <StarRating n={t.rating} />
-                <p className="my-3 text-sm leading-relaxed" style={{ color: "#aaa" }}>&ldquo;{t.text}&rdquo;</p>
-                <div className="font-semibold text-white text-sm">{t.name}</div>
-                <div className="text-xs mt-0.5" style={{ color: "#555" }}>{t.dest} sefəri</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ── REVIEWS ── */}
+      <ReviewsSection />
 
       {/* ── CTA ── */}
       <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#0d0d0d", borderTop: "1px solid #1a1a1a" }}>
