@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
+
+const db = getSupabase();
 import { Check, X, Star } from "lucide-react";
 
 interface Review {
@@ -30,7 +32,7 @@ export default function ReviewsPage() {
 
   async function load() {
     setLoading(true);
-    let q = supabaseAdmin.from("reviews").select("*").order("created_at", { ascending: false });
+    let q = db.from("reviews").select("*").order("created_at", { ascending: false });
     if (filter === "pending")  q = q.eq("is_approved", false);
     if (filter === "approved") q = q.eq("is_approved", true);
     const { data } = await q;
@@ -41,13 +43,13 @@ export default function ReviewsPage() {
   useEffect(() => { load(); }, [filter]);
 
   async function approve(id: string) {
-    await supabaseAdmin.from("reviews").update({ is_approved: true }).eq("id", id);
+    await db.from("reviews").update({ is_approved: true }).eq("id", id);
     load();
   }
 
   async function reject(id: string) {
     if (!confirm("Bu rəyi silmək istəyirsiniz?")) return;
-    await supabaseAdmin.from("reviews").delete().eq("id", id);
+    await db.from("reviews").delete().eq("id", id);
     load();
   }
 
