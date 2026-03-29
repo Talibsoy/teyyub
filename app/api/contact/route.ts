@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendTelegramAlert } from "@/lib/telegram";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "anon";
+    if (!(await checkRateLimit(`contact:${ip}`, 10, 3600))) {
+      return NextResponse.json({ error: "Çox tez-tez göndərirsiniz" }, { status: 429 });
+    }
+
     const { ad, telefon, email, tur, mesaj } = await req.json();
 
     if (!ad || !mesaj) {

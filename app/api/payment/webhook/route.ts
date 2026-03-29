@@ -8,8 +8,9 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text();
     const signature = req.headers.get("x-payriff-signature") || "";
 
-    if (signature && !verifyPayriffWebhook(signature, rawBody)) {
-      console.warn("[Payriff Webhook] İmza yanlışdır");
+    // Signature mütləq olmalıdır — boş gəlsə rədd et
+    if (!signature || !verifyPayriffWebhook(signature, rawBody)) {
+      console.warn("[Payriff Webhook] İmza yanlış və ya yoxdur");
       return NextResponse.json({ ok: false }, { status: 401 });
     }
 

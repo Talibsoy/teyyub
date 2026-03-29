@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // GET — approved reviews (public)
 export async function GET() {
@@ -17,6 +18,13 @@ export async function GET() {
 
 // POST — submit a new review (no auth needed)
 export async function POST(req: NextRequest) {
+  // Rate limit: IP başına 5 rəy/saat
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "anon";
+  const allowed = await checkRateLimit(`review:${ip}`, 5, 3600);
+  if (!allowed) {
+    return NextResponse.json({ error: "Çox tez-tez göndərirsiniz, bir az gözləyin" }, { status: 429 });
+  }
+
   const body = await req.json();
   const { name, destination, rating, message } = body;
 

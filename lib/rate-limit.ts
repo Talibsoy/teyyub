@@ -8,16 +8,17 @@ const redis =
       })
     : null;
 
-const LIMIT = 20;      // maksimum mesaj
-const WINDOW = 60;     // saniyə
-
-export async function checkRateLimit(key: string): Promise<boolean> {
+export async function checkRateLimit(
+  key: string,
+  limit = 20,
+  windowSec = 60
+): Promise<boolean> {
   if (!redis) return true; // Redis yoxdursa, keç
 
   const redisKey = `rl:${key}`;
   const count = await redis.incr(redisKey);
   if (count === 1) {
-    await redis.expire(redisKey, WINDOW);
+    await redis.expire(redisKey, windowSec);
   }
-  return count <= LIMIT;
+  return count <= limit;
 }
