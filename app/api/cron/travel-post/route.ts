@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     // Claude ilə məlumat yaz
     const msg = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 600,
+      max_tokens: 1200,
       messages: [
         {
           role: "user",
@@ -73,8 +73,10 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
     const titleMatch = raw.match(/BAŞLIQ:\s*(.+)/);
     const contentMatch = raw.match(/MƏZMUN:\s*([\s\S]+)/);
 
-    const title = titleMatch?.[1]?.trim() || `${dest.country} — Turizm Məlumatı`;
-    const content = contentMatch?.[1]?.trim() || raw;
+    const title = (titleMatch?.[1]?.trim() || `${dest.country} — Turizm Məlumatı`)
+      .replace(/\*\*/g, "").trim();
+    const content = (contentMatch?.[1]?.trim() || raw)
+      .replace(/\*\*/g, "").replace(/\*/g, "").trim();
 
     // Unsplash-dan şəkil tap
     let image_url: string | null = null;
