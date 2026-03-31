@@ -5,26 +5,25 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const DESTINATIONS = [
-  { country: "Türkiyə", emoji: "🇹🇷" },
-  { country: "Dubay", emoji: "🇦🇪" },
-  { country: "Misir", emoji: "🇪🇬" },
-  { country: "Maldiv adaları", emoji: "🇲🇻" },
-  { country: "İtaliya", emoji: "🇮🇹" },
-  { country: "Yunanıstan", emoji: "🇬🇷" },
-  { country: "Tailand", emoji: "🇹🇭" },
-  { country: "İspaniya", emoji: "🇪🇸" },
-  { country: "Fransa", emoji: "🇫🇷" },
-  { country: "Marokko", emoji: "🇲🇦" },
-  { country: "Bali", emoji: "🇮🇩" },
-  { country: "Maldiv adaları", emoji: "🇲🇻" },
-  { country: "Portuqaliya", emoji: "🇵🇹" },
-  { country: "Çexiya", emoji: "🇨🇿" },
-  { country: "Avstriya", emoji: "🇦🇹" },
-  { country: "İsveçrə", emoji: "🇨🇭" },
-  { country: "Sinqapur", emoji: "🇸🇬" },
-  { country: "Yaponiya", emoji: "🇯🇵" },
-  { country: "Səudiyyə Ərəbistanı", emoji: "🇸🇦" },
-  { country: "Qətər", emoji: "🇶🇦" },
+  { country: "Türkiyə", emoji: "🇹🇷", query: "Turkey travel Istanbul Antalya" },
+  { country: "Dubay", emoji: "🇦🇪", query: "Dubai travel UAE skyline" },
+  { country: "Misir", emoji: "🇪🇬", query: "Egypt pyramids travel Cairo" },
+  { country: "Maldiv adaları", emoji: "🇲🇻", query: "Maldives island travel ocean" },
+  { country: "İtaliya", emoji: "🇮🇹", query: "Italy Rome Venice travel" },
+  { country: "Yunanıstan", emoji: "🇬🇷", query: "Greece Santorini travel" },
+  { country: "Tailand", emoji: "🇹🇭", query: "Thailand Bangkok travel" },
+  { country: "İspaniya", emoji: "🇪🇸", query: "Spain Barcelona travel" },
+  { country: "Fransa", emoji: "🇫🇷", query: "France Paris Eiffel Tower travel" },
+  { country: "Marokko", emoji: "🇲🇦", query: "Morocco Marrakech travel" },
+  { country: "Bali", emoji: "🇮🇩", query: "Bali Indonesia travel temple" },
+  { country: "Portuqaliya", emoji: "🇵🇹", query: "Portugal Lisbon travel" },
+  { country: "Çexiya", emoji: "🇨🇿", query: "Czech Republic Prague travel" },
+  { country: "Avstriya", emoji: "🇦🇹", query: "Austria Vienna travel" },
+  { country: "İsveçrə", emoji: "🇨🇭", query: "Switzerland Alps travel" },
+  { country: "Sinqapur", emoji: "🇸🇬", query: "Singapore city travel" },
+  { country: "Yaponiya", emoji: "🇯🇵", query: "Japan Tokyo travel cherry blossom" },
+  { country: "Səudiyyə Ərəbistanı", emoji: "🇸🇦", query: "Saudi Arabia Riyadh travel" },
+  { country: "Qətər", emoji: "🇶🇦", query: "Qatar Doha travel skyline" },
 ];
 
 export async function GET(req: NextRequest) {
@@ -81,7 +80,7 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
     // Unsplash-dan şəkil tap
     let image_url: string | null = null;
     try {
-      const query = encodeURIComponent(`${dest.country} travel`);
+      const query = encodeURIComponent(dest.query);
       const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
       console.log("[Unsplash] Key var:", !!unsplashKey, "Query:", query);
       const imgRes = await fetch(
