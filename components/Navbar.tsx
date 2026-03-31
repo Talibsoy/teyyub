@@ -5,6 +5,7 @@ import Image from "next/image";
 
 const navLinks = [
   { href: "/turlar", label: "Turlar" },
+  { href: "/melumatlar", label: "Məlumatlar" },
   { href: "/haqqimizda", label: "Haqqımızda" },
   { href: "/elaqe", label: "Əlaqə" },
 ];
