@@ -81,14 +81,18 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
     // Unsplash-dan şəkil tap
     let image_url: string | null = null;
     try {
-      const query = encodeURIComponent(`${dest.country} travel tourism`);
+      const query = encodeURIComponent(`${dest.country} travel`);
       const imgRes = await fetch(
-        `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape`,
+        `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&per_page=5`,
         { headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` } }
       );
       if (imgRes.ok) {
         const imgData = await imgRes.json();
-        image_url = imgData.urls?.regular || null;
+        const results = imgData.results || [];
+        if (results.length > 0) {
+          const pick = results[Math.floor(Math.random() * results.length)];
+          image_url = pick.urls?.regular || null;
+        }
       }
     } catch {
       image_url = null;
