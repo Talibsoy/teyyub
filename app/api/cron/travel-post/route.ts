@@ -82,19 +82,28 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
     let image_url: string | null = null;
     try {
       const query = encodeURIComponent(`${dest.country} travel`);
+      const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+      console.log("[Unsplash] Key var:", !!unsplashKey, "Query:", query);
       const imgRes = await fetch(
         `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&per_page=5`,
-        { headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` } }
+        { headers: { Authorization: `Client-ID ${unsplashKey}` } }
       );
+      console.log("[Unsplash] Status:", imgRes.status);
       if (imgRes.ok) {
         const imgData = await imgRes.json();
         const results = imgData.results || [];
+        console.log("[Unsplash] Nəticə sayı:", results.length);
         if (results.length > 0) {
           const pick = results[Math.floor(Math.random() * results.length)];
           image_url = pick.urls?.regular || null;
+          console.log("[Unsplash] URL:", image_url);
         }
+      } else {
+        const errText = await imgRes.text();
+        console.log("[Unsplash] Xəta:", errText);
       }
-    } catch {
+    } catch (e) {
+      console.log("[Unsplash] Exception:", e);
       image_url = null;
     }
 
