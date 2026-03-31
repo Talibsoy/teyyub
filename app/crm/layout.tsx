@@ -19,6 +19,7 @@ import {
   Zap,
   BarChart2,
   Star,
+  PackageIcon,
 } from "lucide-react";
 
 const nav = [
@@ -27,6 +28,7 @@ const nav = [
   { href: "/crm/customers", label: "Müştərilər", icon: Users },
   { href: "/crm/bookings", label: "Rezervasiyalar", icon: CalendarCheck },
   { href: "/crm/tours", label: "Turlar", icon: MapPin },
+  { href: "/crm/packages", label: "Gizli Paketlər", icon: PackageIcon },
   { href: "/crm/payments", label: "Ödənişlər", icon: CreditCard },
   { href: "/crm/staff", label: "İşçilər", icon: UsersRound },
   { href: "/crm/workflows", label: "Workflowlar", icon: Zap },

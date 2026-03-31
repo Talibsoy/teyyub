@@ -87,7 +87,42 @@ export async function getToursContext(userMessage?: string): Promise<string> {
       return parts.join("\n");
     });
 
-    cachedTours = lines.join("\n\n");
+    // Gizli paketləri də əlavə et
+    let pkgQuery = admin
+      .from("private_packages")
+      .select("*")
+      .eq("is_active", true);
+
+    if (destination) {
+      pkgQuery = pkgQuery.ilike("destination", `%${destination}%`);
+    }
+
+    const { data: packages } = await pkgQuery;
+
+    const typeLabel: Record<string, string> = {
+      combo: "Kombo (Uçuş + Otel)",
+      flight_only: "Yalnız Uçuş",
+      hotel_only: "Yalnız Otel",
+    };
+
+    const pkgLines = (packages || []).map((p) => {
+      const parts = [
+        `🎁 ${p.name} [GİZLİ PAKET] (${p.destination})`,
+        `   📦 Növ: ${typeLabel[p.package_type] || p.package_type}`,
+        `   💰 Qiymət: ${p.price_azn.toLocaleString()} AZN${p.price_usd ? ` (~$${p.price_usd.toLocaleString()})` : ""}`,
+      ];
+      if (p.duration_nights) parts.push(`   📅 Müddət: ${p.duration_nights} gecə`);
+      if (p.flight_info) parts.push(`   ✈️ Uçuş: ${p.flight_info}`);
+      if (p.hotel_name) parts.push(`   🏨 Otel: ${p.hotel_name}${p.hotel_stars ? " " + "★".repeat(p.hotel_stars) : ""}`);
+      if (p.includes) parts.push(`   ✅ Daxildir: ${p.includes}`);
+      if (p.excludes) parts.push(`   ❌ Daxil deyil: ${p.excludes}`);
+      if (p.valid_until) parts.push(`   ⏰ Son tarix: ${new Date(p.valid_until).toLocaleDateString("az-AZ")}`);
+      return parts.join("\n");
+    });
+
+    const allLines = [...lines, ...pkgLines];
+
+    cachedTours = allLines.join("\n\n");
     cacheTime = Date.now();
     return cachedTours;
   } catch {
