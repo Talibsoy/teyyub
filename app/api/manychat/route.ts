@@ -23,12 +23,7 @@ export async function POST(req: NextRequest) {
     const history = await getHistory(historyKey);
 
     // Lead saxla
-    await saveLead({
-      platform: "instagram",
-      sender_id: userId,
-      name,
-      message: text,
-    }).catch(() => {});
+    await saveLead("instagram", userId, { name }, text).catch(() => {});
 
     const aiText = await getAIResponse(text, history, { name });
 
