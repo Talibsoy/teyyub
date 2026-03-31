@@ -22,8 +22,14 @@ interface PrivatePackage {
   created_at: string;
 }
 
-const empty = {
-  name: "", destination: "", package_type: "combo" as const,
+const empty: {
+  name: string; destination: string;
+  package_type: "combo" | "flight_only" | "hotel_only";
+  price_azn: number; price_usd: number; duration_nights: number;
+  flight_info: string; hotel_name: string; hotel_stars: number;
+  includes: string; excludes: string; valid_until: string;
+} = {
+  name: "", destination: "", package_type: "combo",
   price_azn: 0, price_usd: 0, duration_nights: 0,
   flight_info: "", hotel_name: "", hotel_stars: 4,
   includes: "", excludes: "", valid_until: "",
