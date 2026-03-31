@@ -31,10 +31,13 @@ function Stars({ n }: { n: number }) {
   );
 }
 
+const PER_PAGE = 3;
+
 export default function ReviewsSection() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [page, setPage] = useState(0);
 
   async function load() {
     try {
@@ -90,34 +93,75 @@ export default function ReviewsSection() {
         {!loaded ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#555" }}>Yüklənir...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {reviews.map((r) => (
-              <div key={r.id} className="rounded-xl" style={{ background: "#111", border: "1px solid #1a1a1a", overflow: "hidden" }}>
-                {/* Images */}
-                {r.image_urls && r.image_urls.length > 0 && (
-                  <div style={{ display: "flex", gap: 2, height: 140 }}>
-                    {r.image_urls.slice(0, 3).map((url, i) => (
-                      <img key={i} src={url} alt=""
-                        style={{
-                          flex: 1, objectFit: "cover", minWidth: 0,
-                          borderRadius: i === 0 && r.image_urls!.length === 1 ? "0" : "0",
-                        }} />
-                    ))}
-                  </div>
-                )}
-                <div className="p-5">
-                  <Stars n={r.rating} />
-                  <p className="my-3 text-sm leading-relaxed" style={{ color: "#aaa" }}>
-                    &ldquo;{r.message}&rdquo;
-                  </p>
-                  <div className="font-semibold text-white text-sm">{r.name}</div>
-                  {r.destination && (
-                    <div className="text-xs mt-0.5" style={{ color: "#555" }}>{r.destination} səfəri</div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {reviews.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE).map((r) => (
+                <div key={r.id} className="rounded-xl" style={{ background: "#111", border: "1px solid #1a1a1a", overflow: "hidden" }}>
+                  {r.image_urls && r.image_urls.length > 0 && (
+                    <div style={{ display: "flex", gap: 2, height: 140 }}>
+                      {r.image_urls.slice(0, 3).map((url, i) => (
+                        <img key={i} src={url} alt="" style={{ flex: 1, objectFit: "cover", minWidth: 0 }} />
+                      ))}
+                    </div>
                   )}
+                  <div className="p-5">
+                    <Stars n={r.rating} />
+                    <p className="my-3 text-sm leading-relaxed" style={{ color: "#aaa" }}>
+                      &ldquo;{r.message}&rdquo;
+                    </p>
+                    <div className="font-semibold text-white text-sm">{r.name}</div>
+                    {r.destination && (
+                      <div className="text-xs mt-0.5" style={{ color: "#555" }}>{r.destination} səfəri</div>
+                    )}
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {reviews.length > PER_PAGE && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24 }}>
+                <button
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  style={{
+                    background: page === 0 ? "#1a1a1a" : "#222", color: page === 0 ? "#444" : "#fff",
+                    border: "1px solid #2a2a2a", borderRadius: 8, padding: "8px 16px",
+                    cursor: page === 0 ? "not-allowed" : "pointer", fontSize: 13,
+                  }}
+                >
+                  ← Əvvəlki
+                </button>
+                {Array.from({ length: Math.ceil(reviews.length / PER_PAGE) }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i)}
+                    style={{
+                      width: 36, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600,
+                      background: page === i ? "#D4AF37" : "#1a1a1a",
+                      color: page === i ? "#0b0b0b" : "#666",
+                      border: "1px solid " + (page === i ? "#D4AF37" : "#2a2a2a"),
+                      cursor: "pointer",
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage(p => Math.min(Math.ceil(reviews.length / PER_PAGE) - 1, p + 1))}
+                  disabled={page >= Math.ceil(reviews.length / PER_PAGE) - 1}
+                  style={{
+                    background: page >= Math.ceil(reviews.length / PER_PAGE) - 1 ? "#1a1a1a" : "#222",
+                    color: page >= Math.ceil(reviews.length / PER_PAGE) - 1 ? "#444" : "#fff",
+                    border: "1px solid #2a2a2a", borderRadius: 8, padding: "8px 16px",
+                    cursor: page >= Math.ceil(reviews.length / PER_PAGE) - 1 ? "not-allowed" : "pointer", fontSize: 13,
+                  }}
+                >
+                  Növbəti →
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
       </div>
