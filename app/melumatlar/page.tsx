@@ -109,12 +109,13 @@ export default function MelumatlarPage() {
           /* Grid view */
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {posts.map((p) => (
-              <div
+              <a
                 key={p.id}
-                onClick={() => setSelected(p)}
+                href={`/melumatlar/${p.id}`}
                 style={{
                   background: "#111", border: "1px solid #1a1a1a", borderRadius: 14,
                   overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s",
+                  textDecoration: "none", display: "block",
                 }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = "#D4AF37")}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = "#1a1a1a")}
@@ -141,7 +142,7 @@ export default function MelumatlarPage() {
                     {new Date(p.created_at).toLocaleDateString("az-AZ", { day: "numeric", month: "long" })}
                   </p>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         )}
