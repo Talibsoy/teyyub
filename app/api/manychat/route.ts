@@ -25,7 +25,9 @@ export async function POST(req: NextRequest) {
     // Lead saxla
     await saveLead("instagram", userId, { name, phone: null, email: null, destination: null, travel_date: null }, text).catch(() => {});
 
-    const aiText = await getAIResponse(text, history, { name });
+    const msgWithName = name && name !== "Müştəri" ? `[Müştəri adı: ${name}]\n${text}` : text;
+    const aiResponse = await getAIResponse(msgWithName, history);
+    const aiText = aiResponse.message;
 
     history.push({ role: "user", content: text });
     history.push({ role: "assistant", content: aiText });
