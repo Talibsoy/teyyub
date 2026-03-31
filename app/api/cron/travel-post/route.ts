@@ -28,9 +28,11 @@ const DESTINATIONS = [
 ];
 
 export async function GET(req: NextRequest) {
-  // Vercel Cron yoxlaması
+  // Vercel Cron və ya manual token yoxlaması
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const urlToken = new URL(req.url).searchParams.get("token");
+  const secret = process.env.CRON_SECRET;
+  if (secret && authHeader !== `Bearer ${secret}` && urlToken !== secret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -74,12 +76,29 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
     const title = titleMatch?.[1]?.trim() || `${dest.country} — Turizm Məlumatı`;
     const content = contentMatch?.[1]?.trim() || raw;
 
+    // Unsplash-dan şəkil tap
+    let image_url: string | null = null;
+    try {
+      const query = encodeURIComponent(`${dest.country} travel tourism`);
+      const imgRes = await fetch(
+        `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape`,
+        { headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` } }
+      );
+      if (imgRes.ok) {
+        const imgData = await imgRes.json();
+        image_url = imgData.urls?.regular || null;
+      }
+    } catch {
+      image_url = null;
+    }
+
     await db.from("travel_posts").insert({
       country: dest.country,
       emoji: dest.emoji,
       title,
       content,
       image_query: `${dest.country} travel tourism`,
+      image_url,
     });
 
     return NextResponse.json({ success: true, country: dest.country, title });
