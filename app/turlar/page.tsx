@@ -206,7 +206,9 @@ export default function TurlarPage() {
                   )}
                   <div className="p-4 flex-1">
                     <p className="text-xs mb-1" style={{ color: "#666" }}>{tour.destination}</p>
-                    <h3 className="font-bold text-white text-base mb-1">{tour.name}</h3>
+                    <Link href={`/turlar/${tour.id}`}>
+                      <h3 className="font-bold text-white text-base mb-1 hover:text-yellow-400 transition-colors cursor-pointer">{tour.name}</h3>
+                    </Link>
                     {durationLabel && <p className="text-xs mb-2" style={{ color: "#555" }}>⏱ {durationLabel}</p>}
                     {tour.hotel && <p className="text-xs mb-2" style={{ color: "#666" }}>🏨 {tour.hotel}</p>}
                     {tour.description && <p className="text-xs leading-relaxed mb-3 line-clamp-2" style={{ color: "#666" }}>{tour.description}</p>}

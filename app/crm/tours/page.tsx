@@ -28,6 +28,10 @@ const emptyForm = {
   max_seats: "20",
   hotel: "",
   description: "",
+  image_url: "",
+  itinerary: "",
+  includes: "",
+  excludes: "",
   is_active: true,
 };
 
@@ -59,6 +63,10 @@ export default function ToursPage() {
       max_seats: parseInt(form.max_seats) || 20,
       hotel: form.hotel || null,
       description: form.description || null,
+      image_url: form.image_url || null,
+      itinerary: form.itinerary || null,
+      includes: form.includes || null,
+      excludes: form.excludes || null,
       is_active: form.is_active,
     }]);
     if (!error) {
@@ -218,6 +226,30 @@ export default function ToursPage() {
                 <label className="text-xs text-gray-500 mb-1 block">Təsvir</label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={2} placeholder="Tur haqqında qısa məlumat..."
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 resize-none" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Şəkil URL</label>
+                <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Daxildir (hər sətirdə 1 maddə)</label>
+                <textarea value={form.includes} onChange={(e) => setForm({ ...form, includes: e.target.value })}
+                  rows={3} placeholder={"Uçuş\nOtel (all inclusive)\nTransfer"}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 resize-none" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Daxil deyil (hər sətirdə 1 maddə)</label>
+                <textarea value={form.excludes} onChange={(e) => setForm({ ...form, excludes: e.target.value })}
+                  rows={2} placeholder={"Viza\nŞəxsi xərclər"}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 resize-none" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Gündəlik proqram (hər sətirdə 1 gün)</label>
+                <textarea value={form.itinerary} onChange={(e) => setForm({ ...form, itinerary: e.target.value })}
+                  rows={4} placeholder={"Bakıdan uçuş, hoteldə yerləşmə\nŞəhər turu, nahar\nAzad gün\nEv yolu"}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 resize-none" />
               </div>
             </div>
