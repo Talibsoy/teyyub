@@ -1,8 +1,10 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { waLink } from "@/lib/whatsapp";
 import { supabase } from "@/lib/supabase";
+import WishlistButton from "@/components/WishlistButton";
 
 interface Tour {
   id: string;
@@ -59,7 +61,12 @@ function getCategory(destination: string): string {
 }
 
 export default function TurlarPage() {
-  const [active, setActive]       = useState("hamisi");
+  return <Suspense fallback={null}><TurlarContent /></Suspense>;
+}
+
+function TurlarContent() {
+  const searchParams = useSearchParams();
+  const [active, setActive]       = useState(searchParams.get("dest") || "hamisi");
   const [durFilter, setDurFilter] = useState("hamisi");
   const [search, setSearch]       = useState("");
   const [maxPrice, setMaxPrice]   = useState("");
@@ -205,7 +212,10 @@ export default function TurlarPage() {
                     </div>
                   )}
                   <div className="p-4 flex-1">
-                    <p className="text-xs mb-1" style={{ color: "#666" }}>{tour.destination}</p>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs" style={{ color: "#666" }}>{tour.destination}</p>
+                      <WishlistButton tourId={tour.id} />
+                    </div>
                     <Link href={`/turlar/${tour.id}`}>
                       <h3 className="font-bold text-white text-base mb-1 hover:text-yellow-400 transition-colors cursor-pointer">{tour.name}</h3>
                     </Link>

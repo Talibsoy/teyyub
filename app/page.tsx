@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { waLink } from "@/lib/whatsapp";
 import ReviewsSection from "@/components/ReviewsSection";
+import NewsletterSection from "@/components/NewsletterSection";
+import SearchWidget from "@/components/SearchWidget";
 
 const WA_GENERAL = waLink();
 
@@ -65,7 +67,9 @@ export default function HomePage() {
           Pulsuz məsləhət üçün WhatsApp-da yazın.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <SearchWidget />
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <a href={WA_GENERAL} target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 hover:opacity-90 transition-opacity text-sm font-bold py-3.5 px-6 rounded-xl"
             style={{ background: "#25D366", color: "#fff" }}>
@@ -175,6 +179,9 @@ export default function HomePage() {
 
       {/* ── REVIEWS ── */}
       <ReviewsSection />
+
+      {/* ── NEWSLETTER ── */}
+      <NewsletterSection />
 
       {/* ── CTA ── */}
       <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#0d0d0d", borderTop: "1px solid #1a1a1a" }}>
