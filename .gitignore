@@ -42,3 +42,5 @@ next-env.d.ts
 
 .vercel
 # Auto-deploy test Sat Mar 28 00:44:03 AST 2026
+
+.env*.local

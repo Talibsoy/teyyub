@@ -13,7 +13,7 @@ const redis =
 
 const memoryStore = new Map<string, Message[]>();
 
-const TTL = 60 * 60 * 24; // 24 saat
+const TTL = 60 * 60 * 24 * 365; // 1 il
 
 export async function getHistory(key: string): Promise<Message[]> {
   if (redis) {

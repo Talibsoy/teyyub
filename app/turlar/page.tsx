@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { waLink } from "@/lib/whatsapp";
 import { supabase } from "@/lib/supabase";
@@ -17,10 +17,15 @@ interface Tour {
   description: string | null;
 }
 
-function getDuration(start: string | null, end: string | null): string {
-  if (!start || !end) return "";
-  const days = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
-  return `${days} gün / ${days - 1} gecə`;
+function getDuration(start: string | null, end: string | null): number {
+  if (!start || !end) return 0;
+  return Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
+}
+
+function getDurationLabel(start: string | null, end: string | null): string {
+  const d = getDuration(start, end);
+  if (!d) return "";
+  return `${d} gün / ${d - 1} gecə`;
 }
 
 const categories = [
@@ -29,6 +34,13 @@ const categories = [
   { id: "ereb",    label: "🇦🇪 Ərəb" },
   { id: "misir",   label: "🇪🇬 Misir" },
   { id: "avropa",  label: "🇪🇺 Avropa" },
+];
+
+const durations = [
+  { id: "hamisi", label: "Hamısı" },
+  { id: "1-5",    label: "1–5 gün" },
+  { id: "6-8",    label: "6–8 gün" },
+  { id: "9+",     label: "9+ gün" },
 ];
 
 const DEST_CATEGORY: Record<string, string> = {
@@ -47,9 +59,12 @@ function getCategory(destination: string): string {
 }
 
 export default function TurlarPage() {
-  const [active, setActive] = useState("hamisi");
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [active, setActive]       = useState("hamisi");
+  const [durFilter, setDurFilter] = useState("hamisi");
+  const [search, setSearch]       = useState("");
+  const [maxPrice, setMaxPrice]   = useState("");
+  const [tours, setTours]         = useState<Tour[]>([]);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
     supabase.from("tours").select("*").eq("is_active", true)
@@ -57,7 +72,37 @@ export default function TurlarPage() {
       .then(({ data }) => { setTours(data || []); setLoading(false); });
   }, []);
 
-  const filtered = active === "hamisi" ? tours : tours.filter(t => getCategory(t.destination) === active);
+  const filtered = useMemo(() => {
+    return tours.filter((t) => {
+      // Kateqoriya
+      if (active !== "hamisi" && getCategory(t.destination) !== active) return false;
+
+      // Axtarış
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (!t.name.toLowerCase().includes(q) && !t.destination.toLowerCase().includes(q)) return false;
+      }
+
+      // Maksimum qiymət
+      if (maxPrice && t.price_azn > Number(maxPrice)) return false;
+
+      // Müddət
+      if (durFilter !== "hamisi") {
+        const d = getDuration(t.start_date, t.end_date);
+        if (durFilter === "1-5"  && !(d >= 1 && d <= 5)) return false;
+        if (durFilter === "6-8"  && !(d >= 6 && d <= 8)) return false;
+        if (durFilter === "9+"   && d < 9) return false;
+      }
+
+      return true;
+    });
+  }, [tours, active, search, maxPrice, durFilter]);
+
+  const hasFilters = search || maxPrice || active !== "hamisi" || durFilter !== "hamisi";
+
+  function clearFilters() {
+    setSearch(""); setMaxPrice(""); setActive("hamisi"); setDurFilter("hamisi");
+  }
 
   return (
     <div style={{ background: "#0b0b0b", color: "#fff", minHeight: "100vh" }}>
@@ -68,8 +113,37 @@ export default function TurlarPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
-        {/* Filter */}
-        <div className="flex flex-wrap gap-2 justify-center mb-8">
+
+        {/* Axtarış + Qiymət */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          <div className="relative flex-1">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#555" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Tur adı və ya istiqamət axtar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
+              style={{ background: "#111", border: "1px solid #1a1a1a", color: "#fff" }}
+            />
+          </div>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#555" }}>Maks.</span>
+            <input
+              type="number"
+              placeholder="Qiymət (AZN)"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="pl-12 pr-4 py-2.5 rounded-xl text-sm outline-none w-full sm:w-44"
+              style={{ background: "#111", border: "1px solid #1a1a1a", color: "#fff" }}
+            />
+          </div>
+        </div>
+
+        {/* Kateqoriya filtri */}
+        <div className="flex flex-wrap gap-2 justify-center mb-3">
           {categories.map((cat) => (
             <button key={cat.id} onClick={() => setActive(cat.id)}
               className="px-4 py-2 rounded-full text-sm font-medium transition-all"
@@ -81,15 +155,46 @@ export default function TurlarPage() {
           ))}
         </div>
 
-        {loading && <div className="text-center py-16" style={{ color: "#555" }}>Yüklənir...</div>}
-        {!loading && filtered.length === 0 && (
-          <div className="text-center py-16" style={{ color: "#555" }}>Bu kateqoriyada aktiv tur yoxdur.</div>
+        {/* Müddət filtri */}
+        <div className="flex flex-wrap gap-2 justify-center mb-6">
+          {durations.map((d) => (
+            <button key={d.id} onClick={() => setDurFilter(d.id)}
+              className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+              style={durFilter === d.id
+                ? { background: "#333", color: "#D4AF37", border: "1px solid #D4AF37" }
+                : { background: "#111", color: "#666", border: "1px solid #1a1a1a" }}>
+              {d.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Nəticə sayı + sil */}
+        {!loading && (
+          <div className="flex items-center justify-between mb-5">
+            <p className="text-sm" style={{ color: "#555" }}>
+              {filtered.length} tur tapıldı
+            </p>
+            {hasFilters && (
+              <button onClick={clearFilters} className="text-xs underline" style={{ color: "#D4AF37" }}>
+                Filterləri sil
+              </button>
+            )}
+          </div>
         )}
 
-        {!loading && (
+        {loading && <div className="text-center py-16" style={{ color: "#555" }}>Yüklənir...</div>}
+
+        {!loading && filtered.length === 0 && (
+          <div className="text-center py-16">
+            <p style={{ color: "#555" }} className="mb-3">Bu filterlərə uyğun tur tapılmadı.</p>
+            <button onClick={clearFilters} className="text-sm underline" style={{ color: "#D4AF37" }}>Filterləri sil</button>
+          </div>
+        )}
+
+        {!loading && filtered.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((tour) => {
-              const duration = getDuration(tour.start_date, tour.end_date);
+              const durationLabel = getDurationLabel(tour.start_date, tour.end_date);
               const seatsLeft = tour.max_seats - tour.booked_seats;
               const almostFull = seatsLeft <= 3 && seatsLeft > 0;
               return (
@@ -102,7 +207,7 @@ export default function TurlarPage() {
                   <div className="p-4 flex-1">
                     <p className="text-xs mb-1" style={{ color: "#666" }}>{tour.destination}</p>
                     <h3 className="font-bold text-white text-base mb-1">{tour.name}</h3>
-                    {duration && <p className="text-xs mb-2" style={{ color: "#555" }}>⏱ {duration}</p>}
+                    {durationLabel && <p className="text-xs mb-2" style={{ color: "#555" }}>⏱ {durationLabel}</p>}
                     {tour.hotel && <p className="text-xs mb-2" style={{ color: "#666" }}>🏨 {tour.hotel}</p>}
                     {tour.description && <p className="text-xs leading-relaxed mb-3 line-clamp-2" style={{ color: "#666" }}>{tour.description}</p>}
                   </div>
