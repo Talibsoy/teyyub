@@ -29,37 +29,40 @@ export async function GET(req: NextRequest) {
   }
 
   const redis = new Redis({ url, token });
-
-  // Key sayı
   const keyCount = await redis.dbsize();
 
-  // Memory məlumatı (INFO memory)
-  const info = await redis.info("memory") as string;
-  const usedMemMatch = info.match(/used_memory:(\d+)/);
-  const maxMemMatch = info.match(/maxmemory:(\d+)/);
+  // Upstash REST API ilə INFO memory al
+  let usedMB = 0;
+  let maxMB = 256;
+  let pct = 0;
 
-  const usedBytes = usedMemMatch ? parseInt(usedMemMatch[1]) : 0;
-  const maxBytes = maxMemMatch ? parseInt(maxMemMatch[1]) : 268435456; // 256MB default
+  try {
+    const res = await fetch(`${url}/info/memory`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const text = await res.text();
+    const usedMatch = text.match(/used_memory:(\d+)/);
+    const maxMatch = text.match(/maxmemory:(\d+)/);
+    const usedBytes = usedMatch ? parseInt(usedMatch[1]) : 0;
+    const maxBytes = maxMatch && parseInt(maxMatch[1]) > 0
+      ? parseInt(maxMatch[1])
+      : 268435456;
+    usedMB = parseFloat((usedBytes / 1024 / 1024).toFixed(1));
+    maxMB = Math.round(maxBytes / 1024 / 1024);
+    pct = Math.round((usedBytes / maxBytes) * 100);
+  } catch {
+    // memory info alınmasa key sayına görə qiymətləndir
+    pct = Math.round((keyCount / 5000) * 100);
+  }
 
-  const usedMB = (usedBytes / 1024 / 1024).toFixed(1);
-  const maxMB = (maxBytes / 1024 / 1024).toFixed(0);
-  const pct = maxBytes > 0 ? Math.round((usedBytes / maxBytes) * 100) : 0;
-
-  // 70%-dən artıq olsa xəbərdarlıq
   if (pct >= 70) {
     await sendAlert(
       `⚠️ *Upstash Redis Xəbərdarlığı*\n\n` +
       `📦 İstifadə: *${usedMB} MB / ${maxMB} MB* (${pct}%)\n` +
       `🔑 Açar sayı: *${keyCount}*\n\n` +
-      `Upstash limitinə yaxınlaşırsınız! Köhnə söhbətlər silinə bilər.`
+      `Upstash limitinə yaxınlaşırsınız!`
     );
   }
 
-  return NextResponse.json({
-    usedMB: parseFloat(usedMB),
-    maxMB: parseInt(maxMB),
-    pct,
-    keyCount,
-    alerted: pct >= 70,
-  });
+  return NextResponse.json({ usedMB, maxMB, pct, keyCount, alerted: pct >= 70 });
 }
