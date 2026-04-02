@@ -50,7 +50,7 @@ export async function createEpointOrder(params: {
     description:          params.description || "Tur ödənişi — Natoure.az",
     success_redirect_url: `${APP_URL}/payment/success?orderId=${orderId}&bookingId=${params.bookingId}`,
     error_redirect_url:   `${APP_URL}/payment/error?orderId=${orderId}&bookingId=${params.bookingId}`,
-    language:             "AZ",
+    language:             "az",
   };
 
   const { data, signature } = encode(payload);
