@@ -6,7 +6,9 @@ const BASE_URL    = "https://epoint.az/api/1/request";
 const APP_URL     = process.env.NEXT_PUBLIC_APP_URL || "https://www.natourefly.com";
 
 function sign(data: string): string {
-  return crypto.createHmac("sha1", PRIVATE_KEY).update(data).digest("base64");
+  // Epoint imza: base64( sha1(privateKey + data + privateKey) )
+  const raw = crypto.createHash("sha1").update(PRIVATE_KEY + data + PRIVATE_KEY).digest();
+  return raw.toString("base64");
 }
 
 function encode(payload: object): { data: string; signature: string } {
@@ -17,7 +19,11 @@ function encode(payload: object): { data: string; signature: string } {
 export function verifyEpointWebhook(data: string, signature: string): boolean {
   if (!PRIVATE_KEY) return false;
   const expected = sign(data);
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  } catch {
+    return false;
+  }
 }
 
 export function decodeEpointData(data: string): Record<string, unknown> {
