@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getHistory } from "@/lib/conversation-store";
 import { saveExample } from "@/lib/ai-memory";
+import { requireAuth, isAuthError } from "@/lib/require-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (isAuthError(auth)) return auth;
+
   try {
     const { platform, senderId, destination } = await req.json();
 

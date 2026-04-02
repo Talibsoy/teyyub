@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendEmail, bookingConfirmHtml, paymentReceiptHtml } from "@/lib/email";
+import { requireAuth, isAuthError } from "@/lib/require-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (isAuthError(auth)) return auth;
+
   try {
     const { type, bookingId } = await req.json();
     if (!type || !bookingId) return NextResponse.json({ error: "Məlumatlar tam deyil" }, { status: 400 });

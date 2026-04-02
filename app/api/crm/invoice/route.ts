@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { generateInvoicePDF } from "@/lib/invoice";
+import { requireAuth, isAuthError } from "@/lib/require-auth";
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (isAuthError(auth)) return auth;
+
   const bookingId = req.nextUrl.searchParams.get("id");
   if (!bookingId) return NextResponse.json({ error: "id lazımdır" }, { status: 400 });
 

@@ -15,9 +15,8 @@ async function sendAlert(text: string) {
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  const urlToken = new URL(req.url).searchParams.get("token");
   const secret = process.env.CRON_SECRET;
-  if (secret && authHeader !== `Bearer ${secret}` && urlToken !== secret) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

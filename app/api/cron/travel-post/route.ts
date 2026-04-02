@@ -29,9 +29,8 @@ const DESTINATIONS = [
 export async function GET(req: NextRequest) {
   // Vercel Cron və ya manual token yoxlaması
   const authHeader = req.headers.get("authorization");
-  const urlToken = new URL(req.url).searchParams.get("token");
   const secret = process.env.CRON_SECRET;
-  if (secret && authHeader !== `Bearer ${secret}` && urlToken !== secret) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
