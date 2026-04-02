@@ -53,23 +53,20 @@ export default function ToursPage() {
   async function saveTour() {
     if (!form.name || !form.destination || !form.price_azn) return;
     setSaving(true);
-    const { error } = await supabase.from("tours").insert([{
-      name: form.name,
-      destination: form.destination,
-      price_azn: parseFloat(form.price_azn),
-      price_usd: form.price_usd ? parseFloat(form.price_usd) : null,
-      start_date: form.start_date || null,
-      end_date: form.end_date || null,
-      max_seats: parseInt(form.max_seats) || 20,
-      hotel: form.hotel || null,
-      description: form.description || null,
-      image_url: form.image_url || null,
-      itinerary: form.itinerary || null,
-      includes: form.includes || null,
-      excludes: form.excludes || null,
-      is_active: form.is_active,
-    }]);
-    if (!error) {
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const res = await fetch("/api/crm/tours", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(form),
+    });
+
+    if (res.ok) {
       await loadTours();
       setShowModal(false);
       setForm(emptyForm);
