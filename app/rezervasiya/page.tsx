@@ -96,7 +96,7 @@ function RezervasiyaForm() {
         }),
       });
       const payData = await payRes.json();
-      if (!payRes.ok) { setError(payData.error || "Ödəniş xətası"); setSubmitting(false); return; }
+      if (!payRes.ok) { setError((payData.detail || payData.error) || "Ödəniş xətası"); setSubmitting(false); return; }
 
       router.push(payData.paymentUrl);
     } catch {
