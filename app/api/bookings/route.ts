@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     if (error || !booking) {
       console.error("[Bookings] Supabase xəta:", error);
-      return NextResponse.json({ error: "Rezervasiya yaradıla bilmədi" }, { status: 500 });
+      return NextResponse.json({ error: "Rezervasiya yaradıla bilmədi", detail: error?.message }, { status: 500 });
     }
 
     return NextResponse.json({ booking, total_price });

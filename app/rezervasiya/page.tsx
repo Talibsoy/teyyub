@@ -84,7 +84,7 @@ function RezervasiyaForm() {
         }),
       });
       const bookData = await bookRes.json();
-      if (!bookRes.ok) { setError(bookData.error || "Rezervasiya xətası"); setSubmitting(false); return; }
+      if (!bookRes.ok) { setError((bookData.detail || bookData.error) || "Rezervasiya xətası"); setSubmitting(false); return; }
 
       const payRes = await fetch("/api/payment/create", {
         method: "POST",
