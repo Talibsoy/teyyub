@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdminAdmin } from "@/lib/supabaseAdmin";
 
 function generateBookingNumber() {
   const date = new Date();
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Turu yoxla
-    const { data: tour } = await supabase
+    const { data: tour } = await supabaseAdmin
       .from("tours")
       .select("id, name, price_azn, max_seats, booked_seats, is_active")
       .eq("id", tour_id)
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     // Müştəri yarat (və ya tap)
     let customerId: string | null = null;
-    const { data: existingCustomer } = await supabase
+    const { data: existingCustomer } = await supabaseAdmin
       .from("customers")
       .select("id")
       .eq("phone", phone)
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     if (existingCustomer) {
       customerId = existingCustomer.id;
     } else {
-      const { data: newCustomer } = await supabase
+      const { data: newCustomer } = await supabaseAdmin
         .from("customers")
         .insert({
           first_name,
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     ];
 
     // Rezervasiya yarat
-    const { data: booking, error } = await supabase
+    const { data: booking, error } = await supabaseAdmin
       .from("bookings")
       .insert({
         tour_id,
