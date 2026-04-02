@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
           </p>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Xidmət tərəfdaşları:</strong> Otel, aviasiya, transfer şirkətləri — yalnız rezervasiya emalı üçün.</li>
-            <li><strong>Ödəniş sistemləri:</strong> Payriff, bank — ödənişin təhlükəsiz emalı üçün.</li>
+            <li><strong>Ödəniş sistemləri:</strong> Epoint.az, bank — ödənişin təhlükəsiz emalı üçün.</li>
             <li><strong>Texniki xidmətçilər:</strong> Hosting, e-poçt, analitika xidmətləri (gizlilik müqaviləsi ilə bağlı).</li>
             <li><strong>Dövlət orqanları:</strong> Qanunun tələb etdiyi hallarda (məhkəmə qərarı, vergi orqanları).</li>
           </ul>
@@ -141,7 +141,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">10. Bizimlə Əlaqə</h2>
           <div className="bg-gray-50 rounded-xl p-6 space-y-2 text-sm">
-            <p><strong>FlyNaToure Turizm MMC</strong></p>
+            <p><strong>FlyNaToure Turizm OTA</strong></p>
             <p>📍 Bakı şəhəri, Azərbaycan</p>
             <p>📞 <a href="tel:+994517769632" className="text-[#0057A8] hover:underline">+994 51 776 96 32</a></p>
             <p>✉️ <a href="mailto:info@natourefly.com" className="text-[#0057A8] hover:underline">info@natourefly.com</a></p>
