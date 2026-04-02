@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       tour_id,
       first_name, last_name, phone, email,
       adults, children, child_ages,
+      passengers: passengersInput,
       notes,
     } = await req.json();
 
@@ -71,13 +72,15 @@ export async function POST(req: NextRequest) {
       customerId = newCustomer?.id || null;
     }
 
-    // Sərnişin məlumatları
-    const passengersData = [
-      ...Array.from({ length: adults }, (_, i) => ({ type: "adult", index: i + 1 })),
-      ...Array.from({ length: children || 0 }, (_, i) => ({
-        type: "child", index: i + 1, age: (child_ages || [])[i] ?? null,
-      })),
-    ];
+    // Sərnişin məlumatları — formadan gəlirsə istifadə et, yoxdursa minimal data
+    const passengersData = passengersInput?.length
+      ? passengersInput
+      : [
+          ...Array.from({ length: adults }, (_, i) => ({ type: "adult", index: i + 1 })),
+          ...Array.from({ length: children || 0 }, (_, i) => ({
+            type: "child", index: i + 1, age: (child_ages || [])[i] ?? null,
+          })),
+        ];
 
     // Rezervasiya yarat
     const { data: booking, error } = await supabaseAdmin
