@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
+function generateBookingNumber() {
+  const date = new Date();
+  const y = date.getFullYear().toString().slice(2);
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `NAT-${y}${m}-${rand}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { tour_id, customer_name, customer_phone, customer_email, persons, notes } = await req.json();
+    const {
+      tour_id,
+      first_name, last_name, phone, email,
+      adults, children, child_ages,
+      notes,
+    } = await req.json();
 
-    if (!tour_id || !customer_name || !customer_phone || !persons) {
+    if (!tour_id || !first_name || !phone || !adults) {
       return NextResponse.json({ error: "Tələb olunan sahələr doldurulmayıb" }, { status: 400 });
     }
 
@@ -21,24 +34,59 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tur tapılmadı" }, { status: 404 });
     }
 
+    const totalPersons = adults + (children || 0);
     const seatsLeft = tour.max_seats - tour.booked_seats;
-    if (seatsLeft < persons) {
+    if (seatsLeft < totalPersons) {
       return NextResponse.json({ error: "Kifayət qədər boş yer yoxdur" }, { status: 400 });
     }
 
-    const total_amount = tour.price_azn * persons;
+    // Uşaq qiyməti: 50% endirim (2-11 yaş), körpə (0-1) pulsuz
+    const childPrice = Math.round(tour.price_azn * 0.5);
+    const adultTotal = tour.price_azn * adults;
+    const childTotal = childPrice * (children || 0);
+    const total_price = adultTotal + childTotal;
+
+    // Müştəri yarat (və ya tap)
+    let customerId: string | null = null;
+    const { data: existingCustomer } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (existingCustomer) {
+      customerId = existingCustomer.id;
+    } else {
+      const { data: newCustomer } = await supabase
+        .from("customers")
+        .insert({
+          first_name,
+          last_name: last_name || null,
+          phone,
+          email: email || null,
+          source: "website",
+        })
+        .select("id")
+        .single();
+      customerId = newCustomer?.id || null;
+    }
+
+    // Rezervasiya yarat
+    const bookingNotes = [
+      notes,
+      children > 0 ? `Uşaq yaşları: ${(child_ages || []).join(", ")}` : null,
+    ].filter(Boolean).join(" | ");
 
     const { data: booking, error } = await supabase
       .from("bookings")
       .insert({
         tour_id,
-        customer_name,
-        customer_phone,
-        customer_email: customer_email || null,
-        persons,
-        notes: notes || null,
-        status: "pending",
-        total_amount,
+        customer_id: customerId,
+        total_price,
+        currency: "AZN",
+        status: "new",
+        booking_number: generateBookingNumber(),
+        notes: bookingNotes || null,
       })
       .select()
       .single();
@@ -48,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rezervasiya yaradıla bilmədi" }, { status: 500 });
     }
 
-    return NextResponse.json({ booking, total_amount });
+    return NextResponse.json({ booking, total_price });
   } catch (err) {
     console.error("[Bookings] Xəta:", err);
     return NextResponse.json({ error: "Server xətası" }, { status: 500 });
