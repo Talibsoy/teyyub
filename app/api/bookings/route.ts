@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdminAdmin } from "@/lib/supabaseAdmin";
+import { supabaseAdmin } from "@/lib/supabase";
 
 function generateBookingNumber() {
   const date = new Date();
