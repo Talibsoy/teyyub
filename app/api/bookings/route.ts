@@ -71,12 +71,15 @@ export async function POST(req: NextRequest) {
       customerId = newCustomer?.id || null;
     }
 
-    // Rezervasiya yarat
-    const bookingNotes = [
-      notes,
-      children > 0 ? `Uşaq yaşları: ${(child_ages || []).join(", ")}` : null,
-    ].filter(Boolean).join(" | ");
+    // Sərnişin məlumatları
+    const passengersData = [
+      ...Array.from({ length: adults }, (_, i) => ({ type: "adult", index: i + 1 })),
+      ...Array.from({ length: children || 0 }, (_, i) => ({
+        type: "child", index: i + 1, age: (child_ages || [])[i] ?? null,
+      })),
+    ];
 
+    // Rezervasiya yarat
     const { data: booking, error } = await supabase
       .from("bookings")
       .insert({
@@ -86,7 +89,8 @@ export async function POST(req: NextRequest) {
         currency: "AZN",
         status: "new",
         booking_number: generateBookingNumber(),
-        notes: bookingNotes || null,
+        notes: notes || null,
+        passengers: passengersData,
       })
       .select()
       .single();
