@@ -77,7 +77,11 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
 
     const depTime = (firstSeg.departing_at as string) || "";
     const arrTime = (lastSeg.arriving_at as string) || "";
-    const durationMin = (firstSlice.duration as number) || 0;
+    // duration "PT3H5M" formatında gəlir
+    const durRaw = (firstSlice.duration as string) || "";
+    const durHMatch = durRaw.match(/(\d+)H/);
+    const durMMatch = durRaw.match(/(\d+)M/);
+    const durationMin = (parseInt(durHMatch?.[1] || "0") * 60) + parseInt(durMMatch?.[1] || "0");
 
     return {
       offer_id: offer.id as string,
