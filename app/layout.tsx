@@ -99,7 +99,6 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <script async src="https://tpembars.com/NTE0NTcy.js?t=514572" />
       </head>
       <body className="min-h-full flex flex-col">
         <Navbar />
