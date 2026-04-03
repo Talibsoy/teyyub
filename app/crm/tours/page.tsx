@@ -70,6 +70,9 @@ export default function ToursPage() {
       await loadTours();
       setShowModal(false);
       setForm(emptyForm);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || `Xəta: ${res.status}`);
     }
     setSaving(false);
   }

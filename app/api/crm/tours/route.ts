@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/require-auth";
 import { publishTourToAllChannels } from "@/lib/social-post";
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "name, destination və price_azn tələb olunur" }, { status: 400 });
     }
 
-    const { data: tour, error } = await supabase
+    const { data: tour, error } = await supabaseAdmin
       .from("tours")
       .insert([{
         name,
