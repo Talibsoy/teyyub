@@ -1,5 +1,6 @@
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "";
 const RAPIDAPI_HOST = "fly-scraper.p.rapidapi.com";
+const COMMISSION = 1.15; // 15% komissiya
 
 export interface FlightSearchParams {
   originSkyId: string;      // məs. "GYD" (Bakı)
@@ -64,7 +65,7 @@ export async function searchRoundtripFlights(params: FlightSearchParams): Promis
     const marketing = (carriers.marketing as Record<string, unknown>[])?.[0] || {};
 
     return {
-      price: (item.price as Record<string, unknown>)?.raw as number || 0,
+      price: Math.ceil(((item.price as Record<string, unknown>)?.raw as number || 0) * COMMISSION),
       currency: params.currency || "USD",
       airline: (marketing.name as string) || "Naməlum",
       departure: (firstLeg.departure as string) || "",
