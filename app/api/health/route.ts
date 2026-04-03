@@ -34,7 +34,9 @@ export async function GET() {
     results.redis = `error: ${String(e)}`;
   }
 
-  const allOk = Object.values(results).every((v) => v === "connected" || v === "not configured");
+  results.duffel_key = process.env.DUFFEL_API_KEY ? `ok (${process.env.DUFFEL_API_KEY.slice(0, 15)}...)` : "MISSING";
+
+  const allOk = Object.values(results).every((v) => v === "connected" || v === "not configured" || v.startsWith("ok"));
 
   return NextResponse.json(
     { status: allOk ? "ok" : "degraded", ...results, timestamp },
