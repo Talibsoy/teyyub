@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { getToursContext } from "./rag";
 import { getExamples, formatExamplesForPrompt } from "./ai-memory";
+import { searchFlights, formatOffersForAI } from "./duffel";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -85,6 +86,10 @@ Sonra: "Təşəkkür edirəm! Rezervasiya təsdiq üçün komandamız sizinlə �
 
 === AKTUAL TUR VƏ QİYMƏT MƏLUMATLARİ ===
 {TOURS_CONTEXT}
+
+=== REAL-TIME UÇUŞ QİYMƏTLƏRİ (Duffel) ===
+{FLIGHTS_CONTEXT}
+Müştəri uçuş seçmək istəsə offer_id-ni yadda saxla və booking üçün ad, soyad, doğum tarixi, email istə.
 
 
 === ÇOX SORUŞULAN SUALLAR ===
@@ -183,6 +188,57 @@ Bir şeyi də qeyd etmək istəyirəm — cəmi 150 AZN əlavə ilə 5 ulduzlu A
 Maraqlanırsınız, yoxsa mövcud variantla davam edək?"`;
 
 
+const CITY_IATA: Record<string, string> = {
+  istanbul: "IST", antalya: "AYT", ankara: "ESB", izmir: "ADB",
+  dubai: "DXB", abudhabi: "AUH", doha: "DOH",
+  paris: "CDG", london: "LHR", berlin: "BER", amsterdam: "AMS",
+  roma: "FCO", barselona: "BCN", madrid: "MAD", münhen: "MUC",
+  prag: "PRG", varşava: "WAW", budapeşt: "BUD",
+  moskva: "SVO", tbilisi: "TBS", qahirə: "CAI", misir: "CAI",
+  şarm: "SSH", hurgada: "HRG", maldiv: "MLE",
+  banqkok: "BKK", bali: "DPS", tokyo: "NRT", beijing: "PEK",
+};
+
+function extractFlightParams(
+  msg: string,
+  history: { role: string; content: string }[]
+): { origin: string; destination: string; date: string; passengers: number } | null {
+  const combined = [msg, ...history.slice(-6).map(h => h.content)].join(" ").toLowerCase();
+
+  // Uçuş intent
+  if (!combined.includes("bilet") && !combined.includes("uçuş") &&
+      !combined.includes("flight") && !combined.includes("avia") &&
+      !combined.includes("uçaq")) return null;
+
+  // Destinasiya
+  let destination = "";
+  for (const [city, iata] of Object.entries(CITY_IATA)) {
+    if (combined.includes(city)) { destination = iata; break; }
+  }
+  if (!destination) return null;
+
+  // Tarix
+  const dateMatch = combined.match(/(\d{1,2})[.\-/](\d{1,2})(?:[.\-/](\d{2,4}))?/);
+  let date = "";
+  if (dateMatch) {
+    const day = dateMatch[1].padStart(2, "0");
+    const month = dateMatch[2].padStart(2, "0");
+    const year = dateMatch[3]
+      ? (dateMatch[3].length === 2 ? `20${dateMatch[3]}` : dateMatch[3])
+      : new Date().getFullYear();
+    date = `${year}-${month}-${day}`;
+  } else {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    date = d.toISOString().split("T")[0];
+  }
+
+  const personsMatch = combined.match(/(\d+)\s*(?:nəfər|adam|person|adult)/);
+  const passengers = personsMatch ? parseInt(personsMatch[1]) : 1;
+
+  return { origin: "GYD", destination, date, passengers };
+}
+
 export interface CustomerData {
   name: string | null;
   phone: string | null;
@@ -254,10 +310,24 @@ export async function getAIResponse(
   // Real tur məlumatlarını system prompt-a inject et (smart filter ilə)
   const msgText = typeof userContent === "string" ? userContent : userMessage;
   const toursContext = await getToursContext(msgText);
-  const systemWithTours = SYSTEM_PROMPT.replace(
-    "{TOURS_CONTEXT}",
-    toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur."
-  );
+
+  // Duffel uçuş axtarışı — intent aşkarla
+  let flightsContext = "Uçuş axtarışı tələb edilməyib.";
+  try {
+    const flightParams = extractFlightParams(msgText, conversationHistory);
+    if (flightParams) {
+      const offers = await searchFlights(flightParams);
+      flightsContext = offers.length > 0
+        ? formatOffersForAI(offers)
+        : "Bu istiqamət üçün uçuş tapılmadı.";
+    }
+  } catch {
+    flightsContext = "Uçuş məlumatı alınarkən xəta baş verdi.";
+  }
+
+  const systemWithTours = SYSTEM_PROMPT
+    .replace("{TOURS_CONTEXT}", toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur.")
+    .replace("{FLIGHTS_CONTEXT}", flightsContext);
 
   // Uğurlu satış nümunələrini əlavə et
   const destinationMatch = msgText.match(/antalya|dubai|bali|paris|rome|roma|istanbul|istanbul|maldiv|türkiy|ərəb|avropa/i);
