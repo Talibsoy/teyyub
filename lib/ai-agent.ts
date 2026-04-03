@@ -188,7 +188,7 @@ Maraqlanırsınız, yoxsa mövcud variantla davam edək?"`;
 
 // Şəhər → SkyId mapping
 const CITY_SKY_ID: Record<string, string> = {
-  istanbul: "IST", türkiyə: "IST", turkey: "IST", antalya: "AYT",
+  istanbul: "IST", İstanbul: "IST", türkiyə: "IST", turkey: "IST", antalya: "AYT", Antalya: "AYT",
   ankara: "ESB", izmir: "ADB", dubai: "DXB", əbu: "AUH",
   paris: "CDG", fransa: "CDG", london: "LHR", ingiltərə: "LHR",
   berlin: "BER", almaniya: "BER", moskva: "SVO", rusiya: "SVO",
@@ -208,8 +208,10 @@ function detectFlightIntent(
   const combined = [msg, ...history.slice(-4).map(h => h.content)].join(" ").toLowerCase();
 
   // Uçuş intent yoxla
-  const flightKeywords = /uçuş|bilet|avia|flight|fly|gedib-qayıt|birbaşa uçuş|uçaq/i;
-  if (!flightKeywords.test(combined)) return null;
+  const hasFlightKeyword = combined.includes("bilet") || combined.includes("flight") ||
+    combined.includes("fly") || combined.includes("avia") ||
+    combined.includes("u\u00e7u") || combined.includes("u\u00e7aq"); // uçuş, uçaq
+  if (!hasFlightKeyword) return null;
 
   // Destinasiya tap
   let destSkyId = "";
