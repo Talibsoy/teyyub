@@ -203,17 +203,20 @@ function extractFlightParams(
   msg: string,
   history: { role: string; content: string }[]
 ): { origin: string; destination: string; date: string; passengers: number } | null {
-  const combined = [msg, ...history.slice(-6).map(h => h.content)].join(" ").toLowerCase();
+  const combined = [msg, ...history.slice(-6).map(h => h.content)]
+    .join(" ")
+    .toLowerCase()
+    .normalize("NFC");
 
-  // Uçuş intent
-  if (!combined.includes("bilet") && !combined.includes("uçuş") &&
-      !combined.includes("flight") && !combined.includes("avia") &&
-      !combined.includes("uçaq")) return null;
+  // Uçuş intent — geniş yoxlama
+  const flightWords = ["bilet", "flight", "avia", "u\u00e7u\u015f", "u\u00e7aq", "u\u00e7u", "ticket", "avia"];
+  const hasFlightWord = flightWords.some(w => combined.includes(w));
+  if (!hasFlightWord) return null;
 
   // Destinasiya
   let destination = "";
   for (const [city, iata] of Object.entries(CITY_IATA)) {
-    if (combined.includes(city)) { destination = iata; break; }
+    if (combined.includes(city.toLowerCase())) { destination = iata; break; }
   }
   if (!destination) return null;
 
