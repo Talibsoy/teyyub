@@ -3,7 +3,7 @@ import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { addCustomerToSheet } from "@/lib/google-sheets";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
-import { getHistory, saveHistory } from "@/lib/conversation-store";
+import { getHistory, saveHistory, saveConvMeta } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -155,7 +155,15 @@ async function handleMessage(platform: string, senderId: string, userMessage: st
       saveLead(platform, senderId, customerData, userMessage),
     ]);
   }
-  await sendTelegramAlert(platform, userMessage || `[${mediaLabel} göndərdi]`, customerData);
+
+  // Hər mesajda conv_meta yenilə — özət cron tərəfindən göndəriləcək
+  await saveConvMeta(historyKey, {
+    platform,
+    senderId,
+    customerData,
+    messageCount: history.length,
+    lastUserMessage: userMessage || `[${mediaLabel}]`,
+  });
 }
 
 async function sendFBMessage(recipientId: string, message: string) {
