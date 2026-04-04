@@ -86,7 +86,7 @@ Müştəri qərar verə bilmirsə — bu istiqamətləri təklif et:
 
 === ALƏTLƏR — NƏ VAXT İSTİFADƏ ET ===
 
-search_flights → Müştəri uçuş/bilet/avia soruşanda. Tarix yoxdursa soruş, sonra axtar.
+search_flights → Müştəri uçuş/bilet/avia soruşanda. Kalkış şəhəri məlum deyilsə Bakı (GYD) qəbul et. Tarix yoxdursa soruş, sonra axtar.
 check_tour_availability → Müştəri konkret tur, qiymət, mövcud yer soruşanda.
 get_weather → "Hava necədir?", "İsti olacaqmı?", "Nə geyinim?" kimi suallar.
 get_exchange_rate → Qiymətləri başqa valyutaya çevirəndə, "neçə manata dəyər?" soruşanda.
@@ -195,15 +195,20 @@ Cavabın sonunda müştəri məlumatlarını bu JSON formatında ver (məlumat y
 const ALL_TOOLS: Anthropic.Tool[] = [
   {
     name: "search_flights",
-    description: `Bakı (GYD) aeroportundan real-time uçuş axtarır.
+    description: `İstənilən şəhərdən istənilən şəhərə real-time uçuş axtarır.
 Müştəri bilet, uçuş, avia, flight soruşanda çağır.
+Kalkış şəhəri deyilməyibsə — Bakı (GYD) qəbul et.
 Tarix məlum deyilsə əvvəl müştəridən soruş, sonra axtarış et.`,
     input_schema: {
       type: "object" as const,
       properties: {
+        origin: {
+          type: "string",
+          description: "Kalkış aeroportunun IATA kodu. Default: GYD (Bakı). Azərbaycan hava limanları: GYD=Bakı, GNJ=Gəncə, NAJ=Naxçıvan, LLK=Lənkəran. Digər şəhərlər: IST, DXB, CDG, LHR, AYT, TBS, SVO və s."
+        },
         destination: {
           type: "string",
-          description: "IATA kodu: IST(Istanbul), DXB(Dubai), AYT(Antalya), CDG(Paris), LHR(London), DOH(Doha), CAI(Qahirə), SSH(Şarm), HRG(Hurgada), MLE(Maldiv), BKK(Bangkok), DPS(Bali), NRT(Tokyo), FCO(Roma), BCN(Barselona), BER(Berlin), AMS(Amsterdam), TBS(Tbilisi), SVO(Moskva), AUH(Abu Dhabi)"
+          description: "Təyinat aeroportunun IATA kodu: IST(Istanbul), DXB(Dubai), AYT(Antalya), CDG(Paris), LHR(London), DOH(Doha), CAI(Qahirə), SSH(Şarm), HRG(Hurgada), MLE(Maldiv), BKK(Bangkok), DPS(Bali), NRT(Tokyo), FCO(Roma), BCN(Barselona), BER(Berlin), AMS(Amsterdam), TBS(Tbilisi), SVO(Moskva), AUH(Abu Dhabi), GYD(Bakı), GNJ(Gəncə)"
         },
         date: { type: "string", description: "YYYY-MM-DD formatı" },
         passengers: { type: "number", description: "Sərnişin sayı (default: 1)" }
@@ -301,7 +306,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
   switch (name) {
     case "search_flights": {
       const offers = await searchFlights({
-        origin: "GYD",
+        origin: (input.origin as string) || "GYD",
         destination: input.destination as string,
         date: input.date as string,
         passengers: (input.passengers as number) || 1,
