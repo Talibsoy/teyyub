@@ -305,15 +305,30 @@ Sadəcə maraq bildirəndə çağırma.`,
 async function executeTool(name: string, input: Record<string, unknown>): Promise<string> {
   switch (name) {
     case "search_flights": {
-      const offers = await searchFlights({
-        origin: (input.origin as string) || "GYD",
-        destination: input.destination as string,
-        date: input.date as string,
-        passengers: (input.passengers as number) || 1,
-      });
-      return offers.length > 0
-        ? formatOffersForAI(offers)
-        : `${input.destination} istiqaməti üçün ${input.date} tarixinə uçuş tapılmadı.`;
+      try {
+        const offers = await searchFlights({
+          origin: (input.origin as string) || "GYD",
+          destination: input.destination as string,
+          date: input.date as string,
+          passengers: (input.passengers as number) || 1,
+        });
+        return offers.length > 0
+          ? formatOffersForAI(offers)
+          : `${input.destination} istiqaməti üçün ${input.date} tarixinə birbaşa uçuş tapılmadı. Müştəriyə alternativ tarix (±3-5 gün) və ya qonşu istiqamət təklif et.`;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("AbortError") || msg.includes("timeout")) {
+          return `Uçuş axtarışı cavab gözləmə müddətini aşdı. Müştəriyə "sistemdə yüklənmə var, 1-2 dəqiqədən sonra yenidən cəhd edin" de.`;
+        }
+        if (msg.includes("422") || msg.includes("invalid_departure_date") || msg.includes("past")) {
+          return `Bu tarix keçmiş tarix və ya səhv formatdadır. Müştəridən düzgün gələcək tarixi soruş (YYYY-MM-DD).`;
+        }
+        if (msg.includes("404") || msg.includes("not_found")) {
+          return `Bu marşrut mövcud deyil. Müştəriyə alternativ hava limanı (məs. IST yerinə SAW) təklif et.`;
+        }
+        // Digər xətalarda ümumi mesaj — texniki detalları gizlət
+        return `Uçuş sistemi hal-hazırda cavab vermir. Müştəriyə deyin: "Bilet məlumatını komandamız sizinlə birbaşa paylaşacaq — nömrənizi qeyd edim?"`;
+      }
     }
 
     case "check_tour_availability":

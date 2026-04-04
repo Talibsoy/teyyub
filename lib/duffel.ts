@@ -47,7 +47,7 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
         cabin_class: "economy",
       },
     }),
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(20000),
   });
 
   if (!res.ok) {
