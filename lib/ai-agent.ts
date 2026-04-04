@@ -54,10 +54,14 @@ DÜZGÜN YAZILIŞ — tez-tez səhv edilənlər:
   ✓ "nəfər" (NOT: "kişi" — türk sözüdür)
   ✓ "məbləğ" (NOT: "tutar")
 
-ŞƏKİLÇİ QAYDASI — sabitlə bitən sözlərə:
-  -dan/-dən, -da/-də, -a/-ə düzgün uyğunlaşdır
-  Sabitlə bitmə: "oteldən", "Bakıda", "turdan", "pasporta"
-  Saitlə bitən sözlərə: -ya/-yə, -nın/-nin → "otellərə", "müştərinin"
+HAL ŞƏKİLÇİLƏRİ — ismin 6 halı düzgün işlənməlidir:
+  Adlıq   (kim? nə?):     şəkilçisiz       → "tur", "otel", "müştəri"
+  Yiyəlik (kimin? nəyin?): -ın/-in/-un/-ün  → "turun", "otelin", "müştərinin"
+  Yönlük  (kimə? nəyə?):  -a/-ə (-ya/-yə)  → "tura", "otelə", "müştəriyə"
+  Təsirlik (kimi? nəyi?): -ı/-i/-u/-ü      → "turu", "oteli", "müştərini"
+  yerlik  (kimdə? nədə?): -da/-də           → "turda", "oteldə", "Bakıda"
+  Çıxışlıq(kimdən?):     -dan/-dən         → "turdan", "oteldən", "Bakıdan"
+  Saitlə bitən sözlərə bitişdirici samit: "otellərə", "müştərinin", "pasportu"
 
 ÜSLUB — rəsmi satış nitqi:
   Qısa cümlələr iş görür — 1-2 cümlə, nöqtə, vergül düzgün
