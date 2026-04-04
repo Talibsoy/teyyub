@@ -68,6 +68,11 @@ export async function saveConvMeta(
   await redis.set(metaKey, meta, { ex: META_TTL });
 }
 
+export async function getConvMeta(key: string): Promise<ConvMeta | null> {
+  if (!redis) return null;
+  return redis.get<ConvMeta>(`conv_meta:${key}`);
+}
+
 export async function getPendingSummaries(): Promise<(ConvMeta & { metaKey: string })[]> {
   if (!redis) return [];
 

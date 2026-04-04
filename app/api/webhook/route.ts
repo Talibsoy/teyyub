@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { addCustomerToSheet } from "@/lib/google-sheets";
-import { sendTelegramAlert } from "@/lib/telegram";
+import { sendTelegramAlert, sendConversationSummary } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
-import { getHistory, saveHistory, saveConvMeta } from "@/lib/conversation-store";
+import { getHistory, saveHistory, saveConvMeta, getConvMeta, markSummarySent } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -138,6 +138,15 @@ async function resolveFBAttachment(
 
 async function handleMessage(platform: string, senderId: string, userMessage: string, media?: MediaInput) {
   const historyKey = `${platform}_${senderId}`;
+
+  // Əvvəlki sessiya 30+ dəq bitibsə — özət göndər
+  const prevMeta = await getConvMeta(historyKey);
+  const INACTIVE_MS = 30 * 60 * 1000;
+  if (prevMeta && !prevMeta.summarySent && Date.now() - prevMeta.lastActivity >= INACTIVE_MS) {
+    await sendConversationSummary(prevMeta);
+    await markSummarySent(`conv_meta:${historyKey}`);
+  }
+
   const history = await getHistory(historyKey);
 
   const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media);
