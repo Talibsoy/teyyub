@@ -150,6 +150,12 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   // CBAR-dan real valyuta kurslarını al
   const aznRates = await getAznRates();
 
+  // Bütün offerləri logla — portal vs API fərqini görmək üçün
+  console.log(`[OFFERS] Cəmi ${offers.length} offer. İlk 5:`);
+  offers.slice(0, 5).forEach((o: Record<string, unknown>, i: number) => {
+    console.log(`  #${i+1} id=${o.id} amount=${o.total_amount} ${o.total_currency}`);
+  });
+
   // Ucuz 3-ü seç
   const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
     parseFloat(a.total_amount as string) - parseFloat(b.total_amount as string)
