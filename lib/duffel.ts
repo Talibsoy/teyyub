@@ -1,7 +1,17 @@
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || "";
 const DUFFEL_BASE = "https://api.duffel.com";
 const COMMISSION = 1.15; // 15%
-const AZN_RATE = 1.7;    // $1 ≈ 1.7 AZN
+
+// Valyutadan AZN-ə çevirmə cədvəli (təxmini sabit kurs)
+const TO_AZN: Record<string, number> = {
+  USD: 1.70,
+  EUR: 1.87,
+  GBP: 2.16,
+  AED: 0.463,
+  TRY: 0.052,
+  RUB: 0.019,
+  GEL: 0.62,
+};
 
 const headers = () => ({
   Authorization: `Bearer ${DUFFEL_API_KEY}`,
@@ -58,20 +68,6 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   const data = await res.json();
   const offers = data?.data?.offers || [];
 
-  // DEBUG LOG — qiymət analizini görmək üçün
-  if (offers.length > 0) {
-    const sample = offers[0];
-    console.log("[DUFFEL DEBUG] İlk offer:", JSON.stringify({
-      id: sample.id,
-      total_amount: sample.total_amount,
-      total_currency: sample.total_currency,
-      base_amount: sample.base_amount,
-      base_currency: sample.base_currency,
-      tax_amount: sample.tax_amount,
-    }, null, 2));
-    console.log(`[DUFFEL DEBUG] Komissiya hesabı: rawPrice=${parseFloat(sample.total_amount)} × 1.15 = ${Math.ceil(parseFloat(sample.total_amount) * 1.15)} USD → × 1.70 = ${Math.ceil(parseFloat(sample.total_amount) * 1.15 * 1.70)} AZN`);
-  }
-
   // Ucuz 3-ü seç
   const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
     parseFloat(a.total_amount as string) - parseFloat(b.total_amount as string)
@@ -86,8 +82,11 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
     const carrier = (firstSeg.operating_carrier as Record<string, unknown>) || {};
 
     const rawPrice = parseFloat(offer.total_amount as string) || 0;
-    const priceWithComm = Math.ceil(rawPrice * COMMISSION);
-    const priceAzn = Math.ceil(priceWithComm * AZN_RATE);
+    const currency = (offer.total_currency as string) || "USD";
+    const aznRate = TO_AZN[currency] ?? TO_AZN["USD"];
+    const priceAzn = Math.ceil(rawPrice * aznRate * COMMISSION);
+    // USD ekvivalenti (göstərmək üçün)
+    const priceWithComm = Math.ceil(priceAzn / TO_AZN["USD"]);
 
     const depTime = (firstSeg.departing_at as string) || "";
     const arrTime = (lastSeg.arriving_at as string) || "";
