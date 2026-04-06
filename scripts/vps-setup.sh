@@ -45,7 +45,7 @@ app.use((req, res, next) => {
 // RateHawk proxy
 app.all("/ratehawk/*", async (req, res) => {
   const path = req.path.replace("/ratehawk", "");
-  const targetUrl = `https://api.worldota.net${path}`;
+  const targetUrl = `https://api-sandbox.worldota.net${path}`;
 
   try {
     const fetchOptions = {
