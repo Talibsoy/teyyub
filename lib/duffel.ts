@@ -29,6 +29,8 @@ export interface FlightOffer {
   arrival_time: string;
   duration_minutes: number;
   stops: number;
+  cabin_baggage: number;   // əl bagajı (ədəd)
+  checked_baggage: number; // yükləmə bagajı (ədəd)
 }
 
 export interface SearchParams {
@@ -96,6 +98,12 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
     const durMMatch = durRaw.match(/(\d+)M/);
     const durationMin = (parseInt(durHMatch?.[1] || "0") * 60) + parseInt(durMMatch?.[1] || "0");
 
+    // Bagaj məlumatı — offer.passengers[0].baggages[]
+    const passengers = (offer.passengers as Record<string, unknown>[]) || [];
+    const baggages = (passengers[0]?.baggages as Record<string, unknown>[]) || [];
+    const cabinBag = baggages.filter(b => b.type === "carry_on").reduce((s, b) => s + ((b.quantity as number) || 0), 0);
+    const checkedBag = baggages.filter(b => b.type === "checked").reduce((s, b) => s + ((b.quantity as number) || 0), 0);
+
     return {
       offer_id: offer.id as string,
       airline: (carrier.name as string) || "Naməlum",
@@ -105,6 +113,8 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
       arrival_time: arrTime,
       duration_minutes: durationMin,
       stops: segments.length - 1,
+      cabin_baggage: cabinBag,
+      checked_baggage: checkedBag,
     };
   });
 }
@@ -160,6 +170,10 @@ export function formatOffersForAI(offers: FlightOffer[]): string {
     const arr = o.arrival_time ? new Date(o.arrival_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "";
     const dur = o.duration_minutes ? `${Math.floor(o.duration_minutes / 60)}s ${o.duration_minutes % 60}d` : "";
     const stops = o.stops === 0 ? "Birbaşa" : `${o.stops} dayanacaq`;
-    return `${i + 1}. ${o.airline} — ${o.price_azn} ₼ (~$${o.price_usd}) | ${dep}–${arr} | ${dur} | ${stops} | ID: ${o.offer_id}`;
+    const bagInfo = [
+      o.cabin_baggage > 0 ? `${o.cabin_baggage} əl bagajı` : "əl bagajı yoxdur",
+      o.checked_baggage > 0 ? `${o.checked_baggage} yük bagajı` : "yük bagajı yoxdur",
+    ].join(", ");
+    return `${i + 1}. ${o.airline} — ${o.price_azn} ₼ (~$${o.price_usd}) | ${dep}–${arr} | ${dur} | ${stops} | ${bagInfo} | ID: ${o.offer_id}`;
   }).join("\n");
 }
