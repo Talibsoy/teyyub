@@ -20,6 +20,11 @@ const headers = () => ({
   Accept: "application/json",
 });
 
+function toAzn(amount: number, currency: string): number {
+  const rate = TO_AZN[currency] ?? TO_AZN["USD"];
+  return Math.ceil(amount * rate);
+}
+
 export interface FlightOffer {
   offer_id: string;
   airline: string;
@@ -29,8 +34,10 @@ export interface FlightOffer {
   arrival_time: string;
   duration_minutes: number;
   stops: number;
-  cabin_baggage: number;   // əl bagajı (ədəd)
-  checked_baggage: number; // yükləmə bagajı (ədəd)
+  cabin_baggage: number;    // daxil olan əl bagajı (ədəd)
+  checked_baggage: number;  // daxil olan yük bagajı (ədəd)
+  extra_bag_kg: number;     // əlavə satılan bagaj (kq), 0 = yoxdur
+  extra_bag_azn: number;    // əlavə bagaj qiyməti (AZN)
 }
 
 export interface SearchParams {
@@ -38,6 +45,41 @@ export interface SearchParams {
   destination: string;
   date: string;
   passengers?: number;
+}
+
+// Bir offer üçün available_services-dən ən ucuz bagaj xidmətini çək
+async function fetchBaggageService(
+  offerId: string
+): Promise<{ kg: number; azn: number }> {
+  try {
+    const res = await fetch(
+      `${DUFFEL_BASE}/air/offers/${offerId}/available_services`,
+      { headers: headers(), signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return { kg: 0, azn: 0 };
+
+    const data = await res.json();
+    const services: Record<string, unknown>[] = data?.data ?? [];
+
+    // Yalnız baggage tipini filtr et, ən ucuzunu tap
+    const baggageServices = services.filter(s => s.type === "baggage");
+    if (!baggageServices.length) return { kg: 0, azn: 0 };
+
+    const cheapest = baggageServices.sort(
+      (a, b) =>
+        parseFloat(a.total_amount as string) -
+        parseFloat(b.total_amount as string)
+    )[0];
+
+    const kg = (cheapest.maximum_weight_kg as number) || 0;
+    const amount = parseFloat(cheapest.total_amount as string) || 0;
+    const currency = (cheapest.total_currency as string) || "USD";
+    const azn = toAzn(amount * COMMISSION, currency);
+
+    return { kg, azn };
+  } catch {
+    return { kg: 0, azn: 0 };
+  }
 }
 
 export async function searchFlights(params: SearchParams): Promise<FlightOffer[]> {
@@ -74,8 +116,16 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
     parseFloat(a.total_amount as string) - parseFloat(b.total_amount as string)
   );
+  const top3 = sorted.slice(0, 3);
 
-  return sorted.slice(0, 3).map((offer: Record<string, unknown>) => {
+  // Hər offer üçün available_services-i parallel çək
+  const baggageMap = await Promise.all(
+    top3.map((o: Record<string, unknown>) =>
+      fetchBaggageService(o.id as string)
+    )
+  );
+
+  return top3.map((offer: Record<string, unknown>, idx: number) => {
     const slices = (offer.slices as Record<string, unknown>[]) || [];
     const firstSlice = slices[0] || {};
     const segments = (firstSlice.segments as Record<string, unknown>[]) || [];
@@ -85,24 +135,27 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
 
     const rawPrice = parseFloat(offer.total_amount as string) || 0;
     const currency = (offer.total_currency as string) || "USD";
-    const aznRate = TO_AZN[currency] ?? TO_AZN["USD"];
-    const priceAzn = Math.ceil(rawPrice * aznRate * COMMISSION);
-    // USD ekvivalenti (göstərmək üçün)
+    const priceAzn = toAzn(rawPrice * COMMISSION, currency);
     const priceWithComm = Math.ceil(priceAzn / TO_AZN["USD"]);
 
     const depTime = (firstSeg.departing_at as string) || "";
     const arrTime = (lastSeg.arriving_at as string) || "";
-    // duration "PT3H5M" formatında gəlir
     const durRaw = (firstSlice.duration as string) || "";
     const durHMatch = durRaw.match(/(\d+)H/);
     const durMMatch = durRaw.match(/(\d+)M/);
     const durationMin = (parseInt(durHMatch?.[1] || "0") * 60) + parseInt(durMMatch?.[1] || "0");
 
-    // Bagaj məlumatı — offer.passengers[0].baggages[]
+    // Daxil olan bagaj
     const passengers = (offer.passengers as Record<string, unknown>[]) || [];
     const baggages = (passengers[0]?.baggages as Record<string, unknown>[]) || [];
-    const cabinBag = baggages.filter(b => b.type === "carry_on").reduce((s, b) => s + ((b.quantity as number) || 0), 0);
-    const checkedBag = baggages.filter(b => b.type === "checked").reduce((s, b) => s + ((b.quantity as number) || 0), 0);
+    const cabinBag = baggages
+      .filter(b => b.type === "carry_on")
+      .reduce((s, b) => s + ((b.quantity as number) || 0), 0);
+    const checkedBag = baggages
+      .filter(b => b.type === "checked")
+      .reduce((s, b) => s + ((b.quantity as number) || 0), 0);
+
+    const { kg: extraKg, azn: extraAzn } = baggageMap[idx];
 
     return {
       offer_id: offer.id as string,
@@ -115,6 +168,8 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
       stops: segments.length - 1,
       cabin_baggage: cabinBag,
       checked_baggage: checkedBag,
+      extra_bag_kg: extraKg,
+      extra_bag_azn: extraAzn,
     };
   });
 }
@@ -166,14 +221,26 @@ export async function createOrder(params: {
 export function formatOffersForAI(offers: FlightOffer[]): string {
   if (!offers.length) return "Uçuş tapılmadı.";
   return offers.map((o, i) => {
-    const dep = o.departure_time ? new Date(o.departure_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "";
-    const arr = o.arrival_time ? new Date(o.arrival_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "";
-    const dur = o.duration_minutes ? `${Math.floor(o.duration_minutes / 60)}s ${o.duration_minutes % 60}d` : "";
+    const dep = o.departure_time
+      ? new Date(o.departure_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" })
+      : "";
+    const arr = o.arrival_time
+      ? new Date(o.arrival_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" })
+      : "";
+    const dur = o.duration_minutes
+      ? `${Math.floor(o.duration_minutes / 60)}s ${o.duration_minutes % 60}d`
+      : "";
     const stops = o.stops === 0 ? "Birbaşa" : `${o.stops} dayanacaq`;
-    const bagInfo = [
-      o.cabin_baggage > 0 ? `${o.cabin_baggage} əl bagajı` : "əl bagajı yoxdur",
-      o.checked_baggage > 0 ? `${o.checked_baggage} yük bagajı` : "yük bagajı yoxdur",
-    ].join(", ");
-    return `${i + 1}. ${o.airline} — ${o.price_azn} ₼ (~$${o.price_usd}) | ${dep}–${arr} | ${dur} | ${stops} | ${bagInfo} | ID: ${o.offer_id}`;
+
+    const includedBag = [
+      o.cabin_baggage > 0 ? `${o.cabin_baggage} əl bagajı` : null,
+      o.checked_baggage > 0 ? `${o.checked_baggage} yük bagajı` : null,
+    ].filter(Boolean).join(" + ") || "bagaj daxil deyil";
+
+    const extraBag = o.extra_bag_kg > 0
+      ? `əlavə ${o.extra_bag_kg}kq: +${o.extra_bag_azn}₼`
+      : "əlavə bagaj yoxdur";
+
+    return `${i + 1}. ${o.airline} — ${o.price_azn} ₼ (~$${o.price_usd}) | ${dep}–${arr} | ${dur} | ${stops} | Daxil: ${includedBag} | ${extraBag} | ID: ${o.offer_id}`;
   }).join("\n");
 }
