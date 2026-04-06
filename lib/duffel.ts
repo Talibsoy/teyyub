@@ -157,6 +157,8 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
 
     const { kg: extraKg, azn: extraAzn } = baggageMap[idx];
 
+    console.log(`[PRICE] ${carrier.name} | raw=${rawPrice} ${currency} | ×${TO_AZN[currency] ?? 1.70}(AZN rate) ×${COMMISSION}(comm) = ${priceAzn} AZN`);
+
     return {
       offer_id: offer.id as string,
       airline: (carrier.name as string) || "Naməlum",
