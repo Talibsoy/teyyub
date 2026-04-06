@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0b0b;
-  --foreground: #ffffff;
-  --color-primary: #00c2ff;
-  --color-secondary: #0097cc;
-  --color-accent: #00c2ff;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --color-primary: #0284c7;
+  --color-secondary: #4f46e5;
+  --color-accent: #0284c7;
 }
 
 @theme inline {
@@ -23,4 +23,25 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, sans-serif;
+}
+
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.7s ease forwards;
 }
