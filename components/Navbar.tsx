@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Globe } from "lucide-react";
 
 const navLinks = [
   { href: "/turlar", label: "Turlar" },
@@ -33,13 +32,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 no-underline">
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #0284c7, #4f46e5)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Globe size={20} color="white" />
-          </div>
+          <Image src="/logo.png" alt="Natoure" width={38} height={38} className="object-contain" />
           <span style={{
             fontWeight: 700, fontSize: 20,
             background: "linear-gradient(135deg, #0284c7, #4f46e5)",

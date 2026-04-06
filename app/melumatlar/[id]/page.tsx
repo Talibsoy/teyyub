@@ -50,7 +50,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const waMsg = encodeURIComponent(`Salam, ${post.country} turu haqqında məlumat almaq istəyirəm`);
 
   return (
-    <div style={{ background: "#0b0b0b", minHeight: "100vh", paddingBottom: 60 }}>
+    <div style={{ background: "#f8fafc", minHeight: "100vh", paddingBottom: 60 }}>
       {/* Hero image */}
       {post.image_url && (
         <div style={{ width: "100%", height: 360, overflow: "hidden", position: "relative" }}>
@@ -66,7 +66,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 24px" }}>
         {/* Back */}
         <Link href="/melumatlar" style={{
-          color: "#666", fontSize: 13, textDecoration: "none",
+          color: "#94a3b8", fontSize: 13, textDecoration: "none",
           display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24,
         }}>
           ← Bütün məlumatlar
@@ -78,7 +78,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           <span style={{ color: "#D4AF37", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>
             {post.country}
           </span>
-          <h1 style={{ color: "#fff", fontSize: 26, fontWeight: 800, margin: "10px 0 8px", lineHeight: 1.35 }}>
+          <h1 style={{  fontSize: 26, fontWeight: 800, margin: "10px 0 8px", lineHeight: 1.35 }}>
             {post.title}
           </h1>
           <p style={{ color: "#444", fontSize: 12 }}>
@@ -96,13 +96,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
         {/* CTA */}
         <div style={{
-          background: "#111", border: "1px solid #1a1a1a", borderRadius: 16,
+          background: "white", border: "1px solid #e2e8f0", borderRadius: 16,
           padding: "24px 28px", textAlign: "center",
         }}>
-          <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
+          <p style={{  fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
             {post.country} turuna çıxmaq istəyirsiniz?
           </p>
-          <p style={{ color: "#666", fontSize: 13, marginBottom: 20 }}>
+          <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>
             Natoure komandası sizin üçün ən yaxşı paketi hazırlayır
           </p>
           <a
@@ -110,7 +110,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             target="_blank" rel="noopener noreferrer"
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#25D366", color: "#fff", borderRadius: 10,
+              background: "#25D366", borderRadius: 10,
               padding: "13px 28px", fontWeight: 700, fontSize: 14,
               textDecoration: "none",
             }}

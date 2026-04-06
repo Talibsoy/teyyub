@@ -31,17 +31,17 @@ export default function MelumatlarPage() {
   }, []);
 
   return (
-    <div style={{ background: "#0b0b0b", minHeight: "100vh", paddingBottom: 60 }}>
+    <div style={{ background: "#f8fafc", minHeight: "100vh", paddingBottom: 60 }}>
       {/* Header */}
-      <div style={{ background: "#0d0d0d", borderBottom: "1px solid #1a1a1a", padding: "40px 24px 32px" }}>
+      <div style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0", padding: "40px 24px 32px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <p style={{ color: "#D4AF37", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>
             Səyahət Dünyası
           </p>
-          <h1 style={{ color: "#fff", fontSize: 32, fontWeight: 800, margin: 0 }}>
+          <h1 style={{  fontSize: 32, fontWeight: 800, margin: 0 }}>
             Turizm Məlumatları ✈️
           </h1>
-          <p style={{ color: "#666", fontSize: 14, marginTop: 8 }}>
+          <p style={{ color: "#94a3b8", fontSize: 14, marginTop: 8 }}>
             Hər gün yeni ölkə, yeni kəşf — Natoure ekspertlərindən
           </p>
         </div>
@@ -61,14 +61,14 @@ export default function MelumatlarPage() {
             <button
               onClick={() => setSelected(null)}
               style={{
-                background: "none", border: "1px solid #2a2a2a", color: "#888",
+                background: "none", border: "1px solid #2a2a2a", color: "#64748b",
                 borderRadius: 8, padding: "8px 16px", cursor: "pointer",
                 fontSize: 13, marginBottom: 24,
               }}
             >
               ← Geri
             </button>
-            <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 16, overflow: "hidden" }}>
               {selected.image_url && (
                 <img src={selected.image_url} alt={selected.country}
                   style={{ width: "100%", height: 280, objectFit: "cover" }} />
@@ -78,13 +78,13 @@ export default function MelumatlarPage() {
                 <span style={{ color: "#D4AF37", fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
                   {selected.country}
                 </span>
-                <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 700, margin: "8px 0 20px" }}>
+                <h2 style={{  fontSize: 22, fontWeight: 700, margin: "8px 0 20px" }}>
                   {selected.title}
                 </h2>
-                <div style={{ color: "#aaa", fontSize: 14, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
+                <div style={{ color: "#64748b", fontSize: 14, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
                   {selected.content}
                 </div>
-                <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid #1a1a1a" }}>
+                <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid #e2e8f0" }}>
                   <p style={{ color: "#555", fontSize: 12, marginBottom: 12 }}>
                     {new Date(selected.created_at).toLocaleDateString("az-AZ", { day: "numeric", month: "long", year: "numeric" })}
                   </p>
@@ -94,7 +94,7 @@ export default function MelumatlarPage() {
                     rel="noopener noreferrer"
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 8,
-                      background: "#25D366", color: "#fff", borderRadius: 10,
+                      background: "#25D366", borderRadius: 10,
                       padding: "12px 24px", fontWeight: 700, fontSize: 14,
                       textDecoration: "none",
                     }}
@@ -113,7 +113,7 @@ export default function MelumatlarPage() {
                 key={p.id}
                 href={`/melumatlar/${p.id}`}
                 style={{
-                  background: "#111", border: "1px solid #1a1a1a", borderRadius: 14,
+                  background: "white", border: "1px solid #e2e8f0", borderRadius: 14,
                   overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s",
                   textDecoration: "none", display: "block",
                 }}
@@ -124,7 +124,7 @@ export default function MelumatlarPage() {
                   <img src={p.image_url} alt={p.country}
                     style={{ width: "100%", height: 160, objectFit: "cover" }} />
                 ) : (
-                  <div style={{ height: 100, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, background: "#0d0d0d" }}>
+                  <div style={{ height: 100, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, background: "#f1f5f9" }}>
                     {p.emoji}
                   </div>
                 )}
@@ -132,10 +132,10 @@ export default function MelumatlarPage() {
                   <span style={{ color: "#D4AF37", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
                     {p.emoji} {p.country}
                   </span>
-                  <h3 style={{ color: "#fff", fontSize: 15, fontWeight: 600, margin: "6px 0 10px", lineHeight: 1.4 }}>
+                  <h3 style={{  fontSize: 15, fontWeight: 600, margin: "6px 0 10px", lineHeight: 1.4 }}>
                     {p.title}
                   </h3>
-                  <p style={{ color: "#666", fontSize: 12, lineHeight: 1.6, margin: 0 }}>
+                  <p style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6, margin: 0 }}>
                     {p.content.slice(0, 100)}...
                   </p>
                   <p style={{ color: "#444", fontSize: 11, marginTop: 12 }}>

@@ -25,11 +25,11 @@ const whyItems = [
 
 export default function HaqqimızdaPage() {
   return (
-    <div style={{ background: "#0b0b0b", color: "#fff", minHeight: "100vh" }}>
+    <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
       {/* Header */}
-      <div className="px-4 py-12 md:py-16 text-center" style={{ background: "#0d0d0d", borderBottom: "1px solid #1a1a1a" }}>
+      <div className="px-4 py-12 md:py-16 text-center" style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0" }}>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Haqqımızda</h1>
-        <p className="text-sm" style={{ color: "#666" }}>AI + avtomatlaşdırma + satış psixologiyası üzərində qurulmuş müasir turizm platforması</p>
+        <p className="text-sm" style={{ color: "#94a3b8" }}>AI + avtomatlaşdırma + satış psixologiyası üzərində qurulmuş müasir turizm platforması</p>
       </div>
 
       {/* What is Natoure */}
@@ -37,22 +37,22 @@ export default function HaqqimızdaPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Natoure Nədir?</h2>
-            <p className="text-sm leading-relaxed mb-3" style={{ color: "#aaa" }}>
+            <p className="text-sm leading-relaxed mb-3" style={{ color: "#64748b" }}>
               Natoure — müasir yanaşma ilə fəaliyyət göstərən, fərdi və korporativ müştərilər üçün optimallaşdırılmış turizm platformasıdır.
             </p>
-            <p className="text-sm leading-relaxed mb-3" style={{ color: "#aaa" }}>
-              Bizim əsas məqsədimiz standart tur paketləri satmaq yox — müştəriyə uyğun <strong style={{ color: "#fff" }}>fərdi təcrübə</strong> yaratmaqdır.
+            <p className="text-sm leading-relaxed mb-3" style={{ color: "#64748b" }}>
+              Bizim əsas məqsədimiz standart tur paketləri satmaq yox — müştəriyə uyğun <strong style={{  }}>fərdi təcrübə</strong> yaratmaqdır.
             </p>
-            <p className="text-sm leading-relaxed" style={{ color: "#aaa" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "#64748b" }}>
               Natoure, klassik turizm agentliyi deyil — <strong style={{ color: "#D4AF37" }}>AI + avtomatlaşdırma + satış psixologiyası</strong> üzərində qurulmuş sistemdir.
             </p>
           </div>
-          <div className="rounded-2xl p-6 md:p-8" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
+          <div className="rounded-2xl p-6 md:p-8" style={{ background: "white", border: "1px solid #e2e8f0" }}>
             <div className="grid grid-cols-2 gap-6">
               {[{ num: "5", label: "İstiqamət" }, { num: "100%", label: "Fərdi yanaşma" }, { num: "AI", label: "Dəstəkli sistem" }, { num: "24/7", label: "WA Dəstəyi" }].map((s) => (
                 <div key={s.label} className="text-center">
                   <div className="text-2xl md:text-3xl font-bold" style={{ color: "#D4AF37" }}>{s.num}</div>
-                  <div className="text-xs mt-1" style={{ color: "#666" }}>{s.label}</div>
+                  <div className="text-xs mt-1" style={{ color: "#94a3b8" }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -61,18 +61,18 @@ export default function HaqqimızdaPage() {
       </section>
 
       {/* Services */}
-      <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#0d0d0d" }}>
+      <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#f1f5f9" }}>
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">Xidmətlərimiz</h2>
-          <p className="text-sm mb-8" style={{ color: "#666" }}>5 əsas istiqamətdə tam xidmət</p>
+          <p className="text-sm mb-8" style={{ color: "#94a3b8" }}>5 əsas istiqamətdə tam xidmət</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {services.map((s) => (
-              <div key={s.title} className="rounded-xl p-5" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
+              <div key={s.title} className="rounded-xl p-5" style={{ background: "white", border: "1px solid #e2e8f0" }}>
                 <div className="text-3xl mb-3">{s.flag}</div>
                 <h3 className="font-bold text-white text-base mb-3">{s.title}</h3>
                 <ul className="space-y-1.5">
                   {s.items.map((item) => (
-                    <li key={item} className="text-xs flex items-start gap-1.5" style={{ color: "#aaa" }}>
+                    <li key={item} className="text-xs flex items-start gap-1.5" style={{ color: "#64748b" }}>
                       <span style={{ color: "#D4AF37", flexShrink: 0 }}>✓</span> {item}
                     </li>
                   ))}
@@ -84,17 +84,17 @@ export default function HaqqimızdaPage() {
       </section>
 
       {/* USP */}
-      <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#0b0b0b" }}>
+      <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#f8fafc" }}>
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">Digər Şirkətlərdən Fərqimiz</h2>
-          <p className="text-sm mb-8" style={{ color: "#666" }}>Niyə Natoure?</p>
+          <p className="text-sm mb-8" style={{ color: "#94a3b8" }}>Niyə Natoure?</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {usps.map((u) => (
-              <div key={u.title} className="flex gap-4 rounded-xl p-5" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
+              <div key={u.title} className="flex gap-4 rounded-xl p-5" style={{ background: "white", border: "1px solid #e2e8f0" }}>
                 <div className="text-2xl flex-shrink-0">{u.icon}</div>
                 <div>
                   <h3 className="font-bold text-sm mb-1" style={{ color: "#D4AF37" }}>{u.title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: "#666" }}>{u.desc}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: "#94a3b8" }}>{u.desc}</p>
                 </div>
               </div>
             ))}
@@ -103,20 +103,20 @@ export default function HaqqimızdaPage() {
       </section>
 
       {/* Why */}
-      <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#0d0d0d" }}>
+      <section className="px-4 py-12 md:py-16 md:px-12" style={{ background: "#f1f5f9" }}>
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">Niyə Natoure?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-10">
             {whyItems.map((item) => (
-              <div key={item} className="flex items-center gap-3 rounded-xl p-4" style={{ background: "#111", border: "1px solid #1a1a1a" }}>
+              <div key={item} className="flex items-center gap-3 rounded-xl p-4" style={{ background: "white", border: "1px solid #e2e8f0" }}>
                 <span style={{ color: "#D4AF37" }}>✓</span>
-                <span className="text-sm" style={{ color: "#aaa" }}>{item}</span>
+                <span className="text-sm" style={{ color: "#64748b" }}>{item}</span>
               </div>
             ))}
           </div>
           <a href={waLink("Salam, pulsuz məsləhət almaq istəyirəm")} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity text-sm font-bold py-3.5 px-8 rounded-xl"
-            style={{ background: "#25D366", color: "#fff" }}>
+            style={{ background: "#25D366",  }}>
             Pulsuz Məsləhət Al
           </a>
         </div>

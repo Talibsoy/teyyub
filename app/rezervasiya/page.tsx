@@ -148,9 +148,9 @@ function RezervasiyaForm() {
   const totalPrice = tour.price_azn * adults + childPrice * children;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff", paddingBottom: 80 }}>
+    <div style={{ minHeight: "100vh", background: "#f8fafc", paddingBottom: 80 }}>
       {/* Header */}
-      <div style={{ background: "#0d0d0d", borderBottom: "1px solid #1a1a1a", padding: "16px 24px" }}>
+      <div style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0", padding: "16px 24px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", alignItems: "center", gap: 16 }}>
           <button onClick={() => step > 1 ? setStep((step - 1) as 1 | 2 | 3) : router.back()}
             style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 22, padding: 0 }}>←</button>
@@ -162,7 +162,7 @@ function RezervasiyaForm() {
       </div>
 
       {/* Progress bar */}
-      <div style={{ background: "#0d0d0d", borderBottom: "1px solid #1a1a1a", display: "flex", maxWidth: "100%" }}>
+      <div style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0", display: "flex", maxWidth: "100%" }}>
         {[1, 2, 3].map(s => (
           <div key={s} style={{ flex: 1, height: 3, background: s <= step ? "#D4AF37" : "#1a1a1a", transition: "background 0.3s" }} />
         ))}
@@ -252,7 +252,7 @@ function RezervasiyaForm() {
               </div>
             ))}
 
-            <div style={{ ...card, background: "#0d0d0d", marginTop: 8 }}>
+            <div style={{ ...card, background: "#f1f5f9", marginTop: 8 }}>
               <p style={{ color: "#555", fontSize: 12, margin: 0 }}>
                 ⚠️ Pasport məlumatları düzgün daxil edilməlidir. Yanlış məlumat bilet ləğvinə səbəb ola bilər.
               </p>
@@ -314,7 +314,7 @@ function TourCard({ tour, seatsLeft }: { tour: Tour; seatsLeft: number }) {
         {tour.image_url && <img src={tour.image_url} alt={tour.name} style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />}
         <div style={{ flex: 1 }}>
           <p style={{ color: "#D4AF37", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", margin: "0 0 4px" }}>{tour.destination}</p>
-          <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: "0 0 6px" }}>{tour.name}</p>
+          <p style={{  fontSize: 15, fontWeight: 700, margin: "0 0 6px" }}>{tour.name}</p>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {startDate && <span style={{ color: "#777", fontSize: 12 }}>📅 {startDate}{endDate ? ` — ${endDate}` : ""}</span>}
             <span style={{ color: seatsLeft > 5 ? "#4ade80" : "#facc15", fontSize: 12 }}>💺 {seatsLeft} boş yer</span>
@@ -332,7 +332,7 @@ function PassengerRow({ label: lbl, sublabel, price, priceNote, count, min, max,
   return (
     <div style={{ ...card, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <div>
-        <p style={{ color: "#fff", fontSize: 15, fontWeight: 600, margin: 0 }}>{lbl}</p>
+        <p style={{  fontSize: 15, fontWeight: 600, margin: 0 }}>{lbl}</p>
         <p style={{ color: "#555", fontSize: 12, margin: "2px 0 0" }}>{sublabel}</p>
         <p style={{ color: "#D4AF37", fontSize: 13, fontWeight: 700, margin: "4px 0 0" }}>
           {price} ₼{priceNote && <span style={{ color: "#4ade80", fontSize: 11, marginLeft: 6 }}>{priceNote}</span>}
@@ -357,17 +357,17 @@ function PriceSummary({ adults, children, adultPrice, childPrice, total }: {
       <p style={{ color: "#555", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Qiymət</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "#888", fontSize: 13 }}>Böyük × {adults}</span>
-          <span style={{ color: "#fff", fontSize: 13 }}>{adultPrice * adults} ₼</span>
+          <span style={{ color: "#64748b", fontSize: 13 }}>Böyük × {adults}</span>
+          <span style={{  fontSize: 13 }}>{adultPrice * adults} ₼</span>
         </div>
         {children > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#888", fontSize: 13 }}>Uşaq × {children}</span>
-            <span style={{ color: "#fff", fontSize: 13 }}>{childPrice * children} ₼</span>
+            <span style={{ color: "#64748b", fontSize: 13 }}>Uşaq × {children}</span>
+            <span style={{  fontSize: 13 }}>{childPrice * children} ₼</span>
           </div>
         )}
-        <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: 10, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "#fff", fontWeight: 700 }}>Cəmi</span>
+        <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 10, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
+          <span style={{  fontWeight: 700 }}>Cəmi</span>
           <span style={{ color: "#D4AF37", fontSize: 22, fontWeight: 800 }}>{total} ₼</span>
         </div>
       </div>
@@ -389,15 +389,15 @@ function F({ label: lbl, value, onChange, placeholder, type = "text", required =
 }
 
 function Screen({ children }: { children: React.ReactNode }) {
-  return <div style={{ minHeight: "100vh", background: "#0b0b0b", display: "flex", alignItems: "center", justifyContent: "center" }}>{children}</div>;
+  return <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>{children}</div>;
 }
 
 /* ── Styles ── */
-const card: React.CSSProperties = { background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, padding: "16px 18px" };
+const card: React.CSSProperties = { background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" };
 const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, marginBottom: 16 };
-const label: React.CSSProperties = { color: "#888", fontSize: 12, display: "block", marginBottom: 6 };
-const inputStyle: React.CSSProperties = { width: "100%", background: "#111", border: "1px solid #1a1a1a", borderRadius: 10, padding: "11px 14px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" };
-const selectStyle: React.CSSProperties = { background: "#1a1a1a", border: "1px solid #333", borderRadius: 8, color: "#fff", padding: "8px 12px", fontSize: 13 };
+const label: React.CSSProperties = { color: "#64748b", fontSize: 12, display: "block", marginBottom: 6 };
+const inputStyle: React.CSSProperties = { width: "100%", background: "white", border: "1px solid #e2e8f0", borderRadius: 10, padding: "11px 14px", fontSize: 14, outline: "none", boxSizing: "border-box" };
+const selectStyle: React.CSSProperties = { background: "#f8fafc", border: "1px solid #333", borderRadius: 8, padding: "8px 12px", fontSize: 13 };
 const btn = (disabled: boolean): React.CSSProperties => ({
   width: "100%", padding: "15px 0", borderRadius: 12, marginTop: 8,
   background: disabled ? "#333" : "#D4AF37", color: disabled ? "#666" : "#000",
@@ -405,7 +405,7 @@ const btn = (disabled: boolean): React.CSSProperties => ({
 });
 const counterBtn = (disabled: boolean): React.CSSProperties => ({
   width: 36, height: 36, borderRadius: "50%", border: "1px solid #333",
-  background: "#1a1a1a", color: disabled ? "#333" : "#fff", fontSize: 20,
+  background: "#f8fafc", color: disabled ? "#333" : "#fff", fontSize: 20,
   cursor: disabled ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
 });
 
