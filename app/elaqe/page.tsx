@@ -21,15 +21,15 @@ export default function ElaqePage() {
     <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
       {/* Header */}
       <div className="px-4 py-12 md:py-16 text-center" style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0" }}>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Əlaqə</h1>
-        <p className="text-sm" style={{ color: "#94a3b8" }}>Suallarınız üçün bizimlə əlaqə saxlayın. Pulsuz məsləhət veririk.</p>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: "#1e40af" }}>Əlaqə</h1>
+        <p className="text-sm" style={{ color: "#475569" }}>Suallarınız üçün bizimlə əlaqə saxlayın. Pulsuz məsləhət veririk.</p>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-10 md:py-14 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
 
         {/* Contact Info */}
         <div>
-          <h2 className="text-xl font-bold text-white mb-6">Bizimlə Əlaqə</h2>
+          <h2 className="text-xl font-bold mb-6" style={{ color: "#0f172a" }}>Bizimlə Əlaqə</h2>
           <div className="space-y-5">
             {[
               { icon: "📍", title: "Ünvan",         lines: ["Bakı, Azərbaycan"] },
@@ -42,7 +42,7 @@ export default function ElaqePage() {
                   {item.icon}
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-white mb-0.5">{item.title}</div>
+                  <div className="text-xs font-semibold mb-0.5" style={{ color: "#0f172a" }}>{item.title}</div>
                   {item.lines.map((line) => <div key={line} className="text-sm" style={{ color: "#64748b" }}>{line}</div>)}
                 </div>
               </div>
@@ -82,8 +82,8 @@ export default function ElaqePage() {
           {sent ? (
             <div className="text-center py-10">
               <div className="text-5xl mb-4">✅</div>
-              <h3 className="text-lg font-bold text-white mb-2">Müraciətiniz Göndərildi!</h3>
-              <p className="text-sm mb-5" style={{ color: "#94a3b8" }}>24 saat ərzində sizinlə əlaqə saxlayacağıq.</p>
+              <h3 className="text-lg font-bold mb-2" style={{ color: "#0f172a" }}>Müraciətiniz Göndərildi!</h3>
+              <p className="text-sm mb-5" style={{ color: "#475569" }}>24 saat ərzində sizinlə əlaqə saxlayacağıq.</p>
               <button onClick={() => { setSent(false); setForm({ ad: "", telefon: "", email: "", tur: "", mesaj: "" }); }}
                 className="text-sm underline" style={{ color: "#D4AF37" }}>
                 Yeni müraciət göndər
@@ -91,8 +91,8 @@ export default function ElaqePage() {
             </div>
           ) : (
             <>
-              <h2 className="text-lg font-bold text-white mb-1">Rezervasiya / Müraciət</h2>
-              <p className="text-xs mb-5" style={{ color: "#94a3b8" }}>Aşağıdakı formu doldurun, ən qısa zamanda cavab verəcəyik.</p>
+              <h2 className="text-lg font-bold mb-1" style={{ color: "#0f172a" }}>Rezervasiya / Müraciət</h2>
+              <p className="text-xs mb-5" style={{ color: "#475569" }}>Aşağıdakı formu doldurun, ən qısa zamanda cavab verəcəyik.</p>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
