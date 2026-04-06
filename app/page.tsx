@@ -2,22 +2,20 @@
 
 import { useState } from "react";
 import {
-  Sparkles, Globe, Brain, Plane, Star, X, Loader2,
+  Sparkles, Brain, Plane, Star, X, Loader2,
   MapPin, Shield, TrendingUp, Headphones, ChevronRight,
   ArrowRight, Zap,
 } from "lucide-react";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const TAGS = [
-  { label: "Romantik cütlük səyahəti", emoji: "💑" },
-  { label: "Ailə ilə Dubaya uçuş", emoji: "✈️" },
-  { label: "Büdcəyə uyğun Antalya", emoji: "🏖️" },
-  { label: "Baliyə ekzotik tur", emoji: "🌴" },
-  { label: "Parisə mədəniyyət səyahəti", emoji: "🗼" },
-  { label: "Tokio macərası", emoji: "🗾" },
+  "Romantik cütlük səyahəti",
+  "Ailə ilə Dubaya uçuş",
+  "Büdcəyə uyğun Antalya",
+  "Baliyə ekzotik tur",
+  "Parisə mədəniyyət səyahəti",
+  "Tokio macərası",
 ];
-
-const PARTNERS = ["SkyData", "GlobalHotels", "AirConnect", "WorldFare", "TravelHub", "SafeJourney"];
 
 const DESTINATIONS = [
   { name: "Dubai", country: "BƏƏ", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80", large: true },
@@ -80,9 +78,9 @@ function ResultModal({ onClose }: { onClose: () => void }) {
             </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button style={{ flex: 1, padding: 14, borderRadius: 14, border: "none", background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <a href="/turlar" style={{ flex: 1, padding: 14, borderRadius: 14, border: "none", background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
               Paketi İncələ <ArrowRight size={18} />
-            </button>
+            </a>
             <button onClick={onClose} style={{ padding: "14px 20px", borderRadius: 14, border: "1px solid #e2e8f0", background: "white", color: "#64748b", fontWeight: 600, cursor: "pointer" }}>
               Bağla
             </button>
@@ -151,38 +149,23 @@ export default function HomePage() {
           {/* Tags */}
           <div className="fade-in-up" style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 20, animationDelay: "0.4s" }}>
             {TAGS.map(tag => (
-              <button key={tag.label} onClick={() => setPrompt(tag.label)}
+              <button key={tag} onClick={() => setPrompt(tag)}
                 style={{ padding: "8px 16px", borderRadius: 50, border: "1px solid rgba(2,132,199,0.2)", background: "rgba(255,255,255,0.8)", color: "#334155", fontSize: 14, fontWeight: 500, cursor: "pointer", backdropFilter: "blur(10px)", transition: "all 0.2s" }}
                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(2,132,199,0.1)"; e.currentTarget.style.borderColor = "#0284c7"; e.currentTarget.style.color = "#0284c7"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.8)"; e.currentTarget.style.borderColor = "rgba(2,132,199,0.2)"; e.currentTarget.style.color = "#334155"; }}>
-                {tag.emoji} {tag.label}
+                {tag}
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── PARTNERS ── */}
-      <section style={{ padding: "40px 24px", background: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", letterSpacing: 2, textTransform: "uppercase", marginBottom: 24 }}>Etibarlı Tərəfdaşlarımız</p>
-          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "16px 40px" }}>
-            {PARTNERS.map(p => (
-              <span key={p} style={{ fontSize: 18, fontWeight: 700, color: "#cbd5e1", letterSpacing: -0.5, cursor: "default", transition: "color 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#0284c7")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#cbd5e1")}>
-                {p}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── HOW IT WORKS ── */}
       <section id="how" style={{ padding: "100px 24px", background: "#f8fafc" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <p style={{ color: "#0284c7", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Sadə Prosess</p>
+            <p style={{ color: "#1e40af", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Sadə Prosess</p>
             <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, color: "#0f172a" }}>Necə İşləyir?</h2>
           </div>
           <div style={{ display: "flex", gap: 0, flexWrap: "wrap", justifyContent: "center" }}>
@@ -196,7 +179,7 @@ export default function HomePage() {
                   <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg,rgba(2,132,199,0.1),rgba(79,70,229,0.1))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: "#0284c7" }}>{step.icon}</div>
                   <div style={{ position: "absolute", top: 20, left: 20, width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#0284c7,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 13 }}>{i + 1}</div>
                   <h3 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>{step.title}</h3>
-                  <p style={{ color: "#64748b", lineHeight: 1.7, fontSize: 15 }}>{step.desc}</p>
+                  <p style={{ color: "#475569", lineHeight: 1.7, fontSize: 15 }}>{step.desc}</p>
                 </div>
                 {i < arr.length - 1 && <div className="hidden md:flex" style={{ alignItems: "center", padding: "0 8px", color: "#cbd5e1" }}><ChevronRight size={28} /></div>}
               </div>
@@ -209,7 +192,7 @@ export default function HomePage() {
       <section style={{ padding: "100px 24px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <p style={{ color: "#0284c7", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Niyə Natoure?</p>
+            <p style={{ color: "#1e40af", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Niyə Natoure?</p>
             <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, color: "#0f172a" }}>Tam Səyahət Təcrübəsi</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 24 }}>
@@ -239,7 +222,7 @@ export default function HomePage() {
       <section style={{ padding: "100px 24px", background: "#f8fafc" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <p style={{ color: "#0284c7", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Dünya Sizi Gözləyir</p>
+            <p style={{ color: "#1e40af", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Dünya Sizi Gözləyir</p>
             <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, color: "#0f172a" }}>Populyar Məkanlar</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gridTemplateRows: "repeat(2,220px)", gap: 16 }}>
