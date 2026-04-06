@@ -115,8 +115,8 @@ function TurlarContent() {
     <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
       {/* Header */}
       <div className="px-4 py-12 md:py-16 text-center" style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0" }}>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Bütün Turlar</h1>
-        <p className="text-sm" style={{ color: "#94a3b8" }}>Türkiyə, Ərəb ölkələri, Misir və Avropa istiqamətlərindəki bütün tur paketlərimiz</p>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: "#1e40af" }}>Bütün Turlar</h1>
+        <p className="text-sm" style={{ color: "#475569" }}>Türkiyə, Ərəb ölkələri, Misir və Avropa istiqamətlərindəki bütün tur paketlərimiz</p>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
@@ -217,7 +217,7 @@ function TurlarContent() {
                       <WishlistButton tourId={tour.id} />
                     </div>
                     <Link href={`/turlar/${tour.id}`}>
-                      <h3 className="font-bold text-white text-base mb-1 hover:text-yellow-400 transition-colors cursor-pointer">{tour.name}</h3>
+                      <h3 className="font-bold text-base mb-1 hover:text-yellow-400 transition-colors cursor-pointer" style={{ color: "#0f172a" }}>{tour.name}</h3>
                     </Link>
                     {durationLabel && <p className="text-xs mb-2" style={{ color: "#555" }}>⏱ {durationLabel}</p>}
                     {tour.hotel && <p className="text-xs mb-2" style={{ color: "#94a3b8" }}>🏨 {tour.hotel}</p>}
@@ -244,8 +244,8 @@ function TurlarContent() {
 
         {/* CTA */}
         <div className="mt-12 rounded-2xl p-8 md:p-10 text-center" style={{ background: "white", border: "1px solid #e2e8f0" }}>
-          <h3 className="text-xl md:text-2xl font-bold text-white mb-2">İstədiyiniz Turu Tapmadınız?</h3>
-          <p className="text-sm mb-5" style={{ color: "#94a3b8" }}>Fərdi tur paketləri də hazırlayırıq. WhatsApp-da yazın.</p>
+          <h3 className="text-xl md:text-2xl font-bold mb-2" style={{ color: "#0f172a" }}>İstədiyiniz Turu Tapmadınız?</h3>
+          <p className="text-sm mb-5" style={{ color: "#475569" }}>Fərdi tur paketləri də hazırlayırıq. WhatsApp-da yazın.</p>
           <a href={waLink("Salam, fərdi tur paketi haqqında məlumat almaq istəyirəm")}
             target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity text-sm font-bold py-3 px-6 rounded-xl"

@@ -38,10 +38,10 @@ export default function MelumatlarPage() {
           <p style={{ color: "#D4AF37", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>
             Səyahət Dünyası
           </p>
-          <h1 style={{  fontSize: 32, fontWeight: 800, margin: 0 }}>
-            Turizm Məlumatları ✈️
+          <h1 style={{ color: "#1e40af", fontSize: 32, fontWeight: 800, margin: 0 }}>
+            Turizm Məlumatları
           </h1>
-          <p style={{ color: "#94a3b8", fontSize: 14, marginTop: 8 }}>
+          <p style={{ color: "#475569", fontSize: 14, marginTop: 8 }}>
             Hər gün yeni ölkə, yeni kəşf — Natoure ekspertlərindən
           </p>
         </div>
@@ -78,7 +78,7 @@ export default function MelumatlarPage() {
                 <span style={{ color: "#D4AF37", fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
                   {selected.country}
                 </span>
-                <h2 style={{  fontSize: 22, fontWeight: 700, margin: "8px 0 20px" }}>
+                <h2 style={{ color: "#0f172a", fontSize: 22, fontWeight: 700, margin: "8px 0 20px" }}>
                   {selected.title}
                 </h2>
                 <div style={{ color: "#64748b", fontSize: 14, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
@@ -130,9 +130,9 @@ export default function MelumatlarPage() {
                 )}
                 <div style={{ padding: "16px 18px" }}>
                   <span style={{ color: "#D4AF37", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
-                    {p.emoji} {p.country}
+                    {p.country}
                   </span>
-                  <h3 style={{  fontSize: 15, fontWeight: 600, margin: "6px 0 10px", lineHeight: 1.4 }}>
+                  <h3 style={{ color: "#0f172a", fontSize: 15, fontWeight: 600, margin: "6px 0 10px", lineHeight: 1.4 }}>
                     {p.title}
                   </h3>
                   <p style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6, margin: 0 }}>
