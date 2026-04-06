@@ -1,23 +1,22 @@
-const PROXY_URL = process.env.RATEHAWK_PROXY_URL;
-const PROXY_SECRET = process.env.RATEHAWK_PROXY_SECRET;
 const API_KEY = process.env.RATEHAWK_API_KEY;
 const API_SECRET = process.env.RATEHAWK_API_SECRET;
+const RATEHAWK_BASE = "https://api-sandbox.worldota.net";
 
 async function ratehawkRequest(path: string, body: object) {
-  if (!PROXY_URL || !API_KEY || !API_SECRET) {
-    throw new Error("RateHawk env vars tapılmadı");
+  if (!API_KEY || !API_SECRET) {
+    throw new Error("RATEHAWK_API_KEY və ya RATEHAWK_API_SECRET tapılmadı");
   }
 
   const credentials = Buffer.from(`${API_KEY}:${API_SECRET}`).toString("base64");
 
-  const res = await fetch(`${PROXY_URL}/ratehawk${path}`, {
+  const res = await fetch(`${RATEHAWK_BASE}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Basic ${credentials}`,
-      ...(PROXY_SECRET && { "x-proxy-secret": PROXY_SECRET }),
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!res.ok) {
