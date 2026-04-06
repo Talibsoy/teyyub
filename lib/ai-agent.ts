@@ -210,7 +210,8 @@ Tarix məlum deyilsə əvvəl müştəridən soruş, sonra axtarış et.`,
           type: "string",
           description: "Təyinat aeroportunun IATA kodu: IST(Istanbul), DXB(Dubai), AYT(Antalya), CDG(Paris), LHR(London), DOH(Doha), CAI(Qahirə), SSH(Şarm), HRG(Hurgada), MLE(Maldiv), BKK(Bangkok), DPS(Bali), NRT(Tokyo), FCO(Roma), BCN(Barselona), BER(Berlin), AMS(Amsterdam), TBS(Tbilisi), SVO(Moskva), AUH(Abu Dhabi), GYD(Bakı), GNJ(Gəncə)"
         },
-        date: { type: "string", description: "YYYY-MM-DD formatı" },
+        date: { type: "string", description: "Gedişin tarixi YYYY-MM-DD formatı" },
+        return_date: { type: "string", description: "Dönüşün tarixi YYYY-MM-DD. Varsa gediş-dönüş combo qiymeti qaytarılır." },
         passengers: { type: "number", description: "Sərnişin sayı (default: 1)" }
       },
       required: ["destination", "date"]
@@ -310,6 +311,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
           origin: (input.origin as string) || "GYD",
           destination: input.destination as string,
           date: input.date as string,
+          return_date: input.return_date as string | undefined,
           passengers: (input.passengers as number) || 1,
         });
         return offers.length > 0

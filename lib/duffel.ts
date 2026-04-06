@@ -69,16 +69,18 @@ export interface FlightOffer {
   arrival_time: string;
   duration_minutes: number;
   stops: number;
-  cabin_baggage: number;    // daxil olan əl bagajı (ədəd)
-  checked_baggage: number;  // daxil olan yük bagajı (ədəd)
-  extra_bag_kg: number;     // əlavə satılan bagaj (kq), 0 = yoxdur
-  extra_bag_azn: number;    // əlavə bagaj qiyməti (AZN)
+  cabin_baggage: number;
+  checked_baggage: number;
+  extra_bag_kg: number;
+  extra_bag_azn: number;
+  is_round_trip: boolean;
 }
 
 export interface SearchParams {
   origin: string;
   destination: string;
   date: string;
+  return_date?: string; // varsa → gediş-dönüş
   passengers?: number;
 }
 
@@ -127,11 +129,18 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
     headers: headers(),
     body: JSON.stringify({
       data: {
-        slices: [{
-          origin: params.origin,
-          destination: params.destination,
-          departure_date: params.date,
-        }],
+        slices: [
+          {
+            origin: params.origin,
+            destination: params.destination,
+            departure_date: params.date,
+          },
+          ...(params.return_date ? [{
+            origin: params.destination,
+            destination: params.origin,
+            departure_date: params.return_date,
+          }] : []),
+        ],
         passengers: Array.from({ length: passengerCount }, () => ({ type: "adult" })),
         cabin_class: "economy",
       },
@@ -216,6 +225,7 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
       checked_baggage: checkedBag,
       extra_bag_kg: extraKg,
       extra_bag_azn: extraAzn,
+      is_round_trip: !!params.return_date,
     };
   });
 }
@@ -277,6 +287,7 @@ export function formatOffersForAI(offers: FlightOffer[]): string {
       ? `${Math.floor(o.duration_minutes / 60)}s ${o.duration_minutes % 60}d`
       : "";
     const stops = o.stops === 0 ? "Birbaşa" : `${o.stops} dayanacaq`;
+    const tripType = o.is_round_trip ? "Gediş-dönüş" : "Birtərəfli";
 
     const includedBag = [
       o.cabin_baggage > 0 ? `${o.cabin_baggage} əl bagajı` : null,
@@ -287,6 +298,6 @@ export function formatOffersForAI(offers: FlightOffer[]): string {
       ? `əlavə ${o.extra_bag_kg}kq: +${o.extra_bag_azn}₼`
       : "əlavə bagaj yoxdur";
 
-    return `${i + 1}. ${o.airline} — ${o.price_azn} ₼ (~$${o.price_usd}) | ${dep}–${arr} | ${dur} | ${stops} | Daxil: ${includedBag} | ${extraBag} | ID: ${o.offer_id}`;
+    return `${i + 1}. ${o.airline} [${tripType}] — ${o.price_azn} ₼ (~$${o.price_usd}) | ${dep}–${arr} | ${dur} | ${stops} | Daxil: ${includedBag} | ${extraBag} | ID: ${o.offer_id}`;
   }).join("\n");
 }
