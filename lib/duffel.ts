@@ -2,16 +2,51 @@ const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || "";
 const DUFFEL_BASE = "https://api.duffel.com";
 const COMMISSION = 1.15; // 15%
 
-// Valyutadan AZN-ə çevirmə cədvəli (təxmini sabit kurs)
-const TO_AZN: Record<string, number> = {
-  USD: 1.70,
-  EUR: 1.87,
-  GBP: 2.16,
-  AED: 0.463,
-  TRY: 0.052,
-  RUB: 0.019,
-  GEL: 0.62,
+// Ehtiyat kurslar (CBAR cavab verməsə istifadə olunur)
+const FALLBACK_AZN: Record<string, number> = {
+  USD: 1.70, EUR: 1.87, GBP: 2.16, AED: 0.463,
+  TRY: 0.052, RUB: 0.019, GEL: 0.62,
 };
+
+// In-memory cache — 1 saat etibarlıdır
+let rateCache: { rates: Record<string, number>; fetchedAt: number } | null = null;
+
+async function getAznRates(): Promise<Record<string, number>> {
+  const ONE_HOUR = 60 * 60 * 1000;
+  if (rateCache && Date.now() - rateCache.fetchedAt < ONE_HOUR) {
+    return rateCache.rates;
+  }
+
+  try {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, "0");
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const yyyy = today.getFullYear();
+    const url = `https://www.cbar.az/currencies/${dd}.${mm}.${yyyy}.xml`;
+
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error("CBAR cavab vermədi");
+
+    const xml = await res.text();
+    const rates: Record<string, number> = {};
+
+    // <Valute Code="GBP">...<Value>2.2500</Value>
+    const matches = xml.matchAll(/<Valute Code="([A-Z]+)"[^>]*>[\s\S]*?<Value>([\d.]+)<\/Value>/g);
+    for (const m of matches) {
+      rates[m[1]] = parseFloat(m[2]);
+    }
+
+    if (Object.keys(rates).length > 0) {
+      rateCache = { rates, fetchedAt: Date.now() };
+      console.log(`[CBAR] Məzənnələr yeniləndi: GBP=${rates.GBP} USD=${rates.USD} EUR=${rates.EUR}`);
+      return rates;
+    }
+  } catch (e) {
+    console.warn("[CBAR] Məzənnə alınmadı, ehtiyat kurslar istifadə olunur:", e);
+  }
+
+  return FALLBACK_AZN;
+}
 
 const headers = () => ({
   Authorization: `Bearer ${DUFFEL_API_KEY}`,
@@ -20,8 +55,8 @@ const headers = () => ({
   Accept: "application/json",
 });
 
-function toAzn(amount: number, currency: string): number {
-  const rate = TO_AZN[currency] ?? TO_AZN["USD"];
+function toAzn(amount: number, currency: string, rates: Record<string, number>): number {
+  const rate = rates[currency] ?? rates["USD"] ?? FALLBACK_AZN["USD"];
   return Math.ceil(amount * rate);
 }
 
@@ -49,7 +84,8 @@ export interface SearchParams {
 
 // Bir offer üçün available_services-dən ən ucuz bagaj xidmətini çək
 async function fetchBaggageService(
-  offerId: string
+  offerId: string,
+  rates: Record<string, number>
 ): Promise<{ kg: number; azn: number }> {
   try {
     const res = await fetch(
@@ -61,7 +97,6 @@ async function fetchBaggageService(
     const data = await res.json();
     const services: Record<string, unknown>[] = data?.data ?? [];
 
-    // Yalnız baggage tipini filtr et, ən ucuzunu tap
     const baggageServices = services.filter(s => s.type === "baggage");
     if (!baggageServices.length) return { kg: 0, azn: 0 };
 
@@ -74,7 +109,7 @@ async function fetchBaggageService(
     const kg = (cheapest.maximum_weight_kg as number) || 0;
     const amount = parseFloat(cheapest.total_amount as string) || 0;
     const currency = (cheapest.total_currency as string) || "USD";
-    const azn = toAzn(amount * COMMISSION, currency);
+    const azn = toAzn(amount * COMMISSION, currency, rates);
 
     return { kg, azn };
   } catch {
@@ -112,6 +147,9 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   const data = await res.json();
   const offers = data?.data?.offers || [];
 
+  // CBAR-dan real valyuta kurslarını al
+  const aznRates = await getAznRates();
+
   // Ucuz 3-ü seç
   const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
     parseFloat(a.total_amount as string) - parseFloat(b.total_amount as string)
@@ -121,7 +159,7 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   // Hər offer üçün available_services-i parallel çək
   const baggageMap = await Promise.all(
     top3.map((o: Record<string, unknown>) =>
-      fetchBaggageService(o.id as string)
+      fetchBaggageService(o.id as string, aznRates)
     )
   );
 
@@ -135,8 +173,8 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
 
     const rawPrice = parseFloat(offer.total_amount as string) || 0;
     const currency = (offer.total_currency as string) || "USD";
-    const priceAzn = toAzn(rawPrice * COMMISSION, currency);
-    const priceWithComm = Math.ceil(priceAzn / TO_AZN["USD"]);
+    const priceAzn = toAzn(rawPrice * COMMISSION, currency, aznRates);
+    const priceWithComm = Math.ceil(priceAzn / (aznRates["USD"] ?? 1.70));
 
     const depTime = (firstSeg.departing_at as string) || "";
     const arrTime = (lastSeg.arriving_at as string) || "";
@@ -157,7 +195,7 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
 
     const { kg: extraKg, azn: extraAzn } = baggageMap[idx];
 
-    console.log(`[PRICE] ${carrier.name} | raw=${rawPrice} ${currency} | ×${TO_AZN[currency] ?? 1.70}(AZN rate) ×${COMMISSION}(comm) = ${priceAzn} AZN`);
+    console.log(`[PRICE] ${carrier.name} | raw=${rawPrice} ${currency} | ×${aznRates[currency] ?? 1.70}(AZN rate) ×${COMMISSION}(comm) = ${priceAzn} AZN`);
 
     return {
       offer_id: offer.id as string,
