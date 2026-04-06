@@ -58,6 +58,20 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   const data = await res.json();
   const offers = data?.data?.offers || [];
 
+  // DEBUG LOG — qiymət analizini görmək üçün
+  if (offers.length > 0) {
+    const sample = offers[0];
+    console.log("[DUFFEL DEBUG] İlk offer:", JSON.stringify({
+      id: sample.id,
+      total_amount: sample.total_amount,
+      total_currency: sample.total_currency,
+      base_amount: sample.base_amount,
+      base_currency: sample.base_currency,
+      tax_amount: sample.tax_amount,
+    }, null, 2));
+    console.log(`[DUFFEL DEBUG] Komissiya hesabı: rawPrice=${parseFloat(sample.total_amount)} × 1.15 = ${Math.ceil(parseFloat(sample.total_amount) * 1.15)} USD → × 1.70 = ${Math.ceil(parseFloat(sample.total_amount) * 1.15 * 1.70)} AZN`);
+  }
+
   // Ucuz 3-ü seç
   const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
     parseFloat(a.total_amount as string) - parseFloat(b.total_amount as string)
