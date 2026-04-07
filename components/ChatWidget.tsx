@@ -2,15 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { io, Socket } from "socket.io-client";
 
 interface Msg {
-  from: "user" | "admin";
+  from: "user" | "ai";
   text: string;
-  time: number;
 }
-
-const SERVER_URL = process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000";
 
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
@@ -24,54 +20,21 @@ function getSessionId(): string {
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
-  const [userName, setUserName] = useState("");
-  const [nameAsked, setNameAsked] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [unread, setUnread] = useState(0);
-  const socketRef = useRef<Socket | null>(null);
+  const [welcomed, setWelcomed] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const socket = io(SERVER_URL, {
-      query: {
-        sessionId: getSessionId(),
-        userName: localStorage.getItem("natoure_chat_name") || "Ziyarətçi",
-      },
-      autoConnect: false,
-    });
-    socketRef.current = socket;
-
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
-
-    socket.on("admin_message", (msg: Msg) => {
-      setMessages((prev) => [...prev, msg]);
-      if (!open) setUnread((u) => u + 1);
-    });
-
-    socket.on("message_received", (msg: Msg) => {
-      setMessages((prev) => {
-        // optimistic əvəzini real ilə dəyiş
-        const updated = [...prev];
-        const idx = updated.findLastIndex((m) => m.from === "user" && m.time === msg.time);
-        if (idx === -1) updated.push(msg);
-        return updated;
-      });
-    });
-
-    return () => { socket.disconnect(); };
-  }, []);
 
   useEffect(() => {
     if (open) {
       setUnread(0);
-      socketRef.current?.connect();
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-      if (!nameAsked && !localStorage.getItem("natoure_chat_name")) {
-        setNameAsked(true);
+      if (!welcomed) {
+        setMessages([{ from: "ai", text: "Salam! Mən Nigar xanımam, Natoure-nin turizm məsləhətçisi. Sizə necə kömək edə bilərəm?" }]);
+        setWelcomed(true);
       }
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   }, [open]);
 
@@ -79,26 +42,30 @@ export default function ChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function sendMessage() {
+  async function sendMessage() {
     const text = input.trim();
-    if (!text || !socketRef.current) return;
-    const msg: Msg = { from: "user", text, time: Date.now() };
-    setMessages((prev) => [...prev, msg]);
-    socketRef.current.emit("user_message", text);
-    setInput("");
-  }
+    if (!text || loading) return;
 
-  function submitName() {
-    const name = userName.trim() || "Ziyarətçi";
-    localStorage.setItem("natoure_chat_name", name);
-    setNameAsked(false);
-    const socket = socketRef.current;
-    if (!socket) return;
-    socket.disconnect();
-    const q = socket.io.opts.query as Record<string, string>;
-    q.userName = name;
-    socket.connect();
-    setMessages([{ from: "admin", text: `Salam, ${name}! Natoure-yə xoş gəldiniz. Sizə necə kömək edə bilərik?`, time: Date.now() }]);
+    const userMsg: Msg = { from: "user", text };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: getSessionId(), message: text }),
+      });
+      const data = await res.json();
+      const aiMsg: Msg = { from: "ai", text: data.reply };
+      setMessages((prev) => [...prev, aiMsg]);
+      if (!open) setUnread((u) => u + 1);
+    } catch {
+      setMessages((prev) => [...prev, { from: "ai", text: "Bağlantı xətası. Bir az sonra yenidən cəhd edin." }]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -127,7 +94,8 @@ export default function ChatWidget() {
         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.08)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
-        <Image src="/logo.png" alt="Natoure" width={34} height={34} style={{ borderRadius: "50%", objectFit: "cover" }} />
+        <Image src="/logo.png" alt="Natoure" width={34} height={34}
+          style={{ borderRadius: "50%", objectFit: "cover" }} />
         {unread > 0 && (
           <span style={{
             position: "absolute", top: 0, right: 0,
@@ -174,15 +142,13 @@ export default function ChatWidget() {
               <span style={{
                 position: "absolute", bottom: 1, right: 1,
                 width: 9, height: 9, borderRadius: "50%",
-                background: connected ? "#22c55e" : "#94a3b8",
+                background: "#22c55e",
                 border: "2px solid #1e40af",
               }} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Natoure Dəstək</div>
-              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>
-                {connected ? "Onlayn" : "Qoşulur..."}
-              </div>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Nigar xanım</div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>Natoure turizm məsləhətçisi</div>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -192,105 +158,89 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          {/* Ad xahişi */}
-          {nameAsked ? (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
-              <Image src="/logo.png" alt="Natoure" width={56} height={56} style={{ borderRadius: "50%" }} />
-              <p style={{ color: "#0f172a", fontWeight: 600, fontSize: 15, textAlign: "center", margin: 0 }}>
-                Natoure-yə xoş gəldiniz!
-              </p>
-              <p style={{ color: "#64748b", fontSize: 13, textAlign: "center", margin: 0 }}>
-                Adınızı bildirin ki, sizə uyğun kömək edə bilək.
-              </p>
-              <input
-                value={userName}
-                onChange={e => setUserName(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && submitName()}
-                placeholder="Adınız..."
-                autoFocus
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: 10,
-                  border: "1px solid #e2e8f0", fontSize: 14,
-                  outline: "none", color: "#0f172a",
-                }}
-              />
-              <button
-                onClick={submitName}
-                style={{
-                  width: "100%", padding: "11px 0", borderRadius: 10,
-                  background: "linear-gradient(135deg, #1e40af, #0284c7)",
-                  color: "#fff", fontWeight: 700, fontSize: 14,
-                  border: "none", cursor: "pointer",
-                }}
-              >
-                Söhbəti Başlat
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Mesajlar */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
-                {messages.length === 0 && (
-                  <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 13, marginTop: 40 }}>
-                    Salam! Sizə necə kömək edə bilərik?
-                  </div>
+          {/* Mesajlar */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+            {messages.map((m, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: m.from === "user" ? "row-reverse" : "row", alignItems: "flex-end", gap: 6 }}>
+                {m.from === "ai" && (
+                  <Image src="/logo.png" alt="N" width={24} height={24}
+                    style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
                 )}
-                {messages.map((m, i) => (
-                  <div key={i} style={{ display: "flex", flexDirection: m.from === "user" ? "row-reverse" : "row", alignItems: "flex-end", gap: 6 }}>
-                    {m.from === "admin" && (
-                      <Image src="/logo.png" alt="N" width={24} height={24}
-                        style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-                    )}
-                    <div style={{
-                      maxWidth: "75%",
-                      padding: "8px 12px",
-                      borderRadius: m.from === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                      background: m.from === "user" ? "linear-gradient(135deg, #1e40af, #0284c7)" : "#f1f5f9",
-                      color: m.from === "user" ? "#fff" : "#0f172a",
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                    }}>
-                      {m.text}
-                    </div>
-                  </div>
-                ))}
-                <div ref={bottomRef} />
+                <div style={{
+                  maxWidth: "78%",
+                  padding: "9px 13px",
+                  borderRadius: m.from === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                  background: m.from === "user" ? "linear-gradient(135deg, #1e40af, #0284c7)" : "#f1f5f9",
+                  color: m.from === "user" ? "#fff" : "#0f172a",
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  whiteSpace: "pre-wrap",
+                }}>
+                  {m.text}
+                </div>
               </div>
+            ))}
+            {loading && (
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+                <Image src="/logo.png" alt="N" width={24} height={24}
+                  style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                <div style={{ background: "#f1f5f9", borderRadius: "16px 16px 16px 4px", padding: "10px 14px" }}>
+                  <span style={{ display: "flex", gap: 4 }}>
+                    {[0, 1, 2].map(i => (
+                      <span key={i} style={{
+                        width: 6, height: 6, borderRadius: "50%", background: "#94a3b8",
+                        animation: `bounce 1.2s ${i * 0.2}s infinite`,
+                      }} />
+                    ))}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
 
-              {/* Input */}
-              <div style={{ padding: "10px 12px", borderTop: "1px solid #e2e8f0", display: "flex", gap: 8, flexShrink: 0 }}>
-                <input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendMessage()}
-                  placeholder="Mesajınızı yazın..."
-                  style={{
-                    flex: 1, padding: "9px 12px", borderRadius: 10,
-                    border: "1px solid #e2e8f0", fontSize: 13,
-                    outline: "none", color: "#0f172a",
-                  }}
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!input.trim()}
-                  style={{
-                    width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                    background: input.trim() ? "linear-gradient(135deg, #1e40af, #0284c7)" : "#e2e8f0",
-                    border: "none", cursor: input.trim() ? "pointer" : "default",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "background 0.2s",
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={input.trim() ? "#fff" : "#94a3b8"} strokeWidth={2.5}>
-                    <path d="m22 2-7 20-4-9-9-4 20-7z"/>
-                    <path d="M22 2 11 13"/>
-                  </svg>
-                </button>
-              </div>
-            </>
-          )}
+          {/* Input */}
+          <div style={{ padding: "10px 12px", borderTop: "1px solid #e2e8f0", display: "flex", gap: 8, flexShrink: 0 }}>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              placeholder="Mesajınızı yazın..."
+              disabled={loading}
+              style={{
+                flex: 1, padding: "9px 12px", borderRadius: 10,
+                border: "1px solid #e2e8f0", fontSize: 13,
+                outline: "none", color: "#0f172a",
+                background: loading ? "#f8fafc" : "#fff",
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+              style={{
+                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                background: input.trim() && !loading ? "linear-gradient(135deg, #1e40af, #0284c7)" : "#e2e8f0",
+                border: "none", cursor: input.trim() && !loading ? "pointer" : "default",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 0.2s",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke={input.trim() && !loading ? "#fff" : "#94a3b8"} strokeWidth={2.5}>
+                <path d="m22 2-7 20-4-9-9-4 20-7z"/>
+                <path d="M22 2 11 13"/>
+              </svg>
+            </button>
+          </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes bounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-4px); }
+        }
+      `}</style>
     </>
   );
 }
