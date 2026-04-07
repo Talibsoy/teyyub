@@ -6,6 +6,12 @@ import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory, saveConvMeta, getConvMeta, markSummarySent } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { Redis } from "@upstash/redis";
+
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+    : null;
 
 const PAGE_TOKEN = process.env.FB_PAGE_TOKEN!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
@@ -36,6 +42,14 @@ export async function POST(req: NextRequest) {
         // Instagram mesajları entry.messaging-də gəlir
         for (const event of entry.messaging || []) {
           if (event.message?.is_echo) continue;
+
+          // Deduplication — webhook retry loop qarşısı (mid = mesaj ID)
+          const mid: string | undefined = event.message?.mid;
+          if (mid && redis) {
+            const seen = await redis.get(`fb_seen:${mid}`);
+            if (seen) continue;
+            await redis.set(`fb_seen:${mid}`, 1, { ex: 300 });
+          }
 
           // Facebook Səhifəsinin öz ID-si ilə gələn mesajları atla
           const isFBPage = event.sender?.id === process.env.FB_PAGE_ID;
