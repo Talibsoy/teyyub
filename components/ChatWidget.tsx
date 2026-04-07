@@ -2,11 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { io, Socket } from "socket.io-client";
 
 interface Msg {
-  from: "user" | "ai";
+  from: "user" | "ai" | "admin";
   text: string;
+  time?: number;
 }
+
+const SERVER_URL = process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000";
 
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
@@ -19,19 +23,57 @@ function getSessionId(): string {
 }
 
 export default function ChatWidget() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]         = useState(false);
+  const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [unread, setUnread] = useState(0);
+  const [input, setInput]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [unread, setUnread]     = useState(0);
   const [welcomed, setWelcomed] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const socket = io(SERVER_URL, {
+      query: { sessionId: getSessionId(), userName: "Ziyarətçi" },
+      autoConnect: false,
+    });
+    socketRef.current = socket;
+
+    socket.on("connect",    () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
+
+    // AI cavabı gəldi
+    socket.on("ai_message", (msg: Msg) => {
+      setMessages((prev) => [...prev, { ...msg, from: msg.from === "admin" ? "admin" : "ai" }]);
+      setLoading(false);
+      if (!open) setUnread((u) => u + 1);
+    });
+
+    // Admin söhbətə qoşuldu bildirişi
+    socket.on("admin_joined", ({ text }: { text: string }) => {
+      setMessages((prev) => [...prev, { from: "ai", text, time: Date.now() }]);
+      setLoading(false);
+    });
+
+    // Mesaj göndərildi təsdiqi
+    socket.on("user_message_ack", () => {
+      // loading davam edir — AI cavabını gözləyirik
+    });
+
+    return () => { socket.disconnect(); };
+  }, []);
 
   useEffect(() => {
     if (open) {
       setUnread(0);
+      socketRef.current?.connect();
       if (!welcomed) {
-        setMessages([{ from: "ai", text: "Salam! Mən Nigar xanımam, Natoure-nin turizm məsləhətçisi. Sizə necə kömək edə bilərəm?" }]);
+        setMessages([{
+          from: "ai",
+          text: "Salam! Mən Nigar xanımam, Natoure-nin turizm məsləhətçisi. Sizə necə kömək edə bilərəm?",
+          time: Date.now(),
+        }]);
         setWelcomed(true);
       }
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -40,32 +82,16 @@ export default function ChatWidget() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]);
 
-  async function sendMessage() {
+  function sendMessage() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || !socketRef.current) return;
 
-    const userMsg: Msg = { from: "user", text };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { from: "user", text, time: Date.now() }]);
     setInput("");
     setLoading(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: getSessionId(), message: text }),
-      });
-      const data = await res.json();
-      const aiMsg: Msg = { from: "ai", text: data.reply };
-      setMessages((prev) => [...prev, aiMsg]);
-      if (!open) setUnread((u) => u + 1);
-    } catch {
-      setMessages((prev) => [...prev, { from: "ai", text: "Bağlantı xətası. Bir az sonra yenidən cəhd edin." }]);
-    } finally {
-      setLoading(false);
-    }
+    socketRef.current.emit("user_message", text);
   }
 
   return (
@@ -75,20 +101,12 @@ export default function ChatWidget() {
         onClick={() => setOpen((o) => !o)}
         aria-label="Canlı dəstək"
         style={{
-          position: "fixed",
-          bottom: 24,
-          right: 24,
-          zIndex: 9999,
-          width: 60,
-          height: 60,
-          borderRadius: "50%",
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          width: 60, height: 60, borderRadius: "50%",
           background: "linear-gradient(135deg, #1e40af 0%, #0284c7 100%)",
-          border: "none",
-          cursor: "pointer",
+          border: "none", cursor: "pointer",
           boxShadow: "0 4px 20px rgba(30,64,175,0.45)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: "flex", alignItems: "center", justifyContent: "center",
           transition: "transform 0.2s",
         }}
         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.08)")}
@@ -99,9 +117,9 @@ export default function ChatWidget() {
         {unread > 0 && (
           <span style={{
             position: "absolute", top: 0, right: 0,
-            background: "#ef4444", color: "#fff",
-            fontSize: 11, fontWeight: 700, borderRadius: "50%",
-            width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 700,
+            borderRadius: "50%", width: 18, height: 18,
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {unread}
           </span>
@@ -111,30 +129,19 @@ export default function ChatWidget() {
       {/* Chat pəncərəsi */}
       {open && (
         <div style={{
-          position: "fixed",
-          bottom: 96,
-          right: 24,
-          zIndex: 9998,
-          width: 340,
-          maxWidth: "calc(100vw - 32px)",
-          height: 480,
-          maxHeight: "calc(100vh - 120px)",
-          background: "#fff",
-          borderRadius: 20,
+          position: "fixed", bottom: 96, right: 24, zIndex: 9998,
+          width: 340, maxWidth: "calc(100vw - 32px)",
+          height: 480, maxHeight: "calc(100vh - 120px)",
+          background: "#fff", borderRadius: 20,
           boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          border: "1px solid #e2e8f0",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden", border: "1px solid #e2e8f0",
         }}>
           {/* Header */}
           <div style={{
             background: "linear-gradient(135deg, #1e40af 0%, #0284c7 100%)",
             padding: "14px 16px",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            flexShrink: 0,
+            display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
           }}>
             <div style={{ position: "relative" }}>
               <Image src="/logo.png" alt="Natoure" width={36} height={36}
@@ -142,18 +149,18 @@ export default function ChatWidget() {
               <span style={{
                 position: "absolute", bottom: 1, right: 1,
                 width: 9, height: 9, borderRadius: "50%",
-                background: "#22c55e",
+                background: connected ? "#22c55e" : "#f59e0b",
                 border: "2px solid #1e40af",
               }} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Nigar xanım</div>
-              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>Natoure turizm məsləhətçisi</div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>
+                {connected ? "Onlayn • Natoure məsləhətçisi" : "Qoşulur..."}
+              </div>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}
-            >
+            <button onClick={() => setOpen(false)}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>
               ×
             </button>
           </div>
@@ -161,25 +168,30 @@ export default function ChatWidget() {
           {/* Mesajlar */}
           <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
             {messages.map((m, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: m.from === "user" ? "row-reverse" : "row", alignItems: "flex-end", gap: 6 }}>
-                {m.from === "ai" && (
+              <div key={i} style={{
+                display: "flex",
+                flexDirection: m.from === "user" ? "row-reverse" : "row",
+                alignItems: "flex-end", gap: 6,
+              }}>
+                {m.from !== "user" && (
                   <Image src="/logo.png" alt="N" width={24} height={24}
                     style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
                 )}
                 <div style={{
-                  maxWidth: "78%",
-                  padding: "9px 13px",
+                  maxWidth: "78%", padding: "9px 13px",
                   borderRadius: m.from === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                  background: m.from === "user" ? "linear-gradient(135deg, #1e40af, #0284c7)" : "#f1f5f9",
+                  background: m.from === "user"
+                    ? "linear-gradient(135deg, #1e40af, #0284c7)"
+                    : m.from === "admin" ? "#f0fdf4" : "#f1f5f9",
                   color: m.from === "user" ? "#fff" : "#0f172a",
-                  fontSize: 13,
-                  lineHeight: 1.55,
-                  whiteSpace: "pre-wrap",
+                  fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap",
+                  border: m.from === "admin" ? "1px solid #bbf7d0" : "none",
                 }}>
                   {m.text}
                 </div>
               </div>
             ))}
+
             {loading && (
               <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
                 <Image src="/logo.png" alt="N" width={24} height={24}
@@ -189,6 +201,7 @@ export default function ChatWidget() {
                     {[0, 1, 2].map(i => (
                       <span key={i} style={{
                         width: 6, height: 6, borderRadius: "50%", background: "#94a3b8",
+                        display: "inline-block",
                         animation: `bounce 1.2s ${i * 0.2}s infinite`,
                       }} />
                     ))}
@@ -238,7 +251,7 @@ export default function ChatWidget() {
       <style>{`
         @keyframes bounce {
           0%, 60%, 100% { transform: translateY(0); }
-          30% { transform: translateY(-4px); }
+          30% { transform: translateY(-5px); }
         }
       `}</style>
     </>
