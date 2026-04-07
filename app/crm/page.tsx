@@ -110,8 +110,8 @@ export default function DashboardPage() {
       const hData = await hRes.json();
       const examplesRes = await supabase.from("ai_examples").select("id", { count: "exact", head: true });
       setHealth({
-        supabase: hData.services?.supabase === "ok",
-        redis: hData.services?.redis === "ok",
+        supabase: hData.supabase === "connected",
+        redis: hData.redis === "connected",
         ai_examples: examplesRes.count || 0,
       });
     } catch {
