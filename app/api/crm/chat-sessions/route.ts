@@ -8,33 +8,32 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
 export async function GET() {
   if (!redis) return NextResponse.json([]);
 
-  // Son 24 saatda aktiv olan chat sesssiyaları
-  const keys: string[] = [];
-  let cursor = 0;
-  do {
-    const [next, batch] = await (redis as Redis).scan(cursor, { match: "chat:*", count: 100 });
-    cursor = Number(next);
-    keys.push(...(batch as string[]));
-  } while (cursor !== 0);
+  // Son 50 aktiv sessiya — ən yeni əvvəldə
+  const members = await redis.zrange("active_chat_sessions", 0, 49, { rev: true });
+  if (!members || members.length === 0) return NextResponse.json([]);
 
   const sessions = await Promise.all(
-    keys.map(async (key) => {
-      const history = await redis!.get<{ role: string; content: string }[]>(key);
-      if (!history || history.length === 0) return null;
-      const sessionId = key.replace("chat:", "");
-      const lastMsg = history[history.length - 1];
-      const userMsgs = history.filter(m => m.role === "user");
+    (members as string[]).map(async (sessionId) => {
+      const history = await redis!.get<{ role: string; content: string }[]>(`chat:${sessionId}`);
+      const meta    = await redis!.hgetall(`chat_meta:${sessionId}`);
       const adminActive = await redis!.exists(`admin_active:${sessionId}`);
+
+      if (!history || history.length === 0) return null;
+
+      const userMsgs = history.filter(m => m.role === "user");
+      const lastMsg  = history[history.length - 1];
+
       return {
         sessionId,
-        lastMessage: lastMsg.content.slice(0, 80),
+        lastMessage: String(meta?.lastMessage || lastMsg.content).slice(0, 80),
         lastRole: lastMsg.role,
         messageCount: history.length,
         userMessageCount: userMsgs.length,
         adminActive: adminActive === 1,
+        updatedAt: meta?.updatedAt ? Number(meta.updatedAt) : 0,
       };
     })
   );
 
-  return NextResponse.json(sessions.filter(Boolean).reverse());
+  return NextResponse.json(sessions.filter(Boolean));
 }

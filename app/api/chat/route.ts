@@ -72,6 +72,19 @@ export async function POST(req: NextRequest) {
     ];
     await saveHistory(historyKey, updated);
 
+    // Aktiv sessiyalar siyahısına əlavə et (CRM canlı chat üçün)
+    if (redis) {
+      await redis.zadd("active_chat_sessions", { score: Date.now(), member: sessionId });
+      await redis.expire("active_chat_sessions", 86400 * 7); // 7 gün
+      // Son mesajı da saxla
+      await redis.hset(`chat_meta:${sessionId}`, {
+        lastMessage: message.slice(0, 100),
+        lastRole: "user",
+        updatedAt: Date.now(),
+      });
+      await redis.expire(`chat_meta:${sessionId}`, 86400 * 7);
+    }
+
     // Telegram bildirişi
     notifyTelegram(sessionId, message, reply, isHandoff).catch(() => {});
 
