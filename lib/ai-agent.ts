@@ -371,13 +371,17 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       }
     }
 
-    case "search_hotels":
-      return searchHotelsForAI({
-        destination: input.destination as string,
-        checkin:     input.checkin as string,
-        checkout:    input.checkout as string,
-        guests:      (input.guests as number) || 2,
-      });
+    case "search_hotels": {
+      const dest     = input.destination as string;
+      const checkin  = input.checkin as string;
+      const checkout = input.checkout as string;
+      const guests   = (input.guests as number) || 2;
+      if (!dest || !checkin || !checkout) {
+        return `search_hotels xətası: destination="${dest}", checkin="${checkin}", checkout="${checkout}" — tarix və ya istiqamət çatışmır. Müştəridən dəqiq tarix soruş.`;
+      }
+      const hotelResult = await searchHotelsForAI({ destination: dest, checkin, checkout, guests });
+      return hotelResult;
+    }
 
     case "check_tour_availability":
       return checkTourAvailability(
