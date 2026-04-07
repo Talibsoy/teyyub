@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getToursContext } from "./rag";
 import { getExamples, formatExamplesForPrompt } from "./ai-memory";
 import { searchFlights, formatOffersForAI } from "./duffel";
-import { searchHotelsForAI } from "./ratehawk";
+
 import {
   checkTourAvailability,
   getWeatherForecast,
@@ -107,21 +107,17 @@ Cavab:
   [Aviaşirkət] — [Qiymət] AZN
   "Bilet ayırdımmı?"
 
-── 2. OTEL + TUR + PAKET SORĞUSU ───────────────────────
+── 2. TUR + PAKET SORĞUSU ───────────────────────────────
 Sözlər: "otel", "tur", "paket", "qalmaq", "istirahət", "all inclusive",
         "neçə günlük", "hər şey daxil", "kompleks", "hansı oteldə"
-Bu sorğularda search_flights ÇAĞIRILMAZ — Duffel-ə sorgu getməsin.
+Bu sorğularda search_flights ÇAĞIRILMAZ.
 
-  Əgər "tur" soruşursa   → YALNIZ check_tour_availability
-  Əgər "otel" soruşursa  → YALNIZ search_hotels
-  Əgər "paket" soruşursa → search_hotels → calculate_package
-    (uçuş qiymətini AZN ilə özün təxmin et, search_flights çağırma)
+  Tur/otel/paket soruşursa → YALNIZ check_tour_availability
+  Mövcud turda otel varsa → calculate_package ilə ümumi qiymət hesabla
 
-Cavab (otel):
-  [Otel adı] [Ulduz]
-  - Yemeksiz: [Qiymət] AZN/gece
-  - All Inclusive: [Qiymət] AZN/gece
-  "Bu oteli ayırdımmı?"
+Cavab (tur/otel):
+  check_tour_availability nəticəsindən məlumat ver.
+  Konkret otel/qiymət yoxdursa: "Komandamız sizin üçün ən uyğun variantı hazırlayacaq — nömrənizi ala bilərəmmi?"
 
 Cavab (tur):
   [Tur adı] | [Tarix] | [Qiymət] AZN
@@ -249,22 +245,6 @@ Tarix məlum deyilsə əvvəl müştəridən soruş, sonra axtarış et.`,
     }
   },
   {
-    name: "search_hotels",
-    description: `Real-time otel axtarışı — RateHawk API vasitəsilə.
-Müştəri otel, qalma yeri, neçəyə otel, otel adı soruşanda çağır.
-Uçuş + otel birlikdə soruşanda: əvvəl search_flights, sonra search_hotels çağır.`,
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        destination: { type: "string", description: "Şəhər adı: Dubai, Antalya, Istanbul, Paris..." },
-        checkin:     { type: "string", description: "Giriş tarixi YYYY-MM-DD" },
-        checkout:    { type: "string", description: "Çıxış tarixi YYYY-MM-DD" },
-        guests:      { type: "number", description: "Qonaq sayı (default: 2)" },
-      },
-      required: ["destination", "checkin", "checkout"]
-    }
-  },
-  {
     name: "check_tour_availability",
     description: `Mövcud turları, qiymətləri və boş yerləri Supabase-dən yoxla.
 Müştəri konkret tura, mövcudluğa, start tarixinə soruşanda çağır.`,
@@ -378,18 +358,6 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
         // Digər xətalarda ümumi mesaj — texniki detalları gizlət
         return `Uçuş sistemi hal-hazırda cavab vermir. Müştəriyə deyin: "Bilet məlumatını komandamız sizinlə birbaşa paylaşacaq — nömrənizi qeyd edim?"`;
       }
-    }
-
-    case "search_hotels": {
-      const dest     = input.destination as string;
-      const checkin  = input.checkin as string;
-      const checkout = input.checkout as string;
-      const guests   = (input.guests as number) || 2;
-      if (!dest || !checkin || !checkout) {
-        return `search_hotels xətası: destination="${dest}", checkin="${checkin}", checkout="${checkout}" — tarix və ya istiqamət çatışmır. Müştəridən dəqiq tarix soruş.`;
-      }
-      const hotelResult = await searchHotelsForAI({ destination: dest, checkin, checkout, guests });
-      return hotelResult;
     }
 
     case "check_tour_availability":
