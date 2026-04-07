@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,13 +17,20 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError("Email və ya şifrə səhvdir");
       setLoading(false);
-    } else {
+      return;
+    }
+
+    // Admin yoxsa adi üzv?
+    const role = data.user?.app_metadata?.role;
+    if (role === "admin") {
       router.push("/crm");
+    } else {
+      router.push("/");
     }
   }
 
@@ -67,6 +75,13 @@ export default function LoginPage() {
           >
             {loading ? "Yüklənir..." : "Daxil ol"}
           </button>
+
+          <p className="text-center text-sm text-gray-500 mt-2">
+            Hələ üzv deyilsiniz?{" "}
+            <Link href="/qeydiyyat" className="text-blue-400 hover:text-blue-300 font-medium">
+              Qeydiyyat
+            </Link>
+          </p>
         </form>
       </div>
     </div>

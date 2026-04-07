@@ -63,6 +63,16 @@ export default function Navbar() {
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 15px rgba(2,132,199,0.3)"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}>
             Rezervasiya Et
           </Link>
+          <Link href="/qeydiyyat"
+            className="font-semibold px-4 py-2 rounded-xl transition-all duration-200"
+            style={{
+              border: "1.5px solid #0284c7", color: "#0284c7",
+              textDecoration: "none", fontSize: 14,
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#0284c7"; (e.currentTarget as HTMLElement).style.color = "white"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#0284c7"; }}>
+            Qeydiyyat
+          </Link>
           <Link href="/login"
             className="transition-colors duration-200"
             style={{ color: "#475569", textDecoration: "none", fontSize: 14, fontWeight: 500 }}
@@ -102,6 +112,20 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}>
             Rezervasiya Et
           </Link>
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <Link href="/qeydiyyat"
+              className="flex-1 text-center font-semibold px-4 py-3 rounded-xl"
+              style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none" }}
+              onClick={() => setMenuOpen(false)}>
+              Qeydiyyat
+            </Link>
+            <Link href="/login"
+              className="flex-1 text-center py-3 rounded-xl"
+              style={{ color: "#475569", textDecoration: "none", border: "1.5px solid #e2e8f0" }}
+              onClick={() => setMenuOpen(false)}>
+              Giriş
+            </Link>
+          </div>
         </nav>
       )}
     </header>
