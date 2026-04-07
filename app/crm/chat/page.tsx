@@ -35,13 +35,13 @@ export default function CRMChatPage() {
 
   const loadHistory = useCallback(async (sid: string) => {
     setLoading(true);
-    const res = await fetch(`/api/crm/chat-sessions?sessionId=${sid}`);
-    // Tarixçəni birbaşa conversation-store-dan al
-    const r2 = await fetch(`/api/crm/chat-history?sessionId=${sid}`);
-    if (r2.ok) {
-      const data = await r2.json();
-      setHistory(data);
-    }
+    try {
+      const res = await fetch(`/api/crm/chat-history?sessionId=${sid}`);
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data);
+      }
+    } catch {}
     setLoading(false);
   }, []);
 
