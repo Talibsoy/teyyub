@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { searchHotelsForAI } from "@/lib/ratehawk";
+import { getAIResponse } from "@/lib/ai-agent";
 
 export async function GET() {
+  const start = Date.now();
   try {
-    const result = await searchHotelsForAI({
-      destination: "Dubai",
-      checkin: "2026-05-15",
-      checkout: "2026-05-22",
-      guests: 2,
-    });
-    return NextResponse.json({ result });
+    const result = await getAIResponse(
+      "Dubai da may 15-22 arasinda 2 nefer ucun otel qiymetleri",
+      []
+    );
+    return NextResponse.json({ reply: result.message, ms: Date.now() - start });
   } catch (e) {
-    return NextResponse.json({ error: String(e) });
+    return NextResponse.json({ error: String(e), ms: Date.now() - start });
   }
 }
