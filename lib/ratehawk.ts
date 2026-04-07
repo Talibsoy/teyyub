@@ -4,10 +4,10 @@ const BASE       = "https://api-sandbox.worldota.net";
 
 // Sandbox test hotelləri (production-da multicomplete ilə dinamik alınır)
 const DESTINATION_HOTELS: Record<string, string[]> = {
-  dubai:     ["pullman_dubai_jumeirah_lakes_towers__hotel_and_residence"],
+  dubai:     ["pullman_dubai_jumeirah_lakes_towers__hotel_and_residence", "downtown_la_vacation_apartments_by_stay_city_rentals_3"],
   paris:     ["hotel_monsieur", "aparthotel_adagio_paris_montmartre_by_pierre_vacances"],
-  antalya:   ["key_view_the_residences"],
-  istanbul:  ["key_view_the_residences"],
+  antalya:   ["downtown_la_vacation_apartments_by_stay_city_rentals_3", "key_view_the_residences"],
+  istanbul:  ["key_view_the_residences", "downtown_la_vacation_apartments_by_stay_city_rentals_3"],
   losangeles:["downtown_la_vacation_apartments_by_stay_city_rentals_3", "rosa_bell_motel_los_angeles"],
 };
 
@@ -65,26 +65,39 @@ export async function searchHotels(params: {
       const hotel = data?.data?.hotels?.[0];
       if (!hotel || !hotel.rates?.length) continue;
 
-      // Ən ucuz otaq
-      const rate = hotel.rates[0];
       const nights = Math.round(
         (new Date(params.checkout).getTime() - new Date(params.checkin).getTime()) / 86400000
       );
-      const totalUsd = parseFloat(rate.payment_options?.payment_types?.[0]?.amount || "0");
-      const perNight = nights > 0 ? totalUsd / nights : totalUsd;
 
-      results.push({
-        id: hotelId,
-        name: formatHotelName(hotelId),
-        roomName: rate.room_name || "Standart otaq",
-        stars: rate.rg_ext?.class || 3,
-        pricePerNight: Math.ceil(perNight),
-        totalPrice: Math.ceil(totalUsd),
-        currency: "USD",
-        nights,
-        meal: rate.meal || "nomeal",
-        bookHash: rate.book_hash,
-      });
+      // Meal plan qrupları — hər növdən ən ucuzunu götür
+      const MEAL_GROUPS: Record<string, string[]> = {
+        "nomeal":       ["nomeal", "some-nomeal"],
+        "breakfast":    ["breakfast", "breakfast-buffet", "american-breakfast", "continental-breakfast", "english-breakfast"],
+        "half-board":   ["half-board", "half-board-dinner", "half-board-lunch"],
+        "all-inclusive":["all-inclusive", "soft-all-inclusive", "super-all-inclusive", "ultra-all-inclusive", "full-board"],
+      };
+
+      for (const [groupName, mealTypes] of Object.entries(MEAL_GROUPS)) {
+        const rate = hotel.rates.find((r: { meal: string }) => mealTypes.includes(r.meal));
+        if (!rate) continue;
+
+        const totalUsd = parseFloat(rate.payment_options?.payment_types?.[0]?.amount || "0");
+        if (!totalUsd) continue;
+        const perNight = nights > 0 ? totalUsd / nights : totalUsd;
+
+        results.push({
+          id: hotelId,
+          name: formatHotelName(hotelId),
+          roomName: rate.room_name || "Standart otaq",
+          stars: rate.rg_ext?.class || 3,
+          pricePerNight: Math.ceil(perNight),
+          totalPrice: Math.ceil(totalUsd),
+          currency: "USD",
+          nights,
+          meal: groupName,
+          bookHash: rate.book_hash,
+        });
+      }
     } catch {
       // Bu oteli keç, növbətisinə bax
     }
@@ -107,10 +120,26 @@ export async function searchHotelsForAI(params: {
     }
 
     const nights = hotels[0].nights;
-    const lines = hotels.map(h => {
-      const stars = "★".repeat(h.stars);
-      const meal = h.meal === "breakfast" ? " (Səhər yeməyi daxil)" : "";
-      return `• ${h.name} ${stars}\n  Otaq: ${h.roomName}${meal}\n  Qiymət: $${h.pricePerNight}/gecə (${nights} gecə = $${h.totalPrice})`;
+    const MEAL_LABELS: Record<string, string> = {
+      "nomeal":       "Yemek daxil deyil",
+      "breakfast":    "Sehər yeməyi daxil",
+      "half-board":   "Yari pansion (sehər + axşam yeməyi)",
+      "all-inclusive": "All Inclusive",
+    };
+
+    // Otel adına görə qruplaşdır
+    const byHotel: Record<string, typeof hotels> = {};
+    for (const h of hotels) {
+      if (!byHotel[h.name]) byHotel[h.name] = [];
+      byHotel[h.name].push(h);
+    }
+
+    const lines = Object.entries(byHotel).map(([hotelName, variants]) => {
+      const stars = "★".repeat(variants[0].stars);
+      const variantLines = variants.map(v =>
+        `  - ${MEAL_LABELS[v.meal] || v.meal}: $${v.pricePerNight}/gece ($${v.totalPrice} cemi)`
+      ).join("\n");
+      return `${hotelName} ${stars}\n${variantLines}`;
     });
 
     return `${params.destination} — ${params.checkin} – ${params.checkout} (${nights} gecə, ${params.guests} nəfər):\n\n${lines.join("\n\n")}`;
