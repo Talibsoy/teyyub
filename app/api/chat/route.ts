@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIResponse } from "@/lib/ai-agent";
 import { getHistory, saveHistory } from "@/lib/conversation-store";
+import { Redis } from "@upstash/redis";
+
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+  : null;
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID   = process.env.TELEGRAM_CHAT_ID;
@@ -34,6 +39,17 @@ export async function POST(req: NextRequest) {
 
     const historyKey = `chat:${sessionId}`;
     const history = await getHistory(historyKey);
+
+    // Admin aktiv olanda AI cavab vermir
+    if (redis) {
+      const adminActive = await redis.exists(`admin_active:${sessionId}`);
+      if (adminActive) {
+        const updated = [...history, { role: "user" as const, content: message }];
+        await saveHistory(historyKey, updated);
+        notifyTelegram(sessionId, message, "[Admin cavab gözlənilir]").catch(() => {});
+        return NextResponse.json({ reply: null, adminActive: true });
+      }
+    }
 
     const result = await getAIResponse(message, history);
     const raw = result.message

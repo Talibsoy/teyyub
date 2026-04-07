@@ -21,10 +21,12 @@ import {
   BarChart2,
   Star,
   PackageIcon,
+  MessageSquare,
 } from "lucide-react";
 
 const nav = [
   { href: "/crm",            label: "Dashboard",        icon: LayoutDashboard },
+  { href: "/crm/chat",       label: "Canlı Chat",       icon: MessageSquare },
   { href: "/crm/leads",      label: "Leadlər",          icon: UserCheck },
   { href: "/crm/customers",  label: "Müştərilər",       icon: Users },
   { href: "/crm/bookings",   label: "Rezervasiyalar",   icon: CalendarCheck },

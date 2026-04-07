@@ -44,6 +44,23 @@ export default function ChatWidget() {
     }
   }, [open]);
 
+  // Admin mesajlarını 4 saniyədə bir yoxla
+  useEffect(() => {
+    const sid = getSessionId();
+    if (!sid) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/chat/poll?sessionId=${sid}`);
+        const data = await res.json();
+        if (data.message) {
+          setMessages(prev => [...prev, { from: "ai", text: data.message, time: Date.now() }]);
+          if (!open) setUnread(u => u + 1);
+        }
+      } catch {}
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [open]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -67,6 +84,11 @@ export default function ChatWidget() {
       });
       clearTimeout(timer);
       const data = await res.json();
+      if (data.adminActive) {
+        // Admin cavab yazır — loading indicator saxla, polling gözləsin
+        setLoading(false);
+        return;
+      }
       const reply = data.reply || "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin.";
       setMessages(prev => [...prev, { from: "ai", text: reply, time: Date.now(), handoff: !!data.handoff }]);
       if (!open) setUnread(u => u + 1);
