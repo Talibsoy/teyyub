@@ -106,7 +106,20 @@ export async function searchHotels(params: {
   return results;
 }
 
-// AI üçün formatlanmış nəticə
+const COMMISSION = 1.15;
+const USD_TO_AZN  = 1.70;
+const MEAL_LABELS: Record<string, string> = {
+  "nomeal":        "Yemeksiz",
+  "breakfast":     "Sehər yeməyi daxil",
+  "half-board":    "Yarı pansion",
+  "all-inclusive": "All Inclusive",
+};
+
+function toAzn(usd: number): number {
+  return Math.ceil(usd * COMMISSION * USD_TO_AZN);
+}
+
+// AI üçün formatlanmış nəticə (AZN, komissiya daxil)
 export async function searchHotelsForAI(params: {
   destination: string;
   checkin: string;
@@ -116,19 +129,12 @@ export async function searchHotelsForAI(params: {
   try {
     const hotels = await searchHotels(params);
     if (!hotels.length) {
-      return `${params.destination} üçün hal-hazırda otel tapılmadı.`;
+      return `${params.destination} üçün ${params.checkin} – ${params.checkout} tarixlərinə otel tapılmadı. Müştəriyə komanda ilə əlaqə saxlamağı təklif et.`;
     }
 
     const nights = hotels[0].nights;
-    const MEAL_LABELS: Record<string, string> = {
-      "nomeal":       "Yemek daxil deyil",
-      "breakfast":    "Sehər yeməyi daxil",
-      "half-board":   "Yari pansion (sehər + axşam yeməyi)",
-      "all-inclusive": "All Inclusive",
-    };
 
-    // Otel adına görə qruplaşdır
-    const byHotel: Record<string, typeof hotels> = {};
+    const byHotel: Record<string, HotelResult[]> = {};
     for (const h of hotels) {
       if (!byHotel[h.name]) byHotel[h.name] = [];
       byHotel[h.name].push(h);
@@ -136,15 +142,24 @@ export async function searchHotelsForAI(params: {
 
     const lines = Object.entries(byHotel).map(([hotelName, variants]) => {
       const stars = "★".repeat(variants[0].stars);
-      const variantLines = variants.map(v =>
-        `  - ${MEAL_LABELS[v.meal] || v.meal}: $${v.pricePerNight}/gece ($${v.totalPrice} cemi)`
-      ).join("\n");
+      const variantLines = variants.map(v => {
+        const aznPerNight = toAzn(v.pricePerNight);
+        const aznTotal    = toAzn(v.totalPrice);
+        const label = MEAL_LABELS[v.meal] || v.meal;
+        return `  - ${label}: ${aznPerNight} AZN/gece (${nights} gece = ${aznTotal} AZN)`;
+      }).join("\n");
       return `${hotelName} ${stars}\n${variantLines}`;
     });
 
-    return `${params.destination} — ${params.checkin} – ${params.checkout} (${nights} gecə, ${params.guests} nəfər):\n\n${lines.join("\n\n")}`;
+    return [
+      `${params.destination} — ${params.checkin} – ${params.checkout} (${nights} gece, ${params.guests} nefer):`,
+      "",
+      lines.join("\n\n"),
+      "",
+      "Butun qiymetler komissiyanı daxildir. Muştəriyə variant seçdirin.",
+    ].join("\n");
   } catch (e) {
-    return `Otel axtarışında xəta: ${e instanceof Error ? e.message : String(e)}`;
+    return `Otel sistemi cavab vermir. Muştəriyə deyin: komandamız ən yaxşı variantları birbaşa göndərəcək.`;
   }
 }
 
