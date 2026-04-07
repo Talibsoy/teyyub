@@ -5,13 +5,17 @@ import { getHistory, saveHistory } from "@/lib/conversation-store";
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID   = process.env.TELEGRAM_CHAT_ID;
 
-async function notifyTelegram(sessionId: string, userMsg: string, aiReply: string) {
+async function notifyTelegram(sessionId: string, userMsg: string, aiReply: string, urgent = false) {
   if (!BOT_TOKEN || !CHAT_ID) return;
-  const text =
-    `💬 *Sayt Chat*\n` +
-    `🆔 \`${sessionId.slice(0, 8)}\`\n` +
-    `👤 *Müştəri:* ${userMsg}\n` +
-    `🤖 *Nigar:* ${aiReply}`;
+  const text = urgent
+    ? `🚨 *OPERATOR TƏLƏBİ — Sayt Chat*\n` +
+      `🆔 \`${sessionId.slice(0, 8)}\`\n` +
+      `👤 *Müştəri:* ${userMsg}\n\n` +
+      `Müştəri canlı operatorla danışmaq istəyir!`
+    : `💬 *Sayt Chat*\n` +
+      `🆔 \`${sessionId.slice(0, 8)}\`\n` +
+      `👤 *Müştəri:* ${userMsg}\n` +
+      `🤖 *Nigar:* ${aiReply}`;
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
@@ -32,12 +36,18 @@ export async function POST(req: NextRequest) {
     const history = await getHistory(historyKey);
 
     const result = await getAIResponse(message, history);
-    const reply = result.message
+    const raw = result.message
       .replace(/[\u{1F000}-\u{1FFFF}]/gu, "")
       .replace(/[\u{2600}-\u{27BF}]/gu, "")
       .replace(/[━✈️✓✔★☆♦♣♠♥❤🔥💫⚡🎯📊📈📉🏆🎁🎉🎊]/g, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
+
+    // Operator keçidi aşkar et
+    const isHandoff = raw.startsWith("OPERATOR_HANDOFF:");
+    const reply = isHandoff
+      ? raw.replace("OPERATOR_HANDOFF:", "").trim()
+      : raw;
 
     const updated = [
       ...history,
@@ -46,10 +56,10 @@ export async function POST(req: NextRequest) {
     ];
     await saveHistory(historyKey, updated);
 
-    // Telegram bildirişi (gözləmirik)
-    notifyTelegram(sessionId, message, reply).catch(() => {});
+    // Telegram bildirişi
+    notifyTelegram(sessionId, message, reply, isHandoff).catch(() => {});
 
-    return NextResponse.json({ reply });
+    return NextResponse.json({ reply, handoff: isHandoff });
   } catch (err) {
     console.error("[CHAT API]", err);
     return NextResponse.json({ reply: "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin." });
