@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { getSupabase } from "@/lib/supabase";
 
 const navLinks = [
   { href: "/turlar", label: "Turlar" },
@@ -13,11 +14,31 @@ const navLinks = [
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<{ email?: string; isAdmin?: boolean } | null>(null);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", fn);
     return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  useEffect(() => {
+    const client = getSupabase();
+    client.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        const isAdmin = data.session.user.app_metadata?.role === "admin";
+        setUser({ email: data.session.user.email, isAdmin });
+      }
+    });
+    const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        const isAdmin = session.user.app_metadata?.role === "admin";
+        setUser({ email: session.user.email, isAdmin });
+      } else {
+        setUser(null);
+      }
+    });
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   return (
@@ -63,23 +84,34 @@ export default function Navbar() {
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 15px rgba(2,132,199,0.3)"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}>
             Rezervasiya Et
           </Link>
-          <Link href="/qeydiyyat"
-            className="font-semibold px-4 py-2 rounded-xl transition-all duration-200"
-            style={{
-              border: "1.5px solid #0284c7", color: "#0284c7",
-              textDecoration: "none", fontSize: 14,
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#0284c7"; (e.currentTarget as HTMLElement).style.color = "white"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#0284c7"; }}>
-            Qeydiyyat
-          </Link>
-          <Link href="/login"
-            className="transition-colors duration-200"
-            style={{ color: "#475569", textDecoration: "none", fontSize: 14, fontWeight: 500 }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#0284c7")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#475569")}>
-            Giriş
-          </Link>
+          {user ? (
+            user.isAdmin ? (
+              <Link href="/crm"
+                className="font-semibold px-4 py-2 rounded-xl transition-all duration-200"
+                style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none", fontSize: 14 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#0284c7"; (e.currentTarget as HTMLElement).style.color = "white"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#0284c7"; }}>
+                Panel
+              </Link>
+            ) : null
+          ) : (
+            <>
+              <Link href="/qeydiyyat"
+                className="font-semibold px-4 py-2 rounded-xl transition-all duration-200"
+                style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none", fontSize: 14 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#0284c7"; (e.currentTarget as HTMLElement).style.color = "white"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#0284c7"; }}>
+                Qeydiyyat
+              </Link>
+              <Link href="/login"
+                className="transition-colors duration-200"
+                style={{ color: "#475569", textDecoration: "none", fontSize: 14, fontWeight: 500 }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#0284c7")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#475569")}>
+                Giriş
+              </Link>
+            </>
+          )}
         </nav>
 
         <button
@@ -112,20 +144,31 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}>
             Rezervasiya Et
           </Link>
-          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-            <Link href="/qeydiyyat"
-              className="flex-1 text-center font-semibold px-4 py-3 rounded-xl"
-              style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none" }}
-              onClick={() => setMenuOpen(false)}>
-              Qeydiyyat
-            </Link>
-            <Link href="/login"
-              className="flex-1 text-center py-3 rounded-xl"
-              style={{ color: "#475569", textDecoration: "none", border: "1.5px solid #e2e8f0" }}
-              onClick={() => setMenuOpen(false)}>
-              Giriş
-            </Link>
-          </div>
+          {user ? (
+            user.isAdmin ? (
+              <Link href="/crm"
+                className="mt-1 text-center font-semibold px-4 py-3 rounded-xl"
+                style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none" }}
+                onClick={() => setMenuOpen(false)}>
+                Panel
+              </Link>
+            ) : null
+          ) : (
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <Link href="/qeydiyyat"
+                className="flex-1 text-center font-semibold px-4 py-3 rounded-xl"
+                style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none" }}
+                onClick={() => setMenuOpen(false)}>
+                Qeydiyyat
+              </Link>
+              <Link href="/login"
+                className="flex-1 text-center py-3 rounded-xl"
+                style={{ color: "#475569", textDecoration: "none", border: "1.5px solid #e2e8f0" }}
+                onClick={() => setMenuOpen(false)}>
+                Giriş
+              </Link>
+            </div>
+          )}
         </nav>
       )}
     </header>
