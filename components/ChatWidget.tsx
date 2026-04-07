@@ -56,11 +56,15 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 55000);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: getSessionId(), message: text }),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       const data = await res.json();
       const reply = data.reply || "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin.";
       setMessages(prev => [...prev, { from: "ai", text: reply, time: Date.now() }]);
