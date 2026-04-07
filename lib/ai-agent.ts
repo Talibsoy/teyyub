@@ -523,7 +523,6 @@ export async function getAIResponse(
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 8000,
-      thinking: { type: "enabled", budget_tokens: 5000 },
       system: systemFinal,
       messages: currentMessages,
       tools: ALL_TOOLS,
