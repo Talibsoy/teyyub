@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getToursContext } from "./rag";
 import { getExamples, formatExamplesForPrompt } from "./ai-memory";
 import { searchFlights, formatOffersForAI } from "./duffel";
+import { searchHotelsForAI } from "./ratehawk";
 import {
   checkTourAvailability,
   getWeatherForecast,
@@ -87,6 +88,7 @@ Müştəri qərar verə bilmirsə — bu istiqamətləri təklif et:
 === ALƏTLƏR — NƏ VAXT İSTİFADƏ ET ===
 
 search_flights → Müştəri uçuş/bilet/avia soruşanda. Kalkış şəhəri məlum deyilsə Bakı (GYD) qəbul et. Tarix yoxdursa soruş, sonra axtar.
+search_hotels → Müştəri otel, qalma, neçəyə otel soruşanda. Checkin/checkout tarixi lazımdır. Uçuş+otel paketi üçün əvvəl uçuş axtar, sonra otel.
 check_tour_availability → Müştəri konkret tur, qiymət, mövcud yer soruşanda.
 get_weather → "Hava necədir?", "İsti olacaqmı?", "Nə geyinim?" kimi suallar.
 get_exchange_rate → Qiymətləri başqa valyutaya çevirəndə, "neçə manata dəyər?" soruşanda.
@@ -218,6 +220,22 @@ Tarix məlum deyilsə əvvəl müştəridən soruş, sonra axtarış et.`,
     }
   },
   {
+    name: "search_hotels",
+    description: `Real-time otel axtarışı — RateHawk API vasitəsilə.
+Müştəri otel, qalma yeri, neçəyə otel, otel adı soruşanda çağır.
+Uçuş + otel birlikdə soruşanda: əvvəl search_flights, sonra search_hotels çağır.`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        destination: { type: "string", description: "Şəhər adı: Dubai, Antalya, Istanbul, Paris..." },
+        checkin:     { type: "string", description: "Giriş tarixi YYYY-MM-DD" },
+        checkout:    { type: "string", description: "Çıxış tarixi YYYY-MM-DD" },
+        guests:      { type: "number", description: "Qonaq sayı (default: 2)" },
+      },
+      required: ["destination", "checkin", "checkout"]
+    }
+  },
+  {
     name: "check_tour_availability",
     description: `Mövcud turları, qiymətləri və boş yerləri Supabase-dən yoxla.
 Müştəri konkret tura, mövcudluğa, start tarixinə soruşanda çağır.`,
@@ -332,6 +350,14 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
         return `Uçuş sistemi hal-hazırda cavab vermir. Müştəriyə deyin: "Bilet məlumatını komandamız sizinlə birbaşa paylaşacaq — nömrənizi qeyd edim?"`;
       }
     }
+
+    case "search_hotels":
+      return searchHotelsForAI({
+        destination: input.destination as string,
+        checkin:     input.checkin as string,
+        checkout:    input.checkout as string,
+        guests:      (input.guests as number) || 2,
+      });
 
     case "check_tour_availability":
       return checkTourAvailability(
