@@ -89,7 +89,7 @@ export default function CRMChatPage() {
   const activeSession = sessions.find(s => s.sessionId === selected);
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 84px)", gap: 0, background: "#f8fafc", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.07)", border: "1px solid #e2e8f0" }}>
+    <div style={{ display: "flex", height: "calc(100dvh - 112px)", gap: 0, background: "#f8fafc", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.07)", border: "1px solid #e2e8f0" }}>
 
       {/* Sol — sessiyalar */}
       <div style={{ width: 280, borderRight: "1px solid #e2e8f0", background: "white", display: "flex", flexDirection: "column", flexShrink: 0 }}>

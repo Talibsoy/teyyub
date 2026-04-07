@@ -185,7 +185,7 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
           <span style={{ fontWeight: 700, fontSize: 16, color: "#0f172a" }}>Natoure CRM</span>
         </div>
 
-        <div style={{ flex: 1, padding: "28px 28px" }}>
+        <div style={{ flex: 1, padding: "24px 24px 16px" }}>
           {children}
         </div>
       </main>
