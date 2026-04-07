@@ -32,7 +32,12 @@ export async function POST(req: NextRequest) {
     const history = await getHistory(historyKey);
 
     const result = await getAIResponse(message, history);
-    const reply = result.message;
+    const reply = result.message
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu, "")
+      .replace(/[\u{2600}-\u{27BF}]/gu, "")
+      .replace(/[━✈️✓✔★☆♦♣♠♥❤🔥💫⚡🎯📊📈📉🏆🎁🎉🎊]/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
 
     const updated = [
       ...history,
