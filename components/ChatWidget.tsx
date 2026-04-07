@@ -182,29 +182,19 @@ export default function ChatWidget() {
                     <p style={{ margin: 0, fontSize: 12, color: "#0369a1", fontWeight: 600 }}>
                       Bizimlə birbaşa əlaqə saxlayın:
                     </p>
-                    <a href="https://wa.me/994XXXXXXXXX" target="_blank" rel="noopener noreferrer"
+                    <a href="tel:+994517769632"
                       style={{
                         display: "flex", alignItems: "center", gap: 8,
-                        padding: "8px 12px", borderRadius: 8,
-                        background: "#22c55e", color: "white",
-                        textDecoration: "none", fontSize: 13, fontWeight: 600,
-                      }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/>
-                      </svg>
-                      WhatsApp ilə yazın
-                    </a>
-                    <a href="tel:+994XXXXXXXXX"
-                      style={{
-                        display: "flex", alignItems: "center", gap: 8,
-                        padding: "8px 12px", borderRadius: 8,
-                        background: "#1e40af", color: "white",
-                        textDecoration: "none", fontSize: 13, fontWeight: 600,
+                        padding: "10px 14px", borderRadius: 8,
+                        background: "linear-gradient(135deg, #1e40af, #0284c7)",
+                        color: "white", textDecoration: "none",
+                        fontSize: 13, fontWeight: 700,
+                        boxShadow: "0 4px 12px rgba(2,132,199,0.35)",
                       }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.22 2.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.16 6.16l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
                       </svg>
-                      Zəng edin
+                      +994 51 776 96 32 — Zəng edin
                     </a>
                   </div>
                 )}
