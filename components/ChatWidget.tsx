@@ -2,15 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { io, Socket } from "socket.io-client";
 
 interface Msg {
-  from: "user" | "ai" | "admin";
+  from: "user" | "ai";
   text: string;
   time?: number;
 }
-
-const SERVER_URL = process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000";
 
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
@@ -24,50 +21,16 @@ function getSessionId(): string {
 
 export default function ChatWidget() {
   const [open, setOpen]         = useState(false);
-  const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [unread, setUnread]     = useState(0);
   const [welcomed, setWelcomed] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const socket = io(SERVER_URL, {
-      query: { sessionId: getSessionId(), userName: "Ziyarətçi" },
-      autoConnect: false,
-    });
-    socketRef.current = socket;
-
-    socket.on("connect",    () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
-
-    // AI cavabı gəldi
-    socket.on("ai_message", (msg: Msg) => {
-      setMessages((prev) => [...prev, { ...msg, from: msg.from === "admin" ? "admin" : "ai" }]);
-      setLoading(false);
-      if (!open) setUnread((u) => u + 1);
-    });
-
-    // Admin söhbətə qoşuldu bildirişi
-    socket.on("admin_joined", ({ text }: { text: string }) => {
-      setMessages((prev) => [...prev, { from: "ai", text, time: Date.now() }]);
-      setLoading(false);
-    });
-
-    // Mesaj göndərildi təsdiqi
-    socket.on("user_message_ack", () => {
-      // loading davam edir — AI cavabını gözləyirik
-    });
-
-    return () => { socket.disconnect(); };
-  }, []);
 
   useEffect(() => {
     if (open) {
       setUnread(0);
-      socketRef.current?.connect();
       if (!welcomed) {
         setMessages([{
           from: "ai",
@@ -84,21 +47,36 @@ export default function ChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  function sendMessage() {
+  async function sendMessage() {
     const text = input.trim();
-    if (!text || loading || !socketRef.current) return;
+    if (!text || loading) return;
 
-    setMessages((prev) => [...prev, { from: "user", text, time: Date.now() }]);
+    setMessages(prev => [...prev, { from: "user", text, time: Date.now() }]);
     setInput("");
     setLoading(true);
-    socketRef.current.emit("user_message", text);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: getSessionId(), message: text }),
+      });
+      const data = await res.json();
+      const reply = data.reply || "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin.";
+      setMessages(prev => [...prev, { from: "ai", text: reply, time: Date.now() }]);
+      if (!open) setUnread(u => u + 1);
+    } catch {
+      setMessages(prev => [...prev, { from: "ai", text: "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin.", time: Date.now() }]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <>
       {/* Üzən düymə */}
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         aria-label="Canlı dəstək"
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 9999,
@@ -149,15 +127,13 @@ export default function ChatWidget() {
               <span style={{
                 position: "absolute", bottom: 1, right: 1,
                 width: 9, height: 9, borderRadius: "50%",
-                background: connected ? "#22c55e" : "#f59e0b",
+                background: "#22c55e",
                 border: "2px solid #1e40af",
               }} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Nigar xanım</div>
-              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>
-                {connected ? "Onlayn • Natoure məsləhətçisi" : "Qoşulur..."}
-              </div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>Onlayn • Natoure məsləhətçisi</div>
             </div>
             <button onClick={() => setOpen(false)}
               style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>
@@ -182,10 +158,9 @@ export default function ChatWidget() {
                   borderRadius: m.from === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
                   background: m.from === "user"
                     ? "linear-gradient(135deg, #1e40af, #0284c7)"
-                    : m.from === "admin" ? "#f0fdf4" : "#f1f5f9",
+                    : "#f1f5f9",
                   color: m.from === "user" ? "#fff" : "#0f172a",
                   fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap",
-                  border: m.from === "admin" ? "1px solid #bbf7d0" : "none",
                 }}>
                   {m.text}
                 </div>

@@ -6,6 +6,12 @@ import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { Redis } from "@upstash/redis";
+
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+    : null;
 
 const WA_TOKEN = process.env.WA_ACCESS_TOKEN!;
 const WA_PHONE_ID = process.env.WA_PHONE_NUMBER_ID!;
@@ -42,6 +48,14 @@ export async function POST(req: NextRequest) {
             // Rate limit yoxla
             const allowed = await checkRateLimit(`wa:${from}`);
             if (!allowed) continue;
+
+            // Deduplication — eyni mesajı iki dəfə işləmə (webhook retry)
+            const msgId: string = msg.id;
+            if (msgId && redis) {
+              const seen = await redis.get(`wa_seen:${msgId}`);
+              if (seen) continue;
+              await redis.set(`wa_seen:${msgId}`, 1, { ex: 300 }); // 5 dəqiqə
+            }
 
             if (msg.type === "text") {
               const text = msg.text?.body;

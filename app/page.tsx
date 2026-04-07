@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sparkles, Brain, Plane, Star, X, Loader2,
   MapPin, Shield, TrendingUp, Headphones, ChevronRight,
@@ -39,47 +39,29 @@ function AnimatedBlobs() {
 }
 
 // ─── RESULT MODAL ─────────────────────────────────────────────────────────────
-function ResultModal({ onClose }: { onClose: () => void }) {
+function ResultModal({ onClose, aiReply }: { onClose: () => void; aiReply: string }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.3s ease" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "white", borderRadius: 28, maxWidth: 520, width: "100%", overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.3)", animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-        <div style={{ position: "relative", height: 240 }}>
-          <img src="https://images.unsplash.com/photo-1571366343168-631c5bcca7a4?w=900&q=85" alt="Antalya" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent)" }} />
-          <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.4)", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
-            <X size={18} />
+      <div style={{ background: "white", borderRadius: 28, maxWidth: 560, width: "100%", overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.3)", animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
+        <div style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Sparkles size={18} color="white" />
+            <span style={{ color: "white", fontWeight: 700, fontSize: 16 }}>Nigar xanımın Tövsiyəsi</span>
+          </div>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <X size={16} />
           </button>
-          <div style={{ position: "absolute", bottom: 16, left: 20 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", background: "linear-gradient(135deg,#0284c7,#4f46e5)", borderRadius: 50, marginBottom: 6 }}>
-              <Sparkles size={12} color="white" />
-              <span style={{ color: "white", fontSize: 12, fontWeight: 600 }}>AI Tövsiyəsi</span>
-            </div>
-            <p style={{ color: "white", fontWeight: 800, fontSize: 22, margin: 0 }}>Antalya, Türkiyə</p>
-          </div>
         </div>
-        <div style={{ padding: "24px 28px 28px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-            <div>
-              <h3 style={{ fontWeight: 700, fontSize: 20, color: "#0f172a", margin: "0 0 4px" }}>Rixos Premium Belek</h3>
-              <div style={{ display: "flex", gap: 2 }}>
-                {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="#f59e0b" color="#f59e0b" />)}
-              </div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>Başlayan qiymət</p>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: 24, background: "linear-gradient(135deg,#0284c7,#4f46e5)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>3.250 AZN</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>/ nəfər</p>
-            </div>
-          </div>
-          <div style={{ background: "#f8fafc", borderRadius: 14, padding: "14px 16px", marginBottom: 20, borderLeft: "3px solid #0284c7" }}>
-            <p style={{ margin: 0, color: "#475569", fontSize: 14, lineHeight: 1.7 }}>
-              <strong style={{ color: "#0284c7" }}>AI Rəyi:</strong> Sizin istəyinizə əsasən Rixos Premium Belek ideal seçimdir — ultraall-inclusive, şəxsi çimərlik və romantik atmosfer. Gediş-dönüş uçuş daxildir.
+        <div style={{ padding: "24px 28px 28px", maxHeight: "60vh", overflowY: "auto" }}>
+          <div style={{ background: "#f8fafc", borderRadius: 14, padding: "16px 18px", marginBottom: 20, borderLeft: "3px solid #0284c7" }}>
+            <p style={{ margin: 0, color: "#0f172a", fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
+              {aiReply}
             </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <a href="/turlar" style={{ flex: 1, padding: 14, borderRadius: 14, border: "none", background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
-              Paketi İncələ <ArrowRight size={18} />
+            <a href="/turlar" style={{ flex: 1, padding: 14, borderRadius: 14, border: "none", background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
+              Turları İncələ <ArrowRight size={18} />
             </a>
             <button onClick={onClose} style={{ padding: "14px 20px", borderRadius: 14, border: "1px solid #e2e8f0", background: "white", color: "#64748b", fontWeight: 600, cursor: "pointer" }}>
               Bağla
@@ -97,13 +79,39 @@ export default function HomePage() {
   const [loadingStep, setLoadingStep] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [aiReply, setAiReply] = useState("");
+  const sessionIdRef = useRef<string>("");
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    sessionIdRef.current = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }, []);
+
+  const handleGenerate = async () => {
     if (!prompt.trim() || isLoading) return;
     setIsLoading(true);
     setLoadingStep(0);
-    LOADING_STEPS.forEach((_, i) => setTimeout(() => setLoadingStep(i), i * 900));
-    setTimeout(() => { setIsLoading(false); setLoadingStep(-1); setShowModal(true); }, 3800);
+
+    // Loading animasiyası
+    const stepTimers = LOADING_STEPS.map((_, i) => setTimeout(() => setLoadingStep(i), i * 900));
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sessionIdRef.current, message: prompt }),
+      });
+      const data = await res.json();
+      stepTimers.forEach(clearTimeout);
+      setAiReply(data.reply || "Cavab alınmadı. Zəhmət olmasa yenidən cəhd edin.");
+      setShowModal(true);
+    } catch {
+      stepTimers.forEach(clearTimeout);
+      setAiReply("Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin.");
+      setShowModal(true);
+    } finally {
+      setIsLoading(false);
+      setLoadingStep(-1);
+    }
   };
 
   return (
@@ -264,7 +272,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {showModal && <ResultModal onClose={() => setShowModal(false)} />}
+      {showModal && <ResultModal onClose={() => setShowModal(false)} aiReply={aiReply} />}
     </>
   );
 }
