@@ -151,41 +151,40 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex" }}>
-      {/* Desktop sidebar */}
-      <aside style={{ ...sidebarStyle, position: "fixed", top: 0, left: 0, zIndex: 20 }}
-        className="hidden lg:flex">
-        <SidebarContent />
-      </aside>
+    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
 
-      {/* Mobile sidebar */}
+      {/* Toggle düyməsi — həmişə görünür, sol üst küncə sabitlənib */}
+      <button
+        onClick={() => setSidebarOpen(o => !o)}
+        style={{
+          position: "fixed", top: 16, left: 16, zIndex: 50,
+          width: 40, height: 40, borderRadius: "50%", border: "none",
+          background: "linear-gradient(135deg, #1e40af, #0284c7)",
+          color: "white", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 14px rgba(2,132,199,0.4)",
+          transition: "transform 0.2s",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.08)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+      </button>
+
+      {/* Overlay sidebar — hər zaman eyni davranış */}
       {sidebarOpen && (
-        <div className="lg:hidden" style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex" }}>
-          <div style={{ ...sidebarStyle, width: 240, position: "relative" }}>
-            <button onClick={() => setSidebarOpen(false)}
-              style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 30, height: 30, color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <X size={16} />
-            </button>
+        <div style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex" }}>
+          <div style={{ ...sidebarStyle, width: 240, flexShrink: 0 }}>
             <SidebarContent />
           </div>
-          <div style={{ flex: 1, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+          <div style={{ flex: 1, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(3px)" }}
             onClick={() => setSidebarOpen(false)} />
         </div>
       )}
 
-      {/* Main */}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}
-        className="lg:ml-60">
-        {/* Mobile topbar */}
-        <div className="lg:hidden" style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "white", borderBottom: "1px solid #e2e8f0", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
-          <button onClick={() => setSidebarOpen(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#0284c7", display: "flex" }}>
-            <Menu size={22} />
-          </button>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "#0f172a" }}>Natoure CRM</span>
-        </div>
-
-        <div style={{ flex: 1, padding: "24px 24px 16px" }}>
+      {/* Main — tam ekran, sidebar onu sıxmır */}
+      <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, padding: "24px 24px 16px", paddingTop: 72 }}>
           {children}
         </div>
       </main>
