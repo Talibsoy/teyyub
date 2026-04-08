@@ -1,10 +1,11 @@
 import https from "node:https";
 
-// Sandbox: api-sandbox.worldota.net | Production: api.worldota.net
-const RATEHAWK_BASE =
-  process.env.RATEHAWK_SANDBOX === "true"
+// RATEHAWK_BASE funksiya içində hesablanır (modul-level sabit build-time inline olur)
+function getRatehawkBase() {
+  return process.env.RATEHAWK_SANDBOX === "true"
     ? "https://api-sandbox.worldota.net/api/b2b/v3"
     : "https://api.worldota.net/api/b2b/v3";
+}
 
 export interface HotelOffer {
   hotel_key: string;   // unikal açar: hotel_id_checkin_checkout
@@ -59,7 +60,7 @@ function getAuth(): string {
 function ratehawkPost(endpoint: string, body: object): Promise<RatehawkResponse> {
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify(body);
-    const url = new URL(`${RATEHAWK_BASE}${endpoint}`);
+    const url = new URL(`${getRatehawkBase()}${endpoint}`);
     const isSandbox = process.env.RATEHAWK_SANDBOX === "true";
 
     const req = https.request(
