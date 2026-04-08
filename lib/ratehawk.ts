@@ -18,17 +18,35 @@ export interface HotelOffer {
   updated_at: string;
 }
 
-// Populyar destinasiyalar — region_id RateHawk B2B panelinə görə
-export const TRACKED_DESTINATIONS = [
-  { name: "İstanbul",         region_id: 3413  },
-  { name: "Dubai",            region_id: 3014  },
-  { name: "Antalya",          region_id: 8077  },
-  { name: "Şarm əl-Şeyx",    region_id: 8097  },
-  { name: "Hurgada",          region_id: 8096  },
-  { name: "Maldiv adaları",   region_id: 895   },
-  { name: "Bali",             region_id: 90371 },
-  { name: "Barselona",        region_id: 3413  }, // düzəlt lazım olsa
+// ─── İzlənilən otellər (hid = RateHawk hotel ID) ─────────────────────────────
+// Sandbox test otelləri + real otel ID-ləri (production üçün artır)
+export const TRACKED_DESTINATIONS: DestinationGroup[] = [
+  {
+    name: "İstanbul",
+    hids: [10004834, 10047711, 8819557],
+  },
+  {
+    name: "Dubai",
+    hids: [9744270, 6362880, 6682380],
+  },
+  {
+    name: "Antalya",
+    hids: [10595223, 10654204, 10678836],
+  },
+  {
+    name: "Şarm əl-Şeyx",
+    hids: [8142632, 6471709],
+  },
+  {
+    name: "Hurgada",
+    hids: [8608790, 10724071],
+  },
 ];
+
+interface DestinationGroup {
+  name: string;
+  hids: number[];
+}
 
 function getAuth(): string {
   const key = process.env.RATEHAWK_API_KEY!;
@@ -47,7 +65,8 @@ async function ratehawkPost(endpoint: string, body: object) {
   });
 
   if (!res.ok) {
-    throw new Error(`RateHawk ${endpoint} → HTTP ${res.status}`);
+    const text = await res.text().catch(() => "");
+    throw new Error(`RateHawk ${endpoint} → HTTP ${res.status}: ${text.slice(0, 200)}`);
   }
   return res.json();
 }
@@ -71,10 +90,12 @@ function parseHotels(
 
     if (totalPrice <= 0) continue;
 
+    const hid = hotel.hid ?? hotel.id;
+
     offers.push({
-      hotel_key: `${hotel.id}_${checkin}_${checkout}`,
-      hotel_id: String(hotel.id),
-      hotel_name: hotel.name || "Naməlum otel",
+      hotel_key: `${hid}_${checkin}_${checkout}`,
+      hotel_id: String(hid),
+      hotel_name: hotel.name || `Otel #${hid}`,
       destination,
       checkin,
       checkout,
@@ -89,53 +110,29 @@ function parseHotels(
   return offers;
 }
 
-// RateHawk axtarışı polling-li: status "processing" olarsa gözləyir
-async function pollSearch(searchId: string, maxWaitMs = 15000): Promise<RatehawkHotel[]> {
-  const interval = 2000;
-  let waited = 0;
-
-  while (waited < maxWaitMs) {
-    await new Promise((r) => setTimeout(r, interval));
-    waited += interval;
-
-    const res = await ratehawkPost("/search/serp/region/", { id: searchId });
-    if (res.status === "ok") {
-      return res.data?.hotels || [];
-    }
-    if (res.status === "error") break;
-  }
-
-  return [];
-}
-
+// Otel ID-ləri ilə axtarış: /search/serp/hotels/
 export async function searchHotels(
-  destination: { name: string; region_id: number },
+  destination: DestinationGroup,
   checkin: string,
-  checkout: string,
-  hotelsLimit = 8
+  checkout: string
 ): Promise<HotelOffer[]> {
   try {
-    const requestId = `nt_${destination.region_id}_${Date.now()}`;
-
-    const startRes = await ratehawkPost("/search/serp/region/", {
-      id: requestId,
+    const res = await ratehawkPost("/search/serp/hotels/", {
       checkin,
       checkout,
       residency: "az",
       language: "en",
+      currency: "USD",
       guests: [{ adults: 2, children: [] }],
-      region_id: destination.region_id,
-      hotels_limit: hotelsLimit,
+      hids: destination.hids,
     });
 
-    let hotels: RatehawkHotel[] = [];
-
-    if (startRes.status === "ok") {
-      hotels = startRes.data?.hotels || [];
-    } else if (startRes.status === "processing") {
-      hotels = await pollSearch(startRes.data?.id || requestId);
+    if (res.status !== "ok") {
+      console.error(`RateHawk (${destination.name}): status=${res.status}`, res.error || "");
+      return [];
     }
 
+    const hotels: RatehawkHotel[] = res.data?.hotels || [];
     return parseHotels(hotels, destination.name, checkin, checkout);
   } catch (err) {
     console.error(`RateHawk searchHotels (${destination.name}):`, err);
@@ -168,7 +165,8 @@ interface RatehawkRate {
 }
 
 interface RatehawkHotel {
-  id: string | number;
+  hid?: number;
+  id?: string | number;
   name?: string;
   star_rating?: number;
   rates?: RatehawkRate[];
