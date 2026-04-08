@@ -1,4 +1,4 @@
-import https from "https";
+import https from "node:https";
 
 // Sandbox: api-sandbox.worldota.net | Production: api.worldota.net
 const RATEHAWK_BASE =
