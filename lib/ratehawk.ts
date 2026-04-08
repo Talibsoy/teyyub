@@ -1,3 +1,5 @@
+import https from "https";
+
 // Sandbox: api-sandbox.worldota.net | Production: api.worldota.net
 const RATEHAWK_BASE =
   process.env.RATEHAWK_SANDBOX === "true"
@@ -54,26 +56,46 @@ function getAuth(): string {
   return Buffer.from(`${key}:${secret}`).toString("base64");
 }
 
-async function ratehawkPost(endpoint: string, body: object) {
-  // Sandbox TLS workaround (Node 24 + OpenSSL 3 uyğunsuzluğu)
-  if (process.env.RATEHAWK_SANDBOX === "true") {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  }
+function ratehawkPost(endpoint: string, body: object): Promise<RatehawkResponse> {
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify(body);
+    const url = new URL(`${RATEHAWK_BASE}${endpoint}`);
+    const isSandbox = process.env.RATEHAWK_SANDBOX === "true";
 
-  const res = await fetch(`${RATEHAWK_BASE}${endpoint}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${getAuth()}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+    const req = https.request(
+      {
+        hostname: url.hostname,
+        path: url.pathname,
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${getAuth()}`,
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(postData),
+        },
+        // Sandbox-da TLS yoxlamasını söndür (self-signed cert)
+        rejectUnauthorized: !isSandbox,
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk: string) => (data += chunk));
+        res.on("end", () => {
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(new Error(`RateHawk ${endpoint} → HTTP ${res.statusCode}: ${data.slice(0, 200)}`));
+          } else {
+            try {
+              resolve(JSON.parse(data) as RatehawkResponse);
+            } catch {
+              reject(new Error(`JSON parse xətası: ${data.slice(0, 100)}`));
+            }
+          }
+        });
+      }
+    );
+
+    req.on("error", reject);
+    req.write(postData);
+    req.end();
   });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`RateHawk ${endpoint} → HTTP ${res.status}: ${text.slice(0, 200)}`);
-  }
-  return res.json();
 }
 
 function parseHotels(
@@ -160,6 +182,12 @@ export function getDefaultDates(): { checkin: string; checkout: string } {
 }
 
 // ─── Tip köməkçiləri ─────────────────────────────────────────────────────────
+interface RatehawkResponse {
+  status: string;
+  data?: { hotels?: RatehawkHotel[] };
+  error?: string;
+}
+
 interface RatehawkRate {
   daily_prices?: string[];
   room_name?: string;
