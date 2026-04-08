@@ -6,6 +6,10 @@
   },
   "crons": [
     {
+      "path": "/api/cron/hotels",
+      "schedule": "0 */4 * * *"
+    },
+    {
       "path": "/api/cron/travel-post",
       "schedule": "0 6 * * *"
     },

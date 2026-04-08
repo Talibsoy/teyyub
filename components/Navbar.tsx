@@ -6,6 +6,7 @@ import { getSupabase } from "@/lib/supabase";
 
 const navLinks = [
   { href: "/turlar", label: "Turlar" },
+  { href: "/oteller", label: "Otellər" },
   { href: "/melumatlar", label: "Məlumatlar" },
   { href: "/haqqimizda", label: "Haqqımızda" },
   { href: "/elaqe", label: "Əlaqə" },
