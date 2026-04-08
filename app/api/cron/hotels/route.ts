@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
   const isManual = secret === process.env.CRON_SECRET;
 
   if (!isVercelCron && !isManual) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Debug: env var yüklənibmi?
+    const hasSecret = !!process.env.CRON_SECRET;
+    const secretLen = process.env.CRON_SECRET?.length ?? 0;
+    return NextResponse.json({ error: "Unauthorized", debug: { hasSecret, secretLen, received: secret?.slice(0,4) } }, { status: 401 });
   }
 
   if (!process.env.RATEHAWK_API_KEY || !process.env.RATEHAWK_SECRET) {
