@@ -11,14 +11,11 @@ export async function GET(req: NextRequest) {
   const cronHeader = req.headers.get("authorization");
 
   // Auth yoxlaması — Vercel Cron öz Bearer token göndərir, manual çağırış secret param istifadə edir
-  const isVercelCron = cronHeader === `Bearer ${process.env.CRON_SECRET}`;
-  const isManual = secret === process.env.CRON_SECRET;
+  const isVercelCron = cronHeader === `Bearer ${process.env.HOTELS_CRON_SECRET}`;
+  const isManual = secret === process.env.HOTELS_CRON_SECRET;
 
   if (!isVercelCron && !isManual) {
-    // Debug: env var yüklənibmi?
-    const hasSecret = !!process.env.CRON_SECRET;
-    const secretLen = process.env.CRON_SECRET?.length ?? 0;
-    return NextResponse.json({ error: "Unauthorized", debug: { hasSecret, secretLen, received: secret?.slice(0,4) } }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   if (!process.env.RATEHAWK_API_KEY || !process.env.RATEHAWK_SECRET) {
