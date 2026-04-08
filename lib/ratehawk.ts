@@ -1,4 +1,8 @@
-const RATEHAWK_BASE = "https://api.worldota.net/api/b2b/v3";
+// Sandbox: api-sandbox.worldota.net | Production: api.worldota.net
+const RATEHAWK_BASE =
+  process.env.RATEHAWK_SANDBOX === "true"
+    ? "https://api-sandbox.worldota.net/api/b2b/v3"
+    : "https://api.worldota.net/api/b2b/v3";
 
 export interface HotelOffer {
   hotel_key: string;   // unikal açar: hotel_id_checkin_checkout
