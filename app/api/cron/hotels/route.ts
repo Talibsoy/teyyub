@@ -42,8 +42,9 @@ export async function GET(req: NextRequest) {
 
       results.push({ destination: dest.name, found: offers.length, updated, added });
     } catch (err) {
-      console.error(`hotels cron — ${dest.name}:`, err);
-      results.push({ destination: dest.name, found: -1, updated: 0, added: 0 });
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`hotels cron — ${dest.name}:`, msg);
+      results.push({ destination: dest.name, found: -1, updated: 0, added: 0, error: msg });
     }
   }
 
