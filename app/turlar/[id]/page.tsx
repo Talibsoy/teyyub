@@ -1,12 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface Tour {
   id: string;
@@ -34,7 +29,7 @@ function getDuration(start: string | null, end: string | null) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const { data } = await supabase.from("tours").select("*").eq("id", id).single();
+  const { data } = await getSupabase().from("tours").select("*").eq("id", id).single();
   if (!data) return { title: "Tur tapılmadı" };
 
   const dur = getDuration(data.start_date, data.end_date);
@@ -57,7 +52,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function TourDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data: tour } = await supabase
+  const { data: tour } = await getSupabase()
     .from("tours")
     .select("*")
     .eq("id", id)

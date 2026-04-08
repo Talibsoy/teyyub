@@ -1,12 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface Post {
   id: string;
@@ -20,7 +15,7 @@ interface Post {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const { data } = await supabase.from("travel_posts").select("*").eq("id", id).single();
+  const { data } = await getSupabase().from("travel_posts").select("*").eq("id", id).single();
   if (!data) return { title: "Məlumat tapılmadı" };
 
   return {
@@ -39,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data: post } = await supabase
+  const { data: post } = await getSupabase()
     .from("travel_posts")
     .select("*")
     .eq("id", id)
