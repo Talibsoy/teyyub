@@ -162,8 +162,13 @@ export async function searchHotels(
     const hotels: RatehawkHotel[] = res.data?.hotels || [];
     return parseHotels(hotels, destination.name, checkin, checkout);
   } catch (err) {
-    console.error(`RateHawk searchHotels (${destination.name}):`, err);
-    return [];
+    const e = err as NodeJS.ErrnoException;
+    console.error(`RateHawk searchHotels (${destination.name}):`, {
+      message: e.message,
+      code: e.code,
+      stack: e.stack?.slice(0, 300),
+    });
+    throw err; // outer catch-də görünsün
   }
 }
 

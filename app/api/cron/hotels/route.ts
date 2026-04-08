@@ -42,9 +42,11 @@ export async function GET(req: NextRequest) {
 
       results.push({ destination: dest.name, found: offers.length, updated, added });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const e = err as NodeJS.ErrnoException;
+      const msg = `${e.message} | code=${e.code} | stack=${e.stack?.slice(0, 200)}`;
       console.error(`hotels cron — ${dest.name}:`, msg);
-      results.push({ destination: dest.name, found: -1, updated: 0, added: 0, error: msg });
+      results.push({ destination: dest.name, found: -1, updated: 0, added: 0, error: e.message + (e.code ? ` [${e.code}]` : "") });
+      break; // ilk xəta yetər, qalanları tək əlavə et
     }
   }
 
