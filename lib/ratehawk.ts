@@ -55,6 +55,11 @@ function getAuth(): string {
 }
 
 async function ratehawkPost(endpoint: string, body: object) {
+  // Sandbox TLS workaround (Node 24 + OpenSSL 3 uyğunsuzluğu)
+  if (process.env.RATEHAWK_SANDBOX === "true") {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
+
   const res = await fetch(`${RATEHAWK_BASE}${endpoint}`, {
     method: "POST",
     headers: {
