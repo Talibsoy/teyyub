@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { checkin, checkout } = getDefaultDates();
-  const results: { destination: string; found: number; updated: number; added: number }[] = [];
+  const results: { destination: string; found: number; updated: number; added: number; error?: string }[] = [];
 
   for (const dest of TRACKED_DESTINATIONS) {
     try {
