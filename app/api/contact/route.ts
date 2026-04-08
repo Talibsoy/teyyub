@@ -4,7 +4,7 @@ import { sendTelegramAlert } from "@/lib/telegram";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
       travel_date: null,
     });
 
-    // Email bildirişi — admininə
-    await resend.emails.send({
+    // Email bildirişi — admininə (RESEND_API_KEY varsa)
+    if (resend) await resend.emails.send({
       from: "Natoure Sayt <onboarding@resend.dev>",
       to: ["info@natourefly.com"],
       subject: `Yeni müraciət: ${ad}${tur ? ` — ${tur}` : ""}`,
