@@ -4,7 +4,7 @@ import type { HotelOffer } from "@/lib/ratehawk";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const CLIENT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\n/g, "\n");
+const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
 async function getSheet() {
   if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) return null;
