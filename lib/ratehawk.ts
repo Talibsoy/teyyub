@@ -120,10 +120,15 @@ function parseHotels(
 
     const hid = hotel.hid ?? hotel.id;
 
+    // Ad: name → id slug-dan → fallback
+    const slugName = typeof hotel.id === "string"
+      ? hotel.id.split("_").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+      : null;
+
     offers.push({
       hotel_key: `${hid}_${checkin}_${checkout}`,
       hotel_id: String(hid),
-      hotel_name: hotel.name || `Otel #${hid}`,
+      hotel_name: hotel.name || slugName || `Otel #${hid}`,
       destination,
       checkin,
       checkout,
@@ -205,7 +210,7 @@ interface RatehawkRate {
 
 interface RatehawkHotel {
   hid?: number;
-  id?: string | number;
+  id?: string;
   name?: string;
   star_rating?: number;
   rates?: RatehawkRate[];
