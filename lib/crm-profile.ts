@@ -91,7 +91,7 @@ export async function getCRMProfileByUserId(userId: string): Promise<CRMProfile 
   }
 }
 
-// Email-ə görə (Instagram, ManyChat)
+// Email-ə görə (Instagram)
 export async function getCRMProfileByEmail(email: string): Promise<CRMProfile | null> {
   try {
     const admin = getSupabaseAdmin();
