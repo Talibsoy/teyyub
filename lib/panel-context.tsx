@@ -189,12 +189,23 @@ export function PanelProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Failsafe: 6 saniyədən uzun gözləmə olsa da loading bitirir
+    const timeout = setTimeout(() => setLoading(false), 6000);
+
     supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
         const u = { id: data.session.user.id, email: data.session.user.email || "" };
         setUser(u);
-        await Promise.all([fetchProfile(u.id), fetchPoints(u.id), fetchWishlist(u.id)]);
+        try {
+          await Promise.all([fetchProfile(u.id), fetchPoints(u.id), fetchWishlist(u.id)]);
+        } catch (e) {
+          console.error("[Panel] Data fetch xətası:", e);
+        }
       }
+      clearTimeout(timeout);
+      setLoading(false);
+    }).catch(() => {
+      clearTimeout(timeout);
       setLoading(false);
     });
 
@@ -202,7 +213,11 @@ export function PanelProvider({ children }: { children: ReactNode }) {
       if (session) {
         const u = { id: session.user.id, email: session.user.email || "" };
         setUser(u);
-        await Promise.all([fetchProfile(u.id), fetchPoints(u.id), fetchWishlist(u.id)]);
+        try {
+          await Promise.all([fetchProfile(u.id), fetchPoints(u.id), fetchWishlist(u.id)]);
+        } catch (e) {
+          console.error("[Panel] Auth change data xətası:", e);
+        }
       } else {
         setUser(null);
         setProfile(null);
@@ -213,7 +228,10 @@ export function PanelProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const tier = getTier(totalPoints);
