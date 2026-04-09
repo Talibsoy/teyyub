@@ -456,34 +456,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
           return `${destination} üçün hal-hazırda real-time qiymət məlumatı əlçatan deyil. Komandamız ən yaxşı variantları sizinlə birbaşa paylaşacaq.`;
         }
 
-        // AI üçün oxunaqlı format
-        const lines: string[] = [report.summary, ""];
-
-        if (report.flights.length > 0) {
-          lines.push("✈️ UÇUŞ VARİANTLARI (artan qiymət):");
-          report.flights.forEach((f, i) => {
-            lines.push(`  ${i + 1}. ${f.airline} — ${f.price_azn} AZN | ${f.stops === 0 ? "Birbaşa" : f.stops + " dayanacaq"} | ${Math.floor(f.duration_minutes / 60)}s ${f.duration_minutes % 60}d`);
-          });
-          lines.push("");
-        }
-
-        if (report.hotels.length > 0) {
-          lines.push("🏨 OTEL VARİANTLARI (artan qiymət):");
-          report.hotels.forEach((h, i) => {
-            lines.push(`  ${i + 1}. ${h.hotel_name} (${"⭐".repeat(h.stars)}) — ${h.price_azn} AZN | ${h.meal}`);
-          });
-          lines.push("");
-        }
-
-        if (report.packages.length > 0) {
-          lines.push("📦 HAZIR PAKETLƏR:");
-          report.packages.forEach(p => {
-            lines.push(`  ${p.type}: ${p.per_person_azn} AZN/nəfər (cəmi ${p.total_azn} AZN)`);
-            lines.push(`    ✈️ ${p.flight.airline} + 🏨 ${p.hotel.hotel_name}`);
-          });
-        }
-
-        return lines.join("\n");
+        return report.natural_text;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         console.error("[analyze_prices tool]", msg);

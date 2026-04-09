@@ -8,17 +8,76 @@ function getRatehawkBase() {
 }
 
 export interface HotelOffer {
-  hotel_key: string;   // unikal açar: hotel_id_checkin_checkout
-  hotel_id: string;
-  hotel_name: string;
-  destination: string;
-  checkin: string;
-  checkout: string;
-  price_usd: number;
-  stars: number;
-  room_type: string;
-  meal: string;
-  updated_at: string;
+  hotel_key:    string;
+  hotel_id:     string;
+  hotel_string_id: string;   // RateHawk string id ("/hotel/info/" üçün)
+  hotel_name:   string;
+  destination:  string;
+  checkin:      string;
+  checkout:     string;
+  price_usd:    number;
+  stars:        number;
+  room_type:    string;
+  meal:         string;
+  updated_at:   string;
+  // Zəngin detallar (SERP-dən)
+  address?:     string;
+  amenities?:   string[];
+  wifi_free?:   boolean;
+  has_pool?:    boolean;
+  has_beach?:   boolean;
+  all_inclusive?: boolean;
+  activities?:  string[];
+  check_in_time?:  string;
+  check_out_time?: string;
+  description?: string;
+  photos?:      string[];
+}
+
+// Amenity kodlarını insan dilinə çevir
+export function parseAmenities(codes: string[]): {
+  readable: string[];
+  wifi_free: boolean;
+  has_pool: boolean;
+  has_beach: boolean;
+  all_inclusive: boolean;
+  activities: string[];
+} {
+  const MAP: Record<string, string> = {
+    free_wifi: "Pulsuz WiFi", wifi: "WiFi",
+    outdoor_pool: "Açıq hovuz", indoor_pool: "Qapalı hovuz", pool: "Hovuz",
+    beach: "Çimərlik çıxışı", private_beach: "Özəl çimərlik",
+    all_inclusive: "Hər şey daxil", breakfast_included: "Səhər yeməyi daxil",
+    half_board: "Yarım pansion", full_board: "Tam pansion",
+    restaurant: "Restoran", bar: "Bar",
+    gym: "Fitness zalı", fitness: "Fitness zalı",
+    spa: "SPA & Masaj", sauna: "Sauna",
+    kids_club: "Uşaq klubu", playground: "Oyun meydançası",
+    water_sports: "Su idman növləri", diving: "Dalış",
+    tennis: "Tennis kortu", golf: "Golf",
+    parking: "Pulsuz parkinq", transfer: "Aeroport transferi",
+    air_conditioning: "Kondisioner", room_service: "Otaq xidməti",
+    concierge: "Konsyerj xidməti", laundry: "Camaşır xidməti",
+    business_center: "Biznes mərkəzi", conference: "Konfrans zalı",
+  };
+
+  const readable: string[] = [];
+  const activities: string[] = [];
+  let wifi_free = false, has_pool = false, has_beach = false, all_inclusive = false;
+
+  for (const code of codes) {
+    const c = code.toLowerCase();
+    if (c.includes("wifi") || c === "free_wifi") wifi_free = true;
+    if (c.includes("pool")) has_pool = true;
+    if (c.includes("beach")) has_beach = true;
+    if (c === "all_inclusive") all_inclusive = true;
+    if (["water_sports","diving","tennis","golf","kids_club"].includes(c)) {
+      if (MAP[c]) activities.push(MAP[c]);
+    }
+    if (MAP[c]) readable.push(MAP[c]);
+  }
+
+  return { readable: [...new Set(readable)], wifi_free, has_pool, has_beach, all_inclusive, activities };
 }
 
 // ─── İzlənilən otellər (hid = RateHawk hotel ID) ─────────────────────────────
@@ -111,7 +170,6 @@ function parseHotels(
     const rate = hotel.rates?.[0];
     if (!rate) continue;
 
-    // Ümumi qiyməti hesabla (gündəlik qiymətlərin cəmi)
     const totalPrice = Array.isArray(rate.daily_prices)
       ? rate.daily_prices.reduce((sum: number, p: string) => sum + parseFloat(p || "0"), 0)
       : parseFloat(rate.payment_options?.payment_types?.[0]?.amount || "0");
@@ -119,28 +177,115 @@ function parseHotels(
     if (totalPrice <= 0) continue;
 
     const hid = hotel.hid ?? hotel.id;
-
-    // Ad: name → id slug-dan → fallback
+    const stringId = typeof hotel.id === "string" ? hotel.id : String(hid);
     const slugName = typeof hotel.id === "string"
       ? hotel.id.split("_").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
       : null;
 
+    // Amenity parse
+    const amenityCodes: string[] = [
+      ...(hotel.amenity_groups?.flatMap((g: RatehawkAmenityGroup) => g.amenities || []) || []),
+      ...(rate.amenities_data || []),
+    ];
+    const parsed = parseAmenities(amenityCodes);
+
+    // Meal plan insan dilinə
+    const mealMap: Record<string, string> = {
+      all_inclusive: "Hər şey daxil (All Inclusive)",
+      breakfast:     "Səhər yeməyi daxil",
+      half_board:    "Yarım pansion (Səhər + Axşam yeməyi)",
+      full_board:    "Tam pansion (3 öğün)",
+      room_only:     "Yalnız otaq",
+      no_meal:       "Yemək daxil deyil",
+    };
+    const mealLabel = mealMap[rate.meal || ""] || rate.meal || "Məlumat yoxdur";
+
     offers.push({
-      hotel_key: `${hid}_${checkin}_${checkout}`,
-      hotel_id: String(hid),
-      hotel_name: hotel.name || slugName || `Otel #${hid}`,
+      hotel_key:       `${hid}_${checkin}_${checkout}`,
+      hotel_id:        String(hid),
+      hotel_string_id: stringId,
+      hotel_name:      hotel.name || slugName || `Otel #${hid}`,
       destination,
       checkin,
       checkout,
-      price_usd: Math.round(totalPrice * 1.15 * 100) / 100, // +15% xidmət haqqı
-      stars: hotel.star_rating || 0,
-      room_type: rate.room_name || "",
-      meal: rate.meal || "room_only",
-      updated_at: new Date().toISOString(),
+      price_usd:   Math.round(totalPrice * 1.15 * 100) / 100,
+      stars:       hotel.star_rating || 0,
+      room_type:   rate.room_name || "",
+      meal:        mealLabel,
+      updated_at:  new Date().toISOString(),
+      address:         hotel.address || hotel.location?.address || "",
+      amenities:       parsed.readable,
+      wifi_free:       parsed.wifi_free,
+      has_pool:        parsed.has_pool,
+      has_beach:       parsed.has_beach,
+      all_inclusive:   parsed.all_inclusive,
+      activities:      parsed.activities,
+      check_in_time:   hotel.check_in_time  || "14:00",
+      check_out_time:  hotel.check_out_time || "12:00",
+      description:     hotel.description || "",
+      photos:          (hotel.images || []).slice(0, 3).map((img: RatehawkImage) => img.url || img.src || ""),
     });
   }
 
   return offers;
+}
+
+// Bir otel üçün tam detallar (amenity, ünvan, fəaliyyətlər)
+export async function getHotelDetails(hotelId: string): Promise<HotelDetails | null> {
+  try {
+    const res = await ratehawkPost("/hotel/info/", {
+      id: hotelId,
+      language: "en",
+    }) as RatehawkInfoResponse;
+
+    if (res.status !== "ok" || !res.data) return null;
+    const h = res.data;
+
+    const amenityCodes: string[] = h.amenity_groups?.flatMap(
+      (g: RatehawkAmenityGroup) => g.amenities || []
+    ) || [];
+    const parsed = parseAmenities(amenityCodes);
+
+    return {
+      hotel_id:    String(h.hid || hotelId),
+      name:        h.name || "",
+      address:     h.address || "",
+      description: h.description || "",
+      stars:       h.star_rating || 0,
+      amenities:   parsed.readable,
+      wifi_free:   parsed.wifi_free,
+      has_pool:    parsed.has_pool,
+      has_beach:   parsed.has_beach,
+      activities:  parsed.activities,
+      check_in_time:  h.check_in_time  || "14:00",
+      check_out_time: h.check_out_time || "12:00",
+      phone:       h.phone || "",
+      email:       h.email || "",
+      latitude:    h.latitude  || 0,
+      longitude:   h.longitude || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface HotelDetails {
+  hotel_id:       string;
+  name:           string;
+  address:        string;
+  description:    string;
+  stars:          number;
+  amenities:      string[];
+  wifi_free:      boolean;
+  has_pool:       boolean;
+  has_beach:      boolean;
+  activities:     string[];
+  check_in_time:  string;
+  check_out_time: string;
+  phone:          string;
+  email:          string;
+  latitude:       number;
+  longitude:      number;
 }
 
 // Otel ID-ləri ilə axtarış: /search/serp/hotels/
@@ -199,10 +344,27 @@ interface RatehawkResponse {
   error?: string;
 }
 
+interface RatehawkInfoResponse {
+  status: string;
+  data?: RatehawkHotelInfo;
+  error?: string;
+}
+
+interface RatehawkAmenityGroup {
+  amenities?: string[];
+  group_name?: string;
+}
+
+interface RatehawkImage {
+  url?: string;
+  src?: string;
+}
+
 interface RatehawkRate {
   daily_prices?: string[];
   room_name?: string;
   meal?: string;
+  amenities_data?: string[];
   payment_options?: {
     payment_types?: { amount?: string }[];
   };
@@ -214,4 +376,27 @@ interface RatehawkHotel {
   name?: string;
   star_rating?: number;
   rates?: RatehawkRate[];
+  address?: string;
+  description?: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  amenity_groups?: RatehawkAmenityGroup[];
+  images?: RatehawkImage[];
+  location?: { address?: string };
+}
+
+interface RatehawkHotelInfo {
+  hid?: number;
+  id?: string;
+  name?: string;
+  star_rating?: number;
+  address?: string;
+  description?: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  phone?: string;
+  email?: string;
+  latitude?: number;
+  longitude?: number;
+  amenity_groups?: RatehawkAmenityGroup[];
 }
