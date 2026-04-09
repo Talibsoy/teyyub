@@ -190,7 +190,6 @@ export function PanelProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    const timeout = setTimeout(() => { if (mounted) setLoading(false); }, 5000);
 
     const init = async () => {
       try {
@@ -200,33 +199,34 @@ export function PanelProvider({ children }: { children: ReactNode }) {
         if (session) {
           const u = { id: session.user.id, email: session.user.email || "" };
           setUser(u);
-          await Promise.allSettled([
+          // Auth bitti — dərhal loading bitir, panel açılır
+          setLoading(false);
+          // Data arxa planda yüklənir (panel bloklanmır)
+          Promise.allSettled([
             fetchProfile(u.id),
             fetchPoints(u.id),
             fetchWishlist(u.id),
           ]);
-        }
-      } catch (e) {
-        console.error("[Panel] init xətası:", e);
-      } finally {
-        if (mounted) {
-          clearTimeout(timeout);
+        } else {
+          // Session yoxdur → dərhal redirect
           setLoading(false);
         }
+      } catch {
+        if (mounted) setLoading(false);
       }
     };
 
     init();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      // INITIAL_SESSION artıq init() tərəfindən idarə edilir
       if (event === "INITIAL_SESSION") return;
 
       if (session) {
         const u = { id: session.user.id, email: session.user.email || "" };
         setUser(u);
-        await Promise.allSettled([
+        setLoading(false);
+        Promise.allSettled([
           fetchProfile(u.id),
           fetchPoints(u.id),
           fetchWishlist(u.id),
@@ -243,7 +243,6 @@ export function PanelProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
-      clearTimeout(timeout);
       listener.subscription.unsubscribe();
     };
   }, []);
