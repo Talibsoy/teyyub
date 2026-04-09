@@ -49,12 +49,25 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const client = getSupabase();
     client.auth.getSession().then(({ data }) => {
-      if (data.session) setUser(data.session.user);
-      else router.replace("/login");
+      if (!data.session) {
+        router.replace("/login");
+        return;
+      }
+      const isAdmin = data.session.user.app_metadata?.role === "admin";
+      if (!isAdmin) {
+        router.replace("/panel");
+        return;
+      }
+      setUser(data.session.user);
     });
     const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
-      if (!session) router.replace("/login");
-      else setUser(session.user);
+      if (!session) {
+        router.replace("/login");
+      } else {
+        const isAdmin = session.user.app_metadata?.role === "admin";
+        if (!isAdmin) router.replace("/panel");
+        else setUser(session.user);
+      }
     });
     return () => listener.subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
