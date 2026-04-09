@@ -7,10 +7,19 @@ export interface CustomerProfile {
   full_name: string | null;
   phone: string | null;
   birth_date: string | null;
-  nationality: string;
+  nationality: string | null;
+  // Pasport məlumatları
+  passport_issuing_country: string | null;
   passport_number: string | null;
+  passport_surname: string | null;
+  passport_given_name: string | null;
+  passport_gender: string | null;
+  passport_issue_date: string | null;
   passport_expiry: string | null;
+  // Səyahət DNT
   travel_style: string;
+  visited_countries: string[] | null;
+  // Referral
   referral_code: string | null;
   referred_by: string | null;
   created_at: string;

@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { usePanelContext } from "@/lib/panel-context";
 
-// Each point = $0.001 → 1000 points = $1
-const POINT_VALUE_USD = 0.001;
+// 1 xal = $0.01 → 1000 xal = $10
+const POINT_VALUE_USD = 0.01;
 
 const MOCK_PAYMENTS = [
   { id: "p1", date: "2026-03-15", description: "Antalya – Rixos Premium", amount_usd: 1840, status: "paid", method: "Kart", points_earned: 18400 },
@@ -34,7 +34,10 @@ function RedeemModal({ maxPoints, onClose }: { maxPoints: number; onClose: () =>
         </div>
         <div style={{ background: d ? "#1e293b" : "#f8fafc", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, color: d ? "#94a3b8" : "#64748b", marginBottom: 4 }}>Çevirmə dərəcəsi</div>
-          <div style={{ fontWeight: 700, color: d ? "#e2e8f0" : "#0f172a" }}>1000 xal = $1.00 endirim</div>
+          <div style={{ fontWeight: 700, color: d ? "#e2e8f0" : "#0f172a" }}>1000 xal = $10.00 endirim</div>
+          <div style={{ fontSize: 12, color: d ? "#64748b" : "#94a3b8", marginTop: 6 }}>
+            Hər sifariş üçün maks sifariş məbləğinin 3%-i qədər xal istifadə edilə bilər
+          </div>
         </div>
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: d ? "#94a3b8" : "#475569", marginBottom: 8 }}>
@@ -90,7 +93,7 @@ export default function WalletPage() {
         }}>
           <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Xal Balansı</div>
           <div style={{ fontSize: 28, fontWeight: 800 }}>{totalPoints.toLocaleString()}</div>
-          <div style={{ fontSize: 12, opacity: 0.75 }}>≈ ${cashbackUSD} dəyərindədir</div>
+          <div style={{ fontSize: 12, opacity: 0.75 }}>≈ ${cashbackUSD} endirim dəyərindədir</div>
           <button
             onClick={() => totalPoints >= 1000 && setRedeemOpen(true)}
             disabled={totalPoints < 1000}
@@ -137,9 +140,9 @@ export default function WalletPage() {
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
           {[
-            { icon: "✈️", title: "Uçuş Endirimi", desc: "1000 xal = $1 endirim" },
-            { icon: "🏨", title: "Otel Endirimi", desc: "1000 xal = $1 endirim" },
-            { icon: "🎁", title: "Paket Endirimi", desc: "5000+ xal → %5 əlavə endirim" },
+            { icon: "✈️", title: "Uçuş Endirimi",  desc: "1000 xal = $10 endirim" },
+            { icon: "🏨", title: "Otel Endirimi",  desc: "1000 xal = $10 endirim" },
+            { icon: "🎁", title: "Paket Endirimi", desc: "Maks. sifariş məbləğinin 3%-i" },
           ].map((item) => (
             <div key={item.title} style={{
               borderRadius: 14, padding: "16px 18px",
