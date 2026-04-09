@@ -114,7 +114,58 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
       image_url,
     });
 
-    return NextResponse.json({ success: true, country: dest.country, title });
+    // ── Facebook Səhifəsinə paylaş ──────────────────────────────────────────
+    let fb_post_id: string | null = null;
+    const fbToken = process.env.FB_PAGE_TOKEN;
+    const fbPageId = process.env.FB_PAGE_ID;
+
+    if (fbToken && fbPageId) {
+      try {
+        const fbCaption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com`;
+
+        let fbRes: Response;
+        if (image_url) {
+          // Şəkilli post
+          fbRes = await fetch(
+            `https://graph.facebook.com/v19.0/${fbPageId}/photos`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                url: image_url,
+                caption: fbCaption,
+                access_token: fbToken,
+              }),
+            }
+          );
+        } else {
+          // Şəkilsiz post
+          fbRes = await fetch(
+            `https://graph.facebook.com/v19.0/${fbPageId}/feed`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                message: fbCaption,
+                access_token: fbToken,
+              }),
+            }
+          );
+        }
+
+        const fbData = await fbRes.json() as { id?: string; error?: { message: string } };
+        if (fbData.id) {
+          fb_post_id = fbData.id;
+          console.log("[FB] Post uğurlu:", fb_post_id);
+        } else {
+          console.error("[FB] Xəta:", fbData.error?.message);
+        }
+      } catch (e) {
+        console.error("[FB] Exception:", e);
+      }
+    }
+
+    return NextResponse.json({ success: true, country: dest.country, title, fb_post_id });
   } catch (err) {
     console.error("[Cron] Travel post xətası:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
