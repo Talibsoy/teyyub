@@ -88,12 +88,30 @@ export default function ProfilPage() {
     setSaving(true);
     setSaveError("");
     const supabase = getSupabase();
-    const { error } = await supabase.from("customer_profiles").upsert({
-      id: user.id,
-      ...form,
-      visited_countries: visitedCountries,
-      updated_at: new Date().toISOString(),
-    });
+
+    // Boş string-ləri null-a çevir — DATE sütunları "" qəbul etmir
+    const payload = {
+      id:                       user.id,
+      full_name:                form.full_name                || null,
+      phone:                    form.phone                    || null,
+      birth_date:               form.birth_date               || null,
+      nationality:              form.nationality              || null,
+      passport_issuing_country: form.passport_issuing_country || null,
+      passport_number:          form.passport_number          || null,
+      passport_surname:         form.passport_surname         || null,
+      passport_given_name:      form.passport_given_name      || null,
+      passport_gender:          form.passport_gender          || null,
+      passport_issue_date:      form.passport_issue_date      || null,
+      passport_expiry:          form.passport_expiry          || null,
+      travel_style:             form.travel_style,
+      visited_countries:        visitedCountries,
+      updated_at:               new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from("customer_profiles")
+      .upsert(payload, { onConflict: "id" });
+
     setSaving(false);
     if (error) {
       setSaveError(error.message);
