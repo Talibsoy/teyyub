@@ -3,6 +3,7 @@ import { getToursContext } from "./rag";
 import { getExamples, formatExamplesForPrompt } from "./ai-memory";
 import { searchFlights, formatOffersForAI } from "./duffel";
 import { analyzePrices } from "./price-agent";
+import { CRMProfile, formatProfileForAI } from "./crm-profile";
 
 import {
   checkTourAvailability,
@@ -161,6 +162,25 @@ Müştəri razılaşanda:
 
 === REZERVASIYA ===
 Müştəri razılaşanda al: ad/soyad, telefon, email, nəfər sayı → save_lead aləti ilə CRM-ə qeyd et.
+
+=== QİYMƏT SİYASƏTİ — MÜTLƏQ ===
+Bütün qiymətlərə 15% xidmət haqqı DAXİLDİR. Heç vaxt daha aşağı qiymət vəd etmə.
+Qiymət göstərəndə: "Bütün xidmət haqqları daxil" və ya "xidmət haqqı daxil olmaqla" əlavə et.
+Əlavə baqaj, transfer, viza — ayrıca xərclər kimi qeyd et.
+
+=== MÜŞTƏRİ PROFİLİ ===
+{CRM_CONTEXT}
+
+=== QEYDİYYAT TƏŞVİQİ ===
+Müştəri qeydiyyatsızdırsa (CRM_CONTEXT-də "Qeydiyyat: YOX" yazıbsa):
+- Söhbətin 2-3-cü mesajında NATURAL şəkildə qeyd et (məcburi deyil, uyğun anı tap):
+  "Bir məlumatı paylaşım — saytımızda qeydiyyatdan keçsəniz hər rezervasiyadan xal qazanırsınız. Hazırki söhbətimizdən də xal hesablanacaq. Qeydiyyat: natourefly.com/qeydiyyat"
+- İkinci dəfə xatırlatma — yalnız müştəri qiymət soruşanda:
+  "Qeydiyyatlı müştərilərə xüsusi loyallıq endirimi tətbiq edirik. Bəzən 500-1000 xal = pulsuz transfer."
+- Üçüncü dəfə xatırlatma — YOX. Zorlamaq olmaz.
+
+Müştəri qeydiyyatlıdırsa: adı ilə müraciət et, xal balansını natural söhbətdə qeyd et.
+Nümunə: "Nigar xanım, 850 xalınız var — bu rezervasiyada istifadə edə bilərsiniz."
 
 === AKTUAL TURLAR ===
 {TOURS_CONTEXT}
@@ -506,7 +526,8 @@ function parseCustomerData(text: string): { message: string; customerData: Custo
 export async function getAIResponse(
   userMessage: string,
   conversationHistory: { role: "user" | "assistant"; content: string }[] = [],
-  media?: MediaInput
+  media?: MediaInput,
+  crmProfile?: CRMProfile | null
 ): Promise<AIResponse> {
   let userContent: Anthropic.MessageParam["content"];
 
@@ -552,14 +573,19 @@ export async function getAIResponse(
 
   const msgText = typeof userContent === "string" ? userContent : userMessage;
   const toursContext = await getToursContext(msgText);
-  const systemWithTours = SYSTEM_PROMPT.replace(
-    "{TOURS_CONTEXT}",
-    toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur."
-  );
+
+  // CRM profil konteksti
+  const crmContext = crmProfile
+    ? formatProfileForAI(crmProfile)
+    : "Müştəri məlumatı yoxdur (qeydiyyatsız və ya ilk yazışma).\nQeydiyyat: YOX — söhbət əsnasında natural şəkildə dəvət et.\nQeydiyyat linki: https://natourefly.com/qeydiyyat";
+
+  const systemWithContext = SYSTEM_PROMPT
+    .replace("{TOURS_CONTEXT}", toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur.")
+    .replace("{CRM_CONTEXT}", crmContext);
 
   const destinationMatch = msgText.match(/antalya|dubai|bali|paris|rome|roma|istanbul|maldiv|türkiy|ərəb|avropa/i);
   const examples = await getExamples(destinationMatch?.[0] ?? null);
-  const systemFinal = systemWithTours + formatExamplesForPrompt(examples);
+  const systemFinal = systemWithContext + formatExamplesForPrompt(examples);
 
   // Agentic loop — tool_use bitənə qədər davam et (max 5 dövr)
   let currentMessages = messages;

@@ -6,6 +6,7 @@ import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory, saveConvMeta, getConvMeta, markSummarySent } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getCRMProfileByPhone } from "@/lib/crm-profile";
 import { Redis } from "@upstash/redis";
 
 const redis =
@@ -163,7 +164,10 @@ async function handleMessage(platform: string, senderId: string, userMessage: st
 
   const history = await getHistory(historyKey);
 
-  const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media);
+  // CRM profili — Instagram sender phone-u yoxdur, amma əvvəlki saveLead-dən phone ola bilər
+  const crmProfile = await getCRMProfileByPhone(senderId).catch(() => null);
+
+  const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media, crmProfile);
 
   const mediaLabel = media?.mediaType || "media";
   history.push({ role: "user", content: userMessage || `[${mediaLabel}]` });

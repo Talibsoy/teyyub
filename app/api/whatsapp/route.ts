@@ -6,6 +6,7 @@ import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory } from "@/lib/conversation-store";
 import { saveLead } from "@/lib/crm";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getCRMProfileByPhone } from "@/lib/crm-profile";
 import { Redis } from "@upstash/redis";
 
 const redis =
@@ -147,7 +148,10 @@ async function handleWhatsApp(from: string, userMessage: string, media?: MediaIn
   const historyKey = `WA_${from}`;
   const history = await getHistory(historyKey);
 
-  const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media);
+  // CRM-dən müştəri profilini çək (telefon nömrəsinə görə)
+  const crmProfile = await getCRMProfileByPhone(from);
+
+  const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media, crmProfile);
 
   const mediaLabel = media?.mediaType || "media";
   history.push({ role: "user", content: userMessage || `[${mediaLabel}]` });
