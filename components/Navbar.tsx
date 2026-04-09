@@ -93,7 +93,15 @@ export default function Navbar() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#0284c7"; }}>
                 Panel
               </Link>
-            ) : null
+            ) : (
+              <Link href="/panel"
+                className="font-semibold px-4 py-2 rounded-xl transition-all duration-200"
+                style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none", fontSize: 14 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#0284c7"; (e.currentTarget as HTMLElement).style.color = "white"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#0284c7"; }}>
+                Paneliim
+              </Link>
+            )
           ) : (
             <>
               <Link href="/qeydiyyat"
@@ -152,7 +160,14 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}>
                 Panel
               </Link>
-            ) : null
+            ) : (
+              <Link href="/panel"
+                className="mt-1 text-center font-semibold px-4 py-3 rounded-xl"
+                style={{ border: "1.5px solid #0284c7", color: "#0284c7", textDecoration: "none" }}
+                onClick={() => setMenuOpen(false)}>
+                Paneliim
+              </Link>
+            )
           ) : (
             <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
               <Link href="/qeydiyyat"
