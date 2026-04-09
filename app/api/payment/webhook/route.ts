@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const { data: payment } = await supabase
       .from("payments")
-      .select("id, booking_id")
+      .select("id, booking_id, user_id, amount")
       .eq("epoint_order_id", orderId)
       .single();
 
@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
           if (crmCustomer) {
             await supabaseAdmin.from("customers").update({
               loyalty_points: (crmCustomer.loyalty_points || 0) + pointsEarned,
-              tags: supabase.rpc ? undefined : undefined, // tags-ı saxla
             }).eq("id", crmCustomer.id);
 
             // "repeat" tagini əlavə et (ilk ödənişdən sonra)
