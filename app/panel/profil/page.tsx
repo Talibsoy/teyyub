@@ -112,14 +112,27 @@ export default function ProfilPage() {
       .from("customer_profiles")
       .upsert(payload, { onConflict: "id" });
 
-    setSaving(false);
     if (error) {
+      setSaving(false);
       setSaveError(error.message);
-    } else {
-      setSaved(true);
-      await refreshProfile();
-      setTimeout(() => setSaved(false), 3000);
+      return;
     }
+
+    // CRM customers cədvəlini sinxronlaşdır (arxa planda)
+    const nameParts = (payload.full_name || "").trim().split(/\s+/);
+    supabase.from("customers").update({
+      first_name:      nameParts[0] || null,
+      last_name:       nameParts.slice(1).join(" ") || null,
+      phone:           payload.phone,
+      passport_number: payload.passport_number,
+      passport_expiry: payload.passport_expiry,
+      updated_at:      new Date().toISOString(),
+    }).eq("auth_user_id", user.id);
+
+    setSaving(false);
+    setSaved(true);
+    await refreshProfile();
+    setTimeout(() => setSaved(false), 3000);
   };
 
   const f = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>

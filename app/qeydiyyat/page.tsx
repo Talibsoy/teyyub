@@ -22,7 +22,7 @@ export default function QeydiyyatPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -30,17 +30,35 @@ export default function QeydiyyatPage() {
       },
     });
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       if (error.message.includes("already registered")) {
         setError("Bu email artıq qeydiyyatdadır. Giriş edin.");
       } else {
         setError("Xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.");
       }
-    } else {
-      setSuccess(true);
+      return;
     }
+
+    // CRM customers cədvəlinə sinxronizasiya
+    if (data.user) {
+      try {
+        await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId:   data.user.id,
+            email:    data.user.email,
+            fullName: name,
+          }),
+        });
+      } catch {
+        // CRM sync xətası qeydiyyatı bloklamasın
+      }
+    }
+
+    setLoading(false);
+    setSuccess(true);
   }
 
   return (

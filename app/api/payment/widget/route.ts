@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createEpointWidget } from "@/lib/epoint";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +8,13 @@ export async function POST(req: NextRequest) {
 
     if (!bookingId || !amount || amount <= 0) {
       return NextResponse.json({ error: "bookingId və amount tələb olunur" }, { status: 400 });
+    }
+
+    let userId: string | null = null;
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.slice(7));
+      if (user) userId = user.id;
     }
 
     const widget = await createEpointWidget({ amount, bookingId, description });
@@ -19,6 +26,7 @@ export async function POST(req: NextRequest) {
       status:           "pending",
       payment_method:   "wallet",
       epoint_order_id:  widget.orderId,
+      user_id:          userId,
     });
 
     return NextResponse.json({ widgetUrl: widget.paymentUrl, orderId: widget.orderId });

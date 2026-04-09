@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { getSupabase } from "@/lib/supabase";
 
 type Method = "card" | "google" | "apple";
 
@@ -29,10 +30,17 @@ function CheckoutForm() {
     setError("");
 
     try {
+      // Auth token-i götür — loyalty + CRM sinxronizasiyası üçün
+      const { data: { session } } = await getSupabase().auth.getSession();
+      const authHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
+      };
+
       if (method === "card") {
         const res  = await fetch("/api/payment/create", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           body: JSON.stringify({ bookingId, amount, description }),
         });
         const json = await res.json();
@@ -41,7 +49,7 @@ function CheckoutForm() {
       } else {
         const res  = await fetch("/api/payment/widget", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           body: JSON.stringify({ bookingId, amount, description }),
         });
         const json = await res.json();

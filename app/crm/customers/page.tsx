@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, Plus, X, Upload, FileText, Eye } from "lucide-react";
+import { Search, Plus, X, Upload, FileText, Eye, Star, Globe } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -16,12 +16,14 @@ interface Customer {
   tags: string[];
   source: string | null;
   notes: string | null;
+  auth_user_id: string | null;
+  loyalty_points: number | null;
   created_at: string;
 }
 
 const TAG_COLOR: Record<string, string> = {
-  vip: "bg-yellow-900/50 text-yellow-400",
-  repeat: "bg-purple-900/50 text-purple-400",
+  vip:       "bg-yellow-900/50 text-yellow-400",
+  repeat:    "bg-purple-900/50 text-purple-400",
   potential: "bg-blue-900/50 text-blue-400",
 };
 
@@ -161,7 +163,7 @@ export default function CustomersPage() {
                   <th className="text-left px-4 py-3 font-medium">Əlaqə</th>
                   <th className="text-left px-4 py-3 font-medium">Pasport</th>
                   <th className="text-left px-4 py-3 font-medium">Teqlər</th>
-                  <th className="text-left px-4 py-3 font-medium">Mənbə</th>
+                  <th className="text-left px-4 py-3 font-medium">Mənbə / Xallar</th>
                   <th className="text-left px-4 py-3 font-medium">Skan</th>
                 </tr>
               </thead>
@@ -169,8 +171,10 @@ export default function CustomersPage() {
                 {filtered.map((c) => (
                   <tr key={c.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
                     <td className="px-4 py-3">
-                      <div className="text-white font-medium">{c.first_name} {c.last_name || ""}</div>
-                      {c.notes && <div className="text-gray-500 text-xs line-clamp-1">{c.notes}</div>}
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-medium">{c.first_name} {c.last_name || ""}</span>
+                      </div>
+                      {c.notes && <div className="text-gray-500 text-xs line-clamp-1 mt-0.5">{c.notes}</div>}
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-gray-300">{c.phone || "—"}</div>
@@ -199,7 +203,23 @@ export default function CustomersPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 capitalize">{c.source || "—"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
+                        {c.auth_user_id ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-400 border border-blue-800/50 w-fit">
+                            <Globe size={10} /> Panel Üzvü
+                          </span>
+                        ) : (
+                          <span className="text-gray-500 text-xs capitalize">{c.source || "—"}</span>
+                        )}
+                        {c.loyalty_points != null && c.loyalty_points > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-400 font-medium">
+                            <Star size={10} className="fill-amber-400" />
+                            {c.loyalty_points.toLocaleString()} xal
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {c.passport_url ? (
