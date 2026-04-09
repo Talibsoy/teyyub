@@ -83,3 +83,39 @@ export async function checkEpointOrder(orderId: string): Promise<string> {
   const result = await res.json();
   return result.transaction?.status || "unknown";
 }
+
+// Apple Pay / Google Pay üçün widget URL
+export async function createEpointWidget(params: {
+  amount: number;
+  bookingId: string;
+  description?: string;
+}): Promise<EpointOrderResult> {
+  const orderId = `NAT-${params.bookingId}-${Date.now()}`;
+
+  const payload = {
+    public_key:           PUBLIC_KEY,
+    amount:               params.amount.toFixed(2),
+    currency:             "AZN",
+    order_id:             orderId,
+    description:          params.description || "Tur ödənişi — Natoure.az",
+    success_redirect_url: `${APP_URL}/payment/success?orderId=${orderId}&bookingId=${params.bookingId}`,
+    error_redirect_url:   `${APP_URL}/payment/error?orderId=${orderId}&bookingId=${params.bookingId}`,
+    language:             "az",
+  };
+
+  const { data, signature } = encode(payload);
+
+  const res = await fetch("https://epoint.az/api/1/token/widget", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data, signature }),
+  });
+
+  const result = await res.json();
+
+  if (result.status !== "success" || !result.redirect_url) {
+    throw new Error(result.message || "Widget URL yaradıla bilmədi");
+  }
+
+  return { orderId, paymentUrl: result.redirect_url };
+}
