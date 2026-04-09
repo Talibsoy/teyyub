@@ -1,5 +1,6 @@
 // googleapis paketi Node 20 + OpenSSL 3 ilə ERR_OSSL_UNSUPPORTED verir.
-// Həll: birbaşa Google Sheets REST API + native crypto (JWT RS256).
+// Həll: birbaşa Google Sheets REST API + jose (JWT RS256).
+import { importPKCS8, SignJWT } from "jose";
 import { CustomerData } from "@/lib/ai-agent";
 import type { HotelOffer } from "@/lib/ratehawk";
 
@@ -11,40 +12,18 @@ const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n").trim()
 async function getAccessToken(): Promise<string> {
   if (!CLIENT_EMAIL || !PRIVATE_KEY) throw new Error("Google credentials missing");
 
+  // jose — crypto.subtle istifadə edir, OpenSSL 3-lə uyğundur
+  const privateKey = await importPKCS8(PRIVATE_KEY, "RS256");
   const now = Math.floor(Date.now() / 1000);
-  const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
-  const payload = Buffer.from(
-    JSON.stringify({
-      iss: CLIENT_EMAIL,
-      scope: "https://www.googleapis.com/auth/spreadsheets",
-      aud: "https://oauth2.googleapis.com/token",
-      exp: now + 3600,
-      iat: now,
-    })
-  ).toString("base64url");
-
-  const signingInput = `${header}.${payload}`;
-
-  // crypto.subtle — newline olmayan PEM key-lərlə də işləyir
-  const pemContent = PRIVATE_KEY
-    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
-    .replace(/-----END PRIVATE KEY-----/g, "")
-    .replace(/\s+/g, "");
-  const keyBuffer = Buffer.from(pemContent, "base64");
-  const cryptoKey = await globalThis.crypto.subtle.importKey(
-    "pkcs8",
-    keyBuffer,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const sigBuffer = await globalThis.crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    Buffer.from(signingInput)
-  );
-  const signature = Buffer.from(sigBuffer).toString("base64url");
-  const jwt = `${signingInput}.${signature}`;
+  const jwt = await new SignJWT({
+    scope: "https://www.googleapis.com/auth/spreadsheets",
+  })
+    .setProtectedHeader({ alg: "RS256", typ: "JWT" })
+    .setIssuer(CLIENT_EMAIL)
+    .setAudience("https://oauth2.googleapis.com/token")
+    .setIssuedAt(now)
+    .setExpirationTime(now + 3600)
+    .sign(privateKey);
 
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
