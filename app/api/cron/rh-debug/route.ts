@@ -47,6 +47,15 @@ export async function GET(req: NextRequest) {
   const parsed = JSON.parse(raw);
   // Yalnız ilk oteli göstər (böyük datanı azalt)
   const firstHotel = parsed?.data?.hotels?.[0];
+  const topKeys = Object.keys(parsed ?? {});
+  const dataKeys = parsed?.data ? Object.keys(parsed.data) : [];
 
-  return NextResponse.json({ firstHotel, keys: firstHotel ? Object.keys(firstHotel) : [] });
+  return NextResponse.json({
+    topKeys,
+    dataKeys,
+    hotelsLength: parsed?.data?.hotels?.length ?? parsed?.hotels?.length ?? "?",
+    firstHotel: firstHotel ?? parsed?.hotels?.[0],
+    keys: firstHotel ? Object.keys(firstHotel) : [],
+    raw_preview: raw.slice(0, 500),
+  });
 }
