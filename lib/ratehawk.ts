@@ -127,7 +127,7 @@ function parseHotels(
       destination,
       checkin,
       checkout,
-      price_usd: Math.round(totalPrice * 100) / 100,
+      price_usd: Math.round(totalPrice * 1.15 * 100) / 100, // +15% xidmət haqqı
       stars: hotel.star_rating || 0,
       room_type: rate.room_name || "",
       meal: rate.meal || "room_only",

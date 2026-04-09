@@ -109,7 +109,7 @@ export default async function OtellerPage({
           Otellər
         </h1>
         <p style={{ opacity: 0.85, maxWidth: 500, margin: "0 auto", lineHeight: 1.6, fontSize: 16 }}>
-          RateHawk-dan hər 4 saatda bir yenilənən aktual qiymətlər
+          Aktual otel qiymətləri
         </p>
       </section>
 
@@ -160,7 +160,7 @@ export default async function OtellerPage({
           <div style={{ textAlign: "center", padding: "80px 24px", color: "#94a3b8" }}>
             <p style={{ fontSize: 48, marginBottom: 16 }}>🏨</p>
             <p style={{ fontSize: 18, fontWeight: 600, color: "#475569" }}>Hazırda otel məlumatı yoxdur</p>
-            <p style={{ fontSize: 14, marginTop: 8 }}>Sistem hər 4 saatda bir yenilənir</p>
+            <p style={{ fontSize: 14, marginTop: 8 }}>Məlumatlar tezliklə yenilənəcək</p>
           </div>
         ) : (
           <div style={{
