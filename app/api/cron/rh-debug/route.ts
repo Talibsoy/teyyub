@@ -4,7 +4,7 @@ import https from "node:https";
 
 function getAuth() {
   return Buffer.from(
-    `${process.env.RATEHAWK_API_ID}:${process.env.RATEHAWK_API_KEY}`
+    `${process.env.RATEHAWK_API_KEY}:${process.env.RATEHAWK_SECRET}`
   ).toString("base64");
 }
 
