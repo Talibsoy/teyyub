@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getToursContext } from "./rag";
 import { getExamples, formatExamplesForPrompt } from "./ai-memory";
 import { searchFlights, formatOffersForAI } from "./duffel";
+import { analyzePrices } from "./price-agent";
 
 import {
   checkTourAvailability,
@@ -333,6 +334,35 @@ Sadəcə maraq bildirəndə çağırma.`,
       required: []
     }
   },
+  {
+    name: "analyze_prices",
+    description: `Müəyyən destinasiya üçün real-time otel + uçuş qiymətlərini müqayisəli analiz edir.
+Büdcə / Comfort / Premium paketlər qurur, artan qiymət sırası ilə təqdim edir.
+Müştəri "ən ucuz", "qiymət müqayisəsi", "büdcəyə uyğun", "neçəyə başa gəlir", "variantlar", "hansı daha sərfəli" soruşanda çağır.
+Tarix bilinmirsə — növbəti 30 gün + 7 gecə default istifadə et.`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        destination: {
+          type: "string",
+          description: "Destinasiya adı: İstanbul, Dubai, Antalya, Şarm əl-Şeyx, Hurgada..."
+        },
+        checkin: {
+          type: "string",
+          description: "Giriş tarixi YYYY-MM-DD. Bilinmirsə boş burax — default istifadə olunacaq."
+        },
+        checkout: {
+          type: "string",
+          description: "Çıxış tarixi YYYY-MM-DD. Bilinmirsə boş burax — default istifadə olunacaq."
+        },
+        guests: {
+          type: "number",
+          description: "Nəfər sayı (default: 2)"
+        }
+      },
+      required: ["destination"]
+    }
+  },
 ];
 
 // ─── TOOL EXECUTOR ─────────────────────────────────────────────────────────────
@@ -400,6 +430,66 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
         budget: input.budget as string | undefined,
         notes: input.notes as string | undefined,
       });
+
+    case "analyze_prices": {
+      try {
+        const destination = input.destination as string;
+        const guests = (input.guests as number) || 2;
+
+        // Tarix verilməyibsə: +30 gün checkin, +7 gecə checkout
+        let checkin  = input.checkin  as string | undefined;
+        let checkout = input.checkout as string | undefined;
+        if (!checkin) {
+          const d = new Date();
+          d.setDate(d.getDate() + 30);
+          checkin = d.toISOString().split("T")[0];
+        }
+        if (!checkout) {
+          const d = new Date(checkin);
+          d.setDate(d.getDate() + 7);
+          checkout = d.toISOString().split("T")[0];
+        }
+
+        const report = await analyzePrices({ destination, checkin, checkout, guests });
+
+        if (report.packages.length === 0 && report.flights.length === 0 && report.hotels.length === 0) {
+          return `${destination} üçün hal-hazırda real-time qiymət məlumatı əlçatan deyil. Komandamız ən yaxşı variantları sizinlə birbaşa paylaşacaq.`;
+        }
+
+        // AI üçün oxunaqlı format
+        const lines: string[] = [report.summary, ""];
+
+        if (report.flights.length > 0) {
+          lines.push("✈️ UÇUŞ VARİANTLARI (artan qiymət):");
+          report.flights.forEach((f, i) => {
+            lines.push(`  ${i + 1}. ${f.airline} — ${f.price_azn} AZN | ${f.stops === 0 ? "Birbaşa" : f.stops + " dayanacaq"} | ${Math.floor(f.duration_minutes / 60)}s ${f.duration_minutes % 60}d`);
+          });
+          lines.push("");
+        }
+
+        if (report.hotels.length > 0) {
+          lines.push("🏨 OTEL VARİANTLARI (artan qiymət):");
+          report.hotels.forEach((h, i) => {
+            lines.push(`  ${i + 1}. ${h.hotel_name} (${"⭐".repeat(h.stars)}) — ${h.price_azn} AZN | ${h.meal}`);
+          });
+          lines.push("");
+        }
+
+        if (report.packages.length > 0) {
+          lines.push("📦 HAZIR PAKETLƏR:");
+          report.packages.forEach(p => {
+            lines.push(`  ${p.type}: ${p.per_person_azn} AZN/nəfər (cəmi ${p.total_azn} AZN)`);
+            lines.push(`    ✈️ ${p.flight.airline} + 🏨 ${p.hotel.hotel_name}`);
+          });
+        }
+
+        return lines.join("\n");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[analyze_prices tool]", msg);
+        return `Qiymət analizi aparılarkən xəta baş verdi. Komandamız sizinlə əlaqə saxlayaraq ən yaxşı qiymətləri təqdim edəcək.`;
+      }
+    }
 
     default:
       return `Naməlum alət: ${name}`;
