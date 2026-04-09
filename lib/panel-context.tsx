@@ -189,46 +189,60 @@ export function PanelProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Failsafe: 6 saniyədən uzun gözləmə olsa da loading bitirir
-    const timeout = setTimeout(() => setLoading(false), 6000);
+    let mounted = true;
+    const timeout = setTimeout(() => { if (mounted) setLoading(false); }, 5000);
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session) {
-        const u = { id: data.session.user.id, email: data.session.user.email || "" };
-        setUser(u);
-        try {
-          await Promise.all([fetchProfile(u.id), fetchPoints(u.id), fetchWishlist(u.id)]);
-        } catch (e) {
-          console.error("[Panel] Data fetch xətası:", e);
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        if (session) {
+          const u = { id: session.user.id, email: session.user.email || "" };
+          setUser(u);
+          await Promise.allSettled([
+            fetchProfile(u.id),
+            fetchPoints(u.id),
+            fetchWishlist(u.id),
+          ]);
+        }
+      } catch (e) {
+        console.error("[Panel] init xətası:", e);
+      } finally {
+        if (mounted) {
+          clearTimeout(timeout);
+          setLoading(false);
         }
       }
-      clearTimeout(timeout);
-      setLoading(false);
-    }).catch(() => {
-      clearTimeout(timeout);
-      setLoading(false);
-    });
+    };
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    init();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      // INITIAL_SESSION artıq init() tərəfindən idarə edilir
+      if (event === "INITIAL_SESSION") return;
+
       if (session) {
         const u = { id: session.user.id, email: session.user.email || "" };
         setUser(u);
-        try {
-          await Promise.all([fetchProfile(u.id), fetchPoints(u.id), fetchWishlist(u.id)]);
-        } catch (e) {
-          console.error("[Panel] Auth change data xətası:", e);
-        }
+        await Promise.allSettled([
+          fetchProfile(u.id),
+          fetchPoints(u.id),
+          fetchWishlist(u.id),
+        ]);
       } else {
         setUser(null);
         setProfile(null);
         setTotalPoints(0);
         setTransactions([]);
         setWishlist([]);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
+      mounted = false;
       clearTimeout(timeout);
       listener.subscription.unsubscribe();
     };

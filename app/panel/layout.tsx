@@ -28,9 +28,13 @@ function PanelContent({ children }: { children: React.ReactNode }) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>✈️</div>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0284c7", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
           <div style={{ color: "#64748b", fontSize: 14 }}>Yüklənir...</div>
+          <a href="/panel" style={{ display: "block", marginTop: 20, fontSize: 12, color: "#94a3b8", textDecoration: "underline", cursor: "pointer" }}>
+            Çox gözlədisə klikləyin
+          </a>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
