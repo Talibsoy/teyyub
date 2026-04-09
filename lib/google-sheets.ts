@@ -1,6 +1,5 @@
 // googleapis paketi Node 20 + OpenSSL 3 ilə ERR_OSSL_UNSUPPORTED verir.
 // Həll: birbaşa Google Sheets REST API + native crypto (JWT RS256).
-import crypto from "crypto";
 import { CustomerData } from "@/lib/ai-agent";
 import type { HotelOffer } from "@/lib/ratehawk";
 
@@ -25,9 +24,26 @@ async function getAccessToken(): Promise<string> {
   ).toString("base64url");
 
   const signingInput = `${header}.${payload}`;
-  const sign = crypto.createSign("RSA-SHA256");
-  sign.update(signingInput);
-  const signature = sign.sign(PRIVATE_KEY, "base64url");
+
+  // crypto.subtle — newline olmayan PEM key-lərlə də işləyir
+  const pemContent = PRIVATE_KEY
+    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "")
+    .replace(/\s+/g, "");
+  const keyBuffer = Buffer.from(pemContent, "base64");
+  const cryptoKey = await globalThis.crypto.subtle.importKey(
+    "pkcs8",
+    keyBuffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sigBuffer = await globalThis.crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    Buffer.from(signingInput)
+  );
+  const signature = Buffer.from(sigBuffer).toString("base64url");
   const jwt = `${signingInput}.${signature}`;
 
   const res = await fetch("https://oauth2.googleapis.com/token", {
