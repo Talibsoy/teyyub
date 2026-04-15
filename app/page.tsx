@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import NewsletterSection from "@/components/NewsletterSection";
 import {
   Sparkles, Brain, Plane, Star, X, Loader2,
   MapPin, Shield, TrendingUp, Headphones, ChevronRight,
@@ -272,6 +273,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      <NewsletterSection />
       {showModal && <ResultModal onClose={() => setShowModal(false)} aiReply={aiReply} />}
     </>
   );
