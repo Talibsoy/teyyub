@@ -133,7 +133,7 @@ export default function HomePage() {
             </span>
           </h1>
 
-          <p className="fade-in-up" style={{ fontSize: 18, color: "#64748b", marginBottom: 40, lineHeight: 1.6, animationDelay: "0.2s" }}>
+          <p className="fade-in-up" style={{ fontSize: 18, color: "#475569", marginBottom: 40, lineHeight: 1.6, animationDelay: "0.2s" }}>
             Sadəcə arzunuzu yazın — AI qalan hər şeyi planlaşdırır.
           </p>
 
@@ -219,7 +219,7 @@ export default function HomePage() {
                   <span style={{ fontSize: 12, fontWeight: 700, color: f.color, letterSpacing: 1, textTransform: "uppercase" }}>{f.tag}</span>
                 </div>
                 <h3 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 10 }}>{f.title}</h3>
-                <p style={{ color: "#64748b", lineHeight: 1.7, fontSize: 15 }}>{f.desc}</p>
+                <p style={{ color: "#475569", lineHeight: 1.7, fontSize: 15 }}>{f.desc}</p>
               </div>
             ))}
           </div>
