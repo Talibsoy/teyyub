@@ -1,12 +1,12 @@
 /**
  * Voyage AI Embeddings
  * Anthropic-tövsiyəli embedding provider
- * Model: voyage-3-lite (1024 dim, sürətli, ucuz)
+ * Model: voyage-3 (1024 dim)
  * Docs: https://docs.voyageai.com/reference/embeddings-api
  */
 
 const VOYAGE_API  = "https://api.voyageai.com/v1/embeddings";
-const VOYAGE_MODEL = "voyage-3-lite";
+const VOYAGE_MODEL = "voyage-3";
 
 function getKey(): string {
   const key = process.env.VOYAGE_API_KEY;
