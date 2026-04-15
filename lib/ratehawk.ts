@@ -1,7 +1,9 @@
 import https from "node:https";
 
 // RATEHAWK_BASE funksiya içində hesablanır (modul-level sabit build-time inline olur)
+// RATEHAWK_PROXY_URL varsa Contabo proxy üzərindən keç (statik IP → ETG whitelist)
 function getRatehawkBase() {
+  if (process.env.RATEHAWK_PROXY_URL) return process.env.RATEHAWK_PROXY_URL;
   return process.env.RATEHAWK_SANDBOX === "true"
     ? "https://api-sandbox.worldota.net/api/b2b/v3"
     : "https://api.worldota.net/api/b2b/v3";
@@ -20,6 +22,7 @@ export interface HotelOffer {
   room_type:       string;
   meal:            string;
   updated_at:      string;
+  book_hash?:      string;   // Prebook üçün lazımdır
   // Yer
   address?:        string;
   sea_front?:      boolean;   // dəniz kənarında
@@ -182,12 +185,15 @@ function ratehawkPost(endpoint: string, body: object): Promise<RatehawkResponse>
         path: url.pathname,
         method: "POST",
         headers: {
-          Authorization: `Basic ${getAuth()}`,
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(postData),
+          Authorization:      `Basic ${getAuth()}`,
+          "Content-Type":     "application/json",
+          "Content-Length":   Buffer.byteLength(postData),
+          ...(process.env.RATEHAWK_PROXY_SECRET
+            ? { "x-proxy-secret": process.env.RATEHAWK_PROXY_SECRET }
+            : {}),
         },
         // Sandbox-da TLS yoxlamasını söndür (self-signed cert)
-        rejectUnauthorized: !isSandbox,
+        rejectUnauthorized: !isSandbox && !process.env.RATEHAWK_PROXY_URL,
       },
       (res) => {
         let data = "";
@@ -302,6 +308,7 @@ function parseHotels(
       check_out_time:   hotel.check_out_time || "12:00",
       description:      hotel.description || "",
       photos:           (hotel.images || []).slice(0, 3).map((img: RatehawkImage) => img.url || img.src || ""),
+      book_hash:        rate.book_hash || undefined,
     });
   }
 
@@ -366,20 +373,27 @@ export interface HotelDetails {
   longitude:      number;
 }
 
+export interface SearchGuest {
+  adults:   number;
+  children: number[];   // uşaqların yaşları, məs: [3, 10]
+}
+
 // Otel ID-ləri ilə axtarış: /search/serp/hotels/
 export async function searchHotels(
   destination: DestinationGroup,
   checkin: string,
-  checkout: string
+  checkout: string,
+  guests: SearchGuest[] = [{ adults: 2, children: [] }],
+  residency = "az"
 ): Promise<HotelOffer[]> {
   try {
     const res = await ratehawkPost("/search/serp/hotels/", {
       checkin,
       checkout,
-      residency: "az",
+      residency,
       language: "en",
       currency: "USD",
-      guests: [{ adults: 2, children: [] }],
+      guests,
       hids: destination.hids,
     });
 
@@ -443,6 +457,7 @@ interface RatehawkRate {
   room_name?: string;
   meal?: string;
   amenities_data?: string[];
+  book_hash?: string;
   payment_options?: {
     payment_types?: { amount?: string }[];
   };
