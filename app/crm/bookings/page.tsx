@@ -116,6 +116,22 @@ export default function BookingsPage() {
     await supabase.from("bookings").update({ status }).eq("id", id);
     setBookings((prev) => prev.map((b) => b.id === id ? { ...b, status } : b));
     await logActivity("booking", id, "status_changed", { status: booking?.status }, { status });
+    fetch("/api/crm/run-workflow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "booking.status_changed",
+        data: {
+          id,
+          status,
+          old_status: booking?.status,
+          booking_number: booking?.booking_number ?? undefined,
+          name: booking?.customers
+            ? `${booking.customers.first_name} ${booking.customers.last_name || ""}`.trim()
+            : undefined,
+        },
+      }),
+    }).catch(() => {});
     setUpdating(null);
   }
 

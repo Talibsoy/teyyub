@@ -96,6 +96,22 @@ export default function LeadsPage() {
     await supabase.from("leads").update({ status }).eq("id", id);
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
     await logActivity("lead", id, "status_changed", { status: lead?.status }, { status });
+    fetch("/api/crm/run-workflow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "lead.status_changed",
+        data: {
+          id,
+          status,
+          old_status: lead?.status,
+          name: lead?.name ?? undefined,
+          platform: lead?.platform ?? undefined,
+          sender_id: lead?.sender_id ?? undefined,
+          destination: lead?.destination ?? undefined,
+        },
+      }),
+    }).catch(() => {});
     setUpdating(null);
   }
 

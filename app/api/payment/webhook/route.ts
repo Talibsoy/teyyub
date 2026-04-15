@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { verifyEpointWebhook, decodeEpointData } from "@/lib/epoint";
+import { runWorkflows } from "@/lib/workflow-engine";
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,6 +46,15 @@ export async function POST(req: NextRequest) {
             .update({ status: "confirmed" })
             .eq("id", payment.booking_id);
         }
+
+        // Workflow trigger
+        await runWorkflows("payment.created", {
+          id: payment.id,
+          status: "paid",
+          amount: payment.amount,
+          currency: "AZN",
+          booking_number: payment.booking_id || undefined,
+        });
 
         // Panel istifadəçisi varsa — loyalty xal əlavə et + CRM yenilə
         if (payment.user_id) {
