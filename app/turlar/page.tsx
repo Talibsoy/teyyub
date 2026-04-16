@@ -6,6 +6,7 @@ import { waLink } from "@/lib/whatsapp";
 import { supabase } from "@/lib/supabase";
 import WishlistButton from "@/components/WishlistButton";
 import type { Archetype } from "@/lib/quiz-processor";
+import { ARCHETYPE_LABELS } from "@/lib/quiz-processor";
 import { tracker } from "@/lib/tracking-client";
 
 interface Tour {
@@ -140,30 +141,40 @@ function TurlarContent() {
   }, []);
 
   const filtered = useMemo(() => {
-    return tours.filter((t) => {
-      // Kateqoriya
+    const list = tours.filter((t) => {
       if (active !== "hamisi" && getCategory(t.destination) !== active) return false;
-
-      // Axtarış
       if (search.trim()) {
         const q = search.toLowerCase();
         if (!t.name.toLowerCase().includes(q) && !t.destination.toLowerCase().includes(q)) return false;
       }
-
-      // Maksimum qiymət
       if (maxPrice && t.price_azn > Number(maxPrice)) return false;
-
-      // Müddət
       if (durFilter !== "hamisi") {
         const d = getDuration(t.start_date, t.end_date);
         if (durFilter === "1-5"  && !(d >= 1 && d <= 5)) return false;
         if (durFilter === "6-8"  && !(d >= 6 && d <= 8)) return false;
         if (durFilter === "9+"   && d < 9) return false;
       }
-
       return true;
     });
-  }, [tours, active, search, maxPrice, durFilter]);
+
+    // Arxetipə görə auto-sort
+    if (archetype && archetype !== "undetermined") {
+      if (archetype === "budget_optimizer") {
+        list.sort((a, b) => a.price_azn - b.price_azn);
+      } else if (archetype === "luxury_curator") {
+        list.sort((a, b) => b.price_azn - a.price_azn);
+      } else {
+        // Digər arxetiplər üçün match score-a görə sırala
+        list.sort((a, b) => {
+          const sa = calcTourMatchScore(a, archetype) ?? 0;
+          const sb = calcTourMatchScore(b, archetype) ?? 0;
+          return sb - sa;
+        });
+      }
+    }
+
+    return list;
+  }, [tours, active, search, maxPrice, durFilter, archetype]);
 
   const hasFilters = search || maxPrice || active !== "hamisi" || durFilter !== "hamisi";
 
@@ -180,6 +191,47 @@ function TurlarContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+
+        {/* ── Arxetip banneri ── */}
+        {archetype && archetype !== "undetermined" && (() => {
+          const label = ARCHETYPE_LABELS[archetype];
+          const sortDesc: Record<Archetype, string> = {
+            budget_optimizer:  "Ən sərfəli qiymətdən başlayaraq sıralandı",
+            luxury_curator:    "Ən premium paketlər birinci göstərilir",
+            deep_relaxer:      "Çimərliq & istirahət turları öndə",
+            silent_explorer:   "Mədəniyyət & kəşf turları öndə",
+            efficiency_seeker: "Qısa müddətli sürətli turlar öndə",
+            undetermined:      "",
+          };
+          return (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: "linear-gradient(135deg, rgba(2,132,199,0.06), rgba(79,70,229,0.06))",
+              border: "1px solid rgba(2,132,199,0.18)",
+              borderRadius: 14, padding: "12px 18px", marginBottom: 20,
+            }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                background: "linear-gradient(135deg, #0284c7, #4f46e5)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 18,
+              }}>
+                {label.emoji}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, color: "#0284c7", fontWeight: 700 }}>
+                  {label.name} profili üçün
+                </div>
+                <div style={{ fontSize: 13, color: "#475569" }}>
+                  {sortDesc[archetype]}
+                </div>
+              </div>
+              <a href="/" style={{ fontSize: 12, color: "#94a3b8", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Dəyiş →
+              </a>
+            </div>
+          );
+        })()}
 
         {/* Axtarış + Qiymət */}
         <div className="flex flex-col sm:flex-row gap-3 mb-5">

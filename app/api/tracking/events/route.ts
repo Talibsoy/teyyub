@@ -1,8 +1,15 @@
 // app/api/tracking/events/route.ts
-// NatoureFly Personalization Engine — Behavioral Event Ingestion
+// NatoureFly Personalization Engine — Behavioral Event Ingestion + Archetype Re-evaluation
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { processQuizResults, type QuizAnswer, type UserProfileScores } from "@/lib/quiz-processor";
+import {
+  getCachedProfile, setCachedProfile,
+  invalidateProfile, incrementEventCount, resetEventCount,
+} from "@/lib/profile-cache";
+
+const REEVAL_THRESHOLD = 20; // Hər 20 eventdən sonra arxetip yenidən hesablanır
 
 // EMA-based score update
 const LEARNING_RATE = 0.08;
@@ -137,25 +144,89 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const prefKeys = [
+      "pref_budget_sensitivity","pref_comfort_priority","pref_adventure_level",
+      "pref_hassle_free","pref_social_atmosphere","pref_cultural_depth",
+      "pref_nature_affinity","pref_nightlife","pref_family_friendly","pref_food_importance",
+    ];
+
     if (hasChanges) {
-      const scoreFields: Record<string, number> = {};
-      const prefKeys = [
-        "pref_budget_sensitivity","pref_comfort_priority","pref_adventure_level",
-        "pref_hassle_free","pref_social_atmosphere","pref_cultural_depth",
-        "pref_nature_affinity","pref_nightlife","pref_family_friendly","pref_food_importance",
-      ];
+      const scoreFields: Record<string, number | string> = {};
       for (const k of prefKeys) {
         if (typeof updatedScores[k] === "number") scoreFields[k] = updatedScores[k];
       }
-      scoreFields.updated_at = new Date().toISOString() as unknown as number;
+      scoreFields.updated_at = new Date().toISOString();
 
       await supabase
         .from("user_profiles")
         .update(scoreFields)
         .eq("user_id", userId);
+
+      // Redis cache-i etibarsız et — növbəti oxumada DB-dən yenilənəcək
+      await invalidateProfile(userId);
     }
 
-    return NextResponse.json({ ok: true, events_saved: rows.length, scores_updated: hasChanges });
+    // ── Arxetip re-evaluation (hər REEVAL_THRESHOLD eventdən sonra) ──────────
+    let newArchetype: string | null = null;
+    const totalEventCount = await incrementEventCount(userId);
+
+    if (totalEventCount >= REEVAL_THRESHOLD) {
+      await resetEventCount(userId);
+
+      // Quiz cavablarını oxu → yenilənmiş skorlarla arxetip yenidən hesabla
+      const { data: quizRows } = await supabase
+        .from("quiz_responses")
+        .select("question_id, answer_id, answer_data")
+        .eq("user_id", userId);
+
+      if (quizRows && quizRows.length > 0) {
+        const quizAnswers: QuizAnswer[] = quizRows.map((r) => ({
+          question_id: r.question_id,
+          answer_id: r.answer_id,
+          score_impact: (r.answer_data as { score_impact: Record<string, number> })?.score_impact ?? {},
+        }));
+
+        // Quiz cavabları + yenilənmiş davranış skorları birlikdə
+        const mergedProfile = processQuizResults(quizAnswers);
+
+        // Yenilənmiş skorları üstünlük ver (behavioral learning daha güclü)
+        for (const k of prefKeys) {
+          if (typeof updatedScores[k] === "number") {
+            mergedProfile[k as keyof typeof mergedProfile] = updatedScores[k] as never;
+          }
+        }
+
+        // Profil confidence artır
+        const newConfidence = Math.min(0.95, (profile.archetype_confidence ?? 0.65) + 0.05);
+
+        await supabase
+          .from("user_profiles")
+          .update({
+            archetype: mergedProfile.archetype,
+            archetype_confidence: newConfidence,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+
+        newArchetype = mergedProfile.archetype;
+        await invalidateProfile(userId);
+      }
+    } else {
+      // Cache-ə yaz (sonrakı oxumalar DB-yə getməsin)
+      const cachedProfile = {
+        archetype: profile.archetype,
+        archetype_confidence: profile.archetype_confidence,
+        ...Object.fromEntries(prefKeys.map(k => [k, updatedScores[k] ?? profile[k]])),
+      } as UserProfileScores;
+      await setCachedProfile(userId, cachedProfile);
+    }
+
+    return NextResponse.json({
+      ok: true,
+      events_saved: rows.length,
+      scores_updated: hasChanges,
+      archetype_updated: newArchetype,
+    });
   } catch (err) {
     console.error("Tracking events xətası:", err);
     return NextResponse.json({ ok: false, error: "Server xətası" }, { status: 500 });
