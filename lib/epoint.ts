@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 const PUBLIC_KEY  = process.env.EPOINT_PUBLIC_KEY  || "";
 const PRIVATE_KEY = process.env.EPOINT_PRIVATE_KEY || "";
-const BASE_URL    = "https://epoint.az/api/1/request";
+const BASE_URL    = "https://epoint.az/api/1/payment-request";
 const APP_URL     = process.env.NEXT_PUBLIC_APP_URL || "https://www.natourefly.com";
 
 function sign(data: string): string {
