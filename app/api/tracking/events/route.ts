@@ -36,6 +36,8 @@ const EVENT_SIGNALS: Record<string, Record<string, number>> = {
   "booking_complete:hotel:luxury":  { pref_comfort_priority: +0.08, pref_budget_sensitivity: -0.05 },
   "booking_complete:hotel:budget":  { pref_budget_sensitivity: +0.08 },
   "booking_complete:flight:direct": { pref_hassle_free: +0.06 },
+  "booking_start:package:expensive": { pref_comfort_priority: +0.05, pref_budget_sensitivity: -0.02 },
+  "booking_start:package:budget":    { pref_budget_sensitivity: +0.05 },
 };
 
 function deriveSignalKey(event: IncomingEvent): string | null {
@@ -69,6 +71,11 @@ function deriveSignalKey(event: IncomingEvent): string | null {
   }
   if (event_type === "booking_complete" && entity_type === "flight") {
     if ((metadata?.stop_count as number) === 0) return "booking_complete:flight:direct";
+  }
+  if (event_type === "booking_start" && entity_type === "package") {
+    const price = metadata?.price as number;
+    if (price > 1500) return "booking_start:package:expensive";
+    return "booking_start:package:budget";
   }
 
   return null;

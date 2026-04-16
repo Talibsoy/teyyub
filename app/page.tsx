@@ -41,34 +41,99 @@ function AnimatedBlobs() {
 }
 
 // ─── RESULT MODAL ─────────────────────────────────────────────────────────────
-function ResultModal({ onClose, aiReply }: { onClose: () => void; aiReply: string }) {
+interface SearchTour {
+  id: string;
+  name: string;
+  destination: string;
+  price_azn: number;
+  start_date: string | null;
+  hotel: string | null;
+  max_seats: number;
+  booked_seats: number;
+}
+
+interface SearchResult {
+  tours: SearchTour[];
+  ai_intro: string;
+  fallback: boolean;
+}
+
+function waLink(text: string) {
+  return `https://wa.me/994504888080?text=${encodeURIComponent(text)}`;
+}
+
+function ResultModal({ onClose, result }: { onClose: () => void; result: SearchResult | null }) {
+  if (!result) return null;
+  const { tours, ai_intro } = result;
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.3s ease" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "white", borderRadius: 28, maxWidth: 560, width: "100%", overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.3)", animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
+      <div style={{ background: "white", borderRadius: 28, maxWidth: 600, width: "100%", overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.3)", animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
+        {/* Header */}
         <div style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Sparkles size={18} color="white" />
-            <span style={{ color: "white", fontWeight: 700, fontSize: 16 }}>Nigar xanımın Tövsiyəsi</span>
+            <span style={{ color: "white", fontWeight: 700, fontSize: 16 }}>AI Tövsiyəsi</span>
           </div>
           <button onClick={onClose} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <X size={16} />
           </button>
         </div>
-        <div style={{ padding: "24px 28px 28px", maxHeight: "60vh", overflowY: "auto" }}>
-          <div style={{ background: "#f8fafc", borderRadius: 14, padding: "16px 18px", marginBottom: 20, borderLeft: "3px solid #0284c7" }}>
-            <p style={{ margin: 0, color: "#0f172a", fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
-              {aiReply}
+
+        <div style={{ padding: "20px 24px 24px", maxHeight: "70vh", overflowY: "auto" }}>
+          {/* AI intro */}
+          {ai_intro && (
+            <div style={{ background: "#f0f9ff", borderRadius: 12, padding: "12px 16px", marginBottom: 16, borderLeft: "3px solid #0284c7" }}>
+              <p style={{ margin: 0, color: "#0f172a", fontSize: 13, lineHeight: 1.7 }}>{ai_intro}</p>
+            </div>
+          )}
+
+          {/* Tour cards */}
+          {tours.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+              {tours.map(tour => {
+                const seatsLeft = tour.max_seats - tour.booked_seats;
+                return (
+                  <div key={tour.id} style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "white" }}>
+                    <div style={{ padding: "14px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#0284c7", background: "rgba(2,132,199,0.08)", padding: "2px 10px", borderRadius: 20 }}>
+                          {tour.destination}
+                        </span>
+                        <p style={{ margin: "6px 0 4px", fontWeight: 700, fontSize: 14, color: "#0f172a", lineHeight: 1.3 }}>{tour.name}</p>
+                        {tour.hotel && <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>🏨 {tour.hotel}</p>}
+                        {seatsLeft > 0 && seatsLeft <= 3 && (
+                          <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>Son {seatsLeft} yer!</span>
+                        )}
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 800, fontSize: 18, color: "#0284c7" }}>{tour.price_azn} AZN</p>
+                        <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>/nəfər</p>
+                      </div>
+                    </div>
+                    <div style={{ borderTop: "1px solid #f1f5f9", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+                      <a href={`/turlar/${tour.id}`} style={{ padding: "10px 0", textAlign: "center", fontSize: 13, fontWeight: 600, color: "#0284c7", textDecoration: "none", borderRight: "1px solid #f1f5f9" }}>
+                        Ətraflı bax
+                      </a>
+                      <a href={waLink(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`)} target="_blank" rel="noopener noreferrer"
+                        style={{ padding: "10px 0", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#25D366", textDecoration: "none" }}>
+                        WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p style={{ color: "#64748b", fontSize: 14, textAlign: "center", marginBottom: 16 }}>
+              Hal-hazırda uyğun tur tapılmadı. Yeni turlar üçün bizi izləyin.
             </p>
-          </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <a href="/turlar" style={{ flex: 1, padding: 14, borderRadius: 14, border: "none", background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
-              Turları İncələ <ArrowRight size={18} />
-            </a>
-            <button onClick={onClose} style={{ padding: "14px 20px", borderRadius: 14, border: "1px solid #e2e8f0", background: "white", color: "#64748b", fontWeight: 600, cursor: "pointer" }}>
-              Bağla
-            </button>
-          </div>
+          )}
+
+          <a href="/turlar" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+            Bütün Turlara Bax <ArrowRight size={16} />
+          </a>
         </div>
       </div>
     </div>
@@ -81,34 +146,37 @@ export default function HomePage() {
   const [loadingStep, setLoadingStep] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [aiReply, setAiReply] = useState("");
-  const sessionIdRef = useRef<string>("");
-
-  useEffect(() => {
-    sessionIdRef.current = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  }, []);
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isLoading) return;
     setIsLoading(true);
     setLoadingStep(0);
 
-    // Loading animasiyası
     const stepTimers = LOADING_STEPS.map((_, i) => setTimeout(() => setLoadingStep(i), i * 900));
 
     try {
-      const res = await fetch("/api/chat", {
+      const sessionToken = typeof window !== "undefined"
+        ? (localStorage.getItem("nf_session_token") ?? undefined)
+        : undefined;
+
+      const res = await fetch("/api/ai-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: sessionIdRef.current, message: prompt }),
+        body: JSON.stringify({ prompt, session_token: sessionToken }),
       });
       const data = await res.json();
       stepTimers.forEach(clearTimeout);
-      setAiReply(data.reply || "Cavab alınmadı. Zəhmət olmasa yenidən cəhd edin.");
+
+      if (data.ok) {
+        setSearchResult({ tours: data.tours || [], ai_intro: data.ai_intro || "", fallback: data.fallback ?? false });
+      } else {
+        setSearchResult({ tours: [], ai_intro: "Axtarış zamanı xəta baş verdi. Turlar səhifəsinə baxın.", fallback: true });
+      }
       setShowModal(true);
     } catch {
       stepTimers.forEach(clearTimeout);
-      setAiReply("Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin.");
+      setSearchResult({ tours: [], ai_intro: "Bağlantı xətası. Zəhmət olmasa yenidən cəhd edin.", fallback: true });
       setShowModal(true);
     } finally {
       setIsLoading(false);
@@ -280,7 +348,7 @@ export default function HomePage() {
       </section>
 
       <NewsletterSection />
-      {showModal && <ResultModal onClose={() => setShowModal(false)} aiReply={aiReply} />}
+      {showModal && <ResultModal onClose={() => setShowModal(false)} result={searchResult} />}
     </>
   );
 }
