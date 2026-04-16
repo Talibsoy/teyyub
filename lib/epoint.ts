@@ -70,8 +70,9 @@ export async function createEpointOrder(params: {
   return { orderId, paymentUrl: result.redirect_url };
 }
 
-export async function checkEpointOrder(orderId: string): Promise<string> {
-  const payload = { public_key: PUBLIC_KEY, order_id: orderId };
+// transaction — Epoint-in qaytardığı transaction ID (order_id deyil)
+export async function checkEpointOrder(transaction: string): Promise<string> {
+  const payload = { public_key: PUBLIC_KEY, transaction };
   const { data, signature } = encode(payload);
 
   const res = await fetch("https://epoint.az/api/1/get-status", {
