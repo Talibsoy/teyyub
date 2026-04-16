@@ -36,17 +36,27 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const desc = data.description ||
     `${data.destination} turu — ${dur ? `${dur.days} gün / ${dur.nights} gecə` : ""} ${data.price_azn} AZN-dən başlayan qiymətlərlə. Natoure ilə rezervasiya edin.`;
 
+  const canonical = `https://www.natourefly.com/turlar/${id}`;
   return {
     title: `${data.name} | Natoure`,
     description: desc.slice(0, 160),
+    alternates: { canonical },
     openGraph: {
       title: data.name,
       description: desc.slice(0, 160),
-      images: data.image_url ? [{ url: data.image_url }] : [],
+      images: data.image_url ? [{ url: data.image_url, width: 1200, height: 630, alt: data.name }] : [],
       type: "website",
       locale: "az_AZ",
+      url: canonical,
+      siteName: "Natoure",
     },
-    keywords: `${data.destination} turu, ${data.destination} paket tur, Bakıdan ${data.destination}, ${data.name}, Natoure`,
+    twitter: {
+      card: "summary_large_image",
+      title: data.name,
+      description: desc.slice(0, 160),
+      images: data.image_url ? [data.image_url] : [],
+    },
+    keywords: `${data.destination} turu, ${data.destination} paket tur, Bakıdan ${data.destination}, ${data.name}, Natoure, tur paket Azərbaycan`,
   };
 }
 
@@ -280,14 +290,18 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
             "name": tour.name,
             "description": tour.description || `${tour.destination} turu`,
             "touristType": "Leisure",
-            "itinerary": {
+            ...(tour.image_url && { "image": tour.image_url }),
+            ...(tour.start_date && { "startDate": tour.start_date }),
+            ...(tour.end_date && { "endDate": tour.end_date }),
+            "url": `https://www.natourefly.com/turlar/${tour.id}`,
+            "itinerary": itineraryList.length > 0 ? {
               "@type": "ItemList",
               "itemListElement": itineraryList.map((item, i) => ({
                 "@type": "ListItem",
                 "position": i + 1,
                 "name": item,
               })),
-            },
+            } : undefined,
             "offers": {
               "@type": "Offer",
               "price": tour.price_azn,
@@ -295,11 +309,14 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
               "availability": seatsLeft > 0
                 ? "https://schema.org/InStock"
                 : "https://schema.org/SoldOut",
+              "url": `https://www.natourefly.com/turlar/${tour.id}`,
+              "validFrom": tour.start_date ?? undefined,
             },
             "provider": {
               "@type": "TravelAgency",
               "name": "Natoure",
               "url": "https://www.natourefly.com",
+              "telephone": "+994504888080",
             },
           }),
         }}

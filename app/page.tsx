@@ -147,6 +147,10 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  // Quick search
+  const [qDest, setQDest]     = useState("hamisi");
+  const [qMonth, setQMonth]   = useState("");
+  const [qPersons, setQPersons] = useState(2);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isLoading) return;
@@ -236,8 +240,52 @@ export default function HomePage() {
             ))}
           </div>
 
+          {/* Quick Search */}
+          <div className="fade-in-up" style={{ marginTop: 28, animationDelay: "0.45s" }}>
+            <div style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(16px)", borderRadius: 20, padding: "16px 20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08), 0 0 0 1px rgba(2,132,199,0.12)" }}>
+              <p style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, textAlign: "center", marginBottom: 14, letterSpacing: 1, textTransform: "uppercase" }}>Sürətli Axtarış</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "center" }}>
+                {/* Destination */}
+                <select value={qDest} onChange={e => setQDest(e.target.value)}
+                  style={{ flex: "1 1 130px", minWidth: 120, padding: "10px 14px", borderRadius: 12, border: "1px solid #e2e8f0", background: "white", fontSize: 14, color: "#0f172a", outline: "none", cursor: "pointer" }}>
+                  <option value="hamisi">İstiqamət seç</option>
+                  <option value="turkiye">🇹🇷 Türkiyə</option>
+                  <option value="ereb">🇦🇪 Dubai / ƏƏ</option>
+                  <option value="misir">🇪🇬 Misir</option>
+                  <option value="avropa">🇪🇺 Avropa</option>
+                </select>
+                {/* Month */}
+                <select value={qMonth} onChange={e => setQMonth(e.target.value)}
+                  style={{ flex: "1 1 130px", minWidth: 120, padding: "10px 14px", borderRadius: 12, border: "1px solid #e2e8f0", background: "white", fontSize: 14, color: qMonth ? "#0f172a" : "#94a3b8", outline: "none", cursor: "pointer" }}>
+                  <option value="">Ay seç</option>
+                  {Array.from({ length: 8 }, (_, i) => {
+                    const d = new Date(); d.setMonth(d.getMonth() + i);
+                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                    const label = d.toLocaleString("az-AZ", { month: "long", year: "numeric" });
+                    return <option key={val} value={val}>{label}</option>;
+                  })}
+                </select>
+                {/* Persons */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "8px 14px", flex: "0 0 auto" }}>
+                  <MapPin size={14} style={{ color: "#94a3b8" }} />
+                  <button onClick={() => setQPersons(p => Math.max(1, p - 1))}
+                    style={{ width: 24, height: 24, borderRadius: 6, border: "1px solid #e2e8f0", background: "white", cursor: "pointer", fontSize: 16, lineHeight: 1, color: "#475569" }}>−</button>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", minWidth: 28, textAlign: "center" }}>{qPersons} nəfər</span>
+                  <button onClick={() => setQPersons(p => Math.min(20, p + 1))}
+                    style={{ width: 24, height: 24, borderRadius: 6, border: "1px solid #e2e8f0", background: "white", cursor: "pointer", fontSize: 16, lineHeight: 1, color: "#475569" }}>+</button>
+                </div>
+                {/* Search button */}
+                <a href={`/turlar${qDest !== "hamisi" || qMonth ? `?${new URLSearchParams({ ...(qDest !== "hamisi" && { dest: qDest }), ...(qMonth && { month: qMonth }) }).toString()}` : ""}`}
+                  style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 6, padding: "10px 22px", borderRadius: 12, background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(2,132,199,0.3)" }}>
+                  <Star size={14} />
+                  Tur Axtar
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* Quiz teaser — hero içində, dərhal görünür */}
-          <div className="fade-in-up" style={{ marginTop: 32, display: "flex", justifyContent: "center", animationDelay: "0.5s" }}>
+          <div className="fade-in-up" style={{ marginTop: 24, display: "flex", justifyContent: "center", animationDelay: "0.5s" }}>
             <QuizWidget />
           </div>
         </div>

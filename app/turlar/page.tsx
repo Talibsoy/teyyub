@@ -122,9 +122,10 @@ function MatchBadge({ score }: { score: number }) {
 function TurlarContent() {
   const searchParams = useSearchParams();
   const [active, setActive]       = useState(searchParams.get("dest") || "hamisi");
-  const [durFilter, setDurFilter] = useState("hamisi");
-  const [search, setSearch]       = useState("");
-  const [maxPrice, setMaxPrice]   = useState("");
+  const [durFilter, setDurFilter] = useState(searchParams.get("dur") || "hamisi");
+  const [search, setSearch]       = useState(searchParams.get("q") || "");
+  const [minPrice, setMinPrice]   = useState(searchParams.get("minPrice") || "");
+  const [maxPrice, setMaxPrice]   = useState(searchParams.get("maxPrice") || "");
   const [tours, setTours]         = useState<Tour[]>([]);
   const [loading, setLoading]     = useState(true);
   const [archetype, setArchetype] = useState<Archetype | null>(null);
@@ -140,6 +141,20 @@ function TurlarContent() {
     tracker.init();
   }, []);
 
+  // URL parametrlərini yenilə (shallow routing)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams();
+    if (active !== "hamisi") p.set("dest", active);
+    if (durFilter !== "hamisi") p.set("dur", durFilter);
+    if (search.trim()) p.set("q", search.trim());
+    if (minPrice) p.set("minPrice", minPrice);
+    if (maxPrice) p.set("maxPrice", maxPrice);
+    const qs = p.toString();
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, "", newUrl);
+  }, [active, durFilter, search, minPrice, maxPrice]);
+
   const filtered = useMemo(() => {
     const list = tours.filter((t) => {
       if (active !== "hamisi" && getCategory(t.destination) !== active) return false;
@@ -147,6 +162,7 @@ function TurlarContent() {
         const q = search.toLowerCase();
         if (!t.name.toLowerCase().includes(q) && !t.destination.toLowerCase().includes(q)) return false;
       }
+      if (minPrice && t.price_azn < Number(minPrice)) return false;
       if (maxPrice && t.price_azn > Number(maxPrice)) return false;
       if (durFilter !== "hamisi") {
         const d = getDuration(t.start_date, t.end_date);
@@ -174,12 +190,12 @@ function TurlarContent() {
     }
 
     return list;
-  }, [tours, active, search, maxPrice, durFilter, archetype]);
+  }, [tours, active, search, minPrice, maxPrice, durFilter, archetype]);
 
-  const hasFilters = search || maxPrice || active !== "hamisi" || durFilter !== "hamisi";
+  const hasFilters = search || minPrice || maxPrice || active !== "hamisi" || durFilter !== "hamisi";
 
   function clearFilters() {
-    setSearch(""); setMaxPrice(""); setActive("hamisi"); setDurFilter("hamisi");
+    setSearch(""); setMinPrice(""); setMaxPrice(""); setActive("hamisi"); setDurFilter("hamisi");
   }
 
   return (
@@ -245,17 +261,28 @@ function TurlarContent() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
-              style={{ background: "white", border: "1px solid #e2e8f0",  }}
+              style={{ background: "white", border: "1px solid #e2e8f0" }}
+            />
+          </div>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#555" }}>Min.</span>
+            <input
+              type="number"
+              placeholder="Min (AZN)"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="pl-10 pr-3 py-2.5 rounded-xl text-sm outline-none w-full sm:w-32"
+              style={{ background: "white", border: "1px solid #e2e8f0" }}
             />
           </div>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#555" }}>Maks.</span>
             <input
               type="number"
-              placeholder="Qiymət (AZN)"
+              placeholder="Maks (AZN)"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="pl-12 pr-4 py-2.5 rounded-xl text-sm outline-none w-full sm:w-44"
+              className="pl-12 pr-4 py-2.5 rounded-xl text-sm outline-none w-full sm:w-36"
               style={{ background: "white", border: "1px solid #e2e8f0",  }}
             />
           </div>
