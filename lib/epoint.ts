@@ -57,14 +57,14 @@ export async function createEpointOrder(params: {
 
   const res = await fetch(BASE_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ data, signature }),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ data, signature }).toString(),
   });
 
   const result = await res.json();
 
   if (result.status !== "success" || !result.redirect_url) {
-    throw new Error(result.message || "Epoint ödəniş yaradıla bilmədi");
+    throw new Error(`[Epoint] ${result.message || result.status || "Ödəniş yaradıla bilmədi"}`);
   }
 
   return { orderId, paymentUrl: result.redirect_url };
@@ -77,8 +77,8 @@ export async function checkEpointOrder(transaction: string): Promise<string> {
 
   const res = await fetch("https://epoint.az/api/1/get-status", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ data, signature }),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ data, signature }).toString(),
   });
 
   const result = await res.json();
@@ -108,8 +108,8 @@ export async function createEpointWidget(params: {
 
   const res = await fetch("https://epoint.az/api/1/token/widget", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ data, signature }),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ data, signature }).toString(),
   });
 
   const result = await res.json();
