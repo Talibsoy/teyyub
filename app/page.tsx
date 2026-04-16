@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import NewsletterSection from "@/components/NewsletterSection";
+import QuizWidget from "@/components/personalization/QuizWidget";
 import {
   Sparkles, Brain, Plane, Star, X, Loader2,
   MapPin, Shield, TrendingUp, Headphones, ChevronRight,
@@ -165,6 +166,11 @@ export default function HomePage() {
                 {tag}
               </button>
             ))}
+          </div>
+
+          {/* Quiz teaser — hero içində, dərhal görünür */}
+          <div className="fade-in-up" style={{ marginTop: 32, display: "flex", justifyContent: "center", animationDelay: "0.5s" }}>
+            <QuizWidget />
           </div>
         </div>
       </section>

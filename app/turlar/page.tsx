@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { waLink } from "@/lib/whatsapp";
 import { supabase } from "@/lib/supabase";
 import WishlistButton from "@/components/WishlistButton";
+import type { Archetype } from "@/lib/quiz-processor";
+import { tracker } from "@/lib/tracking-client";
 
 interface Tour {
   id: string;
@@ -64,6 +66,58 @@ export default function TurlarPage() {
   return <Suspense fallback={null}><TurlarContent /></Suspense>;
 }
 
+// ─── Match score (arxetip əsasında, RateHawk API olmadan sadə heuristik) ──────
+const BEACH_KEYWORDS = ["antalya", "bodrum", "maldiv", "bali", "hurqada", "şarm", "rodos", "krit"];
+const CULTURE_KEYWORDS = ["paris", "istanbul", "roma", "barselona", "amsterdam", "tokio", "kyoto"];
+
+function calcTourMatchScore(tour: Tour, archetype: Archetype | null): number | null {
+  if (!archetype || archetype === "undetermined") return null;
+
+  const dest = tour.destination.toLowerCase();
+  const price = tour.price_azn;
+  const duration = getDuration(tour.start_date, tour.end_date);
+
+  let score = 55; // Baza
+
+  if (archetype === "budget_optimizer") {
+    if (price < 800)  score += 25;
+    else if (price < 1400) score += 12;
+    else score -= 10;
+  } else if (archetype === "luxury_curator") {
+    if (price >= 2500) score += 25;
+    else if (price >= 1500) score += 10;
+    else score -= 15;
+  } else if (archetype === "deep_relaxer") {
+    if (BEACH_KEYWORDS.some(k => dest.includes(k))) score += 25;
+    if (duration >= 7) score += 10;
+    if (price >= 1200) score += 8;
+  } else if (archetype === "silent_explorer") {
+    if (CULTURE_KEYWORDS.some(k => dest.includes(k))) score += 25;
+    if (duration >= 5) score += 10;
+  } else if (archetype === "efficiency_seeker") {
+    if (duration <= 5) score += 15;
+    if (price < 1800) score += 10;
+    if (BEACH_KEYWORDS.some(k => dest.includes(k))) score += 8;
+  }
+
+  return Math.min(99, Math.max(30, score));
+}
+
+function MatchBadge({ score }: { score: number }) {
+  const color = score >= 80 ? "#16a34a" : score >= 60 ? "#0284c7" : "#64748b";
+  const bg    = score >= 80 ? "rgba(22,163,74,0.1)" : score >= 60 ? "rgba(2,132,199,0.1)" : "rgba(100,116,139,0.08)";
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      background: bg, border: `1px solid ${color}30`,
+      borderRadius: 20, padding: "3px 8px",
+    }}>
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+      <span style={{ fontSize: 11, fontWeight: 700, color }}>{score}% uyğun</span>
+    </div>
+  );
+}
+
 function TurlarContent() {
   const searchParams = useSearchParams();
   const [active, setActive]       = useState(searchParams.get("dest") || "hamisi");
@@ -72,11 +126,17 @@ function TurlarContent() {
   const [maxPrice, setMaxPrice]   = useState("");
   const [tours, setTours]         = useState<Tour[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [archetype, setArchetype] = useState<Archetype | null>(null);
 
   useEffect(() => {
     supabase.from("tours").select("*").eq("is_active", true)
       .order("created_at", { ascending: false })
       .then(({ data }) => { setTours(data || []); setLoading(false); });
+
+    const saved = localStorage.getItem("nf_archetype");
+    if (saved) setArchetype(saved as Archetype);
+
+    tracker.init();
   }, []);
 
   const filtered = useMemo(() => {
@@ -204,8 +264,20 @@ function TurlarContent() {
               const durationLabel = getDurationLabel(tour.start_date, tour.end_date);
               const seatsLeft = tour.max_seats - tour.booked_seats;
               const almostFull = seatsLeft <= 3 && seatsLeft > 0;
+              const matchScore = calcTourMatchScore(tour, archetype);
               return (
-                <div key={tour.id} className="rounded-xl flex flex-col overflow-hidden" style={{ background: "white", border: "1px solid #e2e8f0" }}>
+                <div key={tour.id}
+                  className="rounded-xl flex flex-col overflow-hidden"
+                  style={{ background: "white", border: "1px solid #e2e8f0" }}
+                  onMouseEnter={() => {
+                    tracker.track({
+                      event_type: "view_detail",
+                      entity_type: "package",
+                      entity_id: tour.id,
+                      metadata: { price: tour.price_azn, destination: tour.destination },
+                    });
+                  }}
+                >
                   {almostFull && (
                     <div className="text-xs font-bold text-center py-1.5" style={{ background: "#ef4444",  }}>
                       Son {seatsLeft} yer!
@@ -214,7 +286,10 @@ function TurlarContent() {
                   <div className="p-4 flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs" style={{ color: "#94a3b8" }}>{tour.destination}</p>
-                      <WishlistButton tourId={tour.id} />
+                      <div className="flex items-center gap-2">
+                        {matchScore !== null && <MatchBadge score={matchScore} />}
+                        <WishlistButton tourId={tour.id} />
+                      </div>
                     </div>
                     <Link href={`/turlar/${tour.id}`}>
                       <h3 className="font-bold text-base mb-1 hover:text-yellow-400 transition-colors cursor-pointer" style={{ color: "#0f172a" }}>{tour.name}</h3>
