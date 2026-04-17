@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import ChatWidget from "./ChatWidget";
-import WhatsAppButton from "./WhatsAppButton";
 
 const BARE_ROUTES = ["/prototype"];
 
@@ -22,7 +21,6 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1">{children}</main>
       <Footer />
       <ChatWidget />
-      <WhatsAppButton />
     </>
   );
 }
