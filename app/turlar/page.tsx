@@ -294,7 +294,7 @@ function TurlarContent() {
             <button key={cat.id} onClick={() => setActive(cat.id)}
               className="px-4 py-2 rounded-full text-sm font-medium transition-all"
               style={active === cat.id
-                ? { background: "#D4AF37", color: "#000" }
+                ? { background: "#0284c7", color: "#fff" }
                 : { background: "white", color: "#64748b", border: "1px solid #e2e8f0" }}>
               {cat.label}
             </button>
@@ -307,7 +307,7 @@ function TurlarContent() {
             <button key={d.id} onClick={() => setDurFilter(d.id)}
               className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
               style={durFilter === d.id
-                ? { background: "#333", color: "#D4AF37", border: "1px solid #D4AF37" }
+                ? { background: "#0284c7", color: "#fff", border: "1px solid #0284c7" }
                 : { background: "white", color: "#94a3b8", border: "1px solid #e2e8f0" }}>
               {d.label}
             </button>
@@ -321,7 +321,7 @@ function TurlarContent() {
               {filtered.length} tur tapıldı
             </p>
             {hasFilters && (
-              <button onClick={clearFilters} className="text-xs underline" style={{ color: "#D4AF37" }}>
+              <button onClick={clearFilters} className="text-xs underline" style={{ color: "#0284c7" }}>
                 Filterləri sil
               </button>
             )}
@@ -379,7 +379,7 @@ function TurlarContent() {
                   </div>
                   <div className="p-4 pt-0">
                     <div className="flex items-center justify-between mb-3 pt-3" style={{ borderTop: "1px solid #e2e8f0" }}>
-                      <span className="text-lg font-bold" style={{ color: "#D4AF37" }}>{tour.price_azn} AZN</span>
+                      <span className="text-lg font-bold" style={{ color: "#0284c7" }}>{tour.price_azn} AZN</span>
                       <span className="text-xs" style={{ color: "#555" }}>/nəfər</span>
                     </div>
                     <Link href={`/turlar/${tour.id}`}
