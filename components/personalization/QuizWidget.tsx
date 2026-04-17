@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Zap, Clock, Star, Wallet, Map, Palmtree, Wine, Users, ChevronRight, RotateCcw, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Zap, Clock, Star, Wallet, Map, Palmtree, Wine, Users, ChevronRight, RotateCcw, ArrowRight, CheckCircle2, Calendar, UserCircle, Utensils, Heart, Compass } from "lucide-react";
 import { QUIZ_QUESTIONS, ARCHETYPE_LABELS, Archetype } from "@/lib/quiz-processor";
 
 function getSessionToken(): string {
@@ -24,19 +24,43 @@ type Step = "intro" | "quiz" | "loading" | "result";
 
 // Option icons (Lucide, no emoji)
 const OPTION_ICONS: Record<string, React.ReactNode> = {
+  // Q1 — Enerji
   Q1_A: <Palmtree size={22} />,
   Q1_B: <Map size={22} />,
+  // Q2 — Prioritet
   Q2_A: <Clock size={22} />,
   Q2_B: <Star size={22} />,
   Q2_C: <Wallet size={22} />,
+  // Q3 — Yerləşmə
   Q3_A: <Star size={22} />,
   Q3_B: <Palmtree size={22} />,
+  // Q4 — Axşam
   Q4_A: <Wine size={22} />,
   Q4_B: <Users size={22} />,
+  // Q5 — Büdcə
   Q5_A: <Wallet size={22} />,
   Q5_B: <Wallet size={22} />,
   Q5_C: <Star size={22} />,
   Q5_D: <Zap size={22} />,
+  // Q6 — Planlama (Conscientiousness)
+  Q6_A: <Calendar size={22} />,
+  Q6_B: <Map size={22} />,
+  Q6_C: <Zap size={22} />,
+  // Q7 — Sosial (Extraversion)
+  Q7_A: <Users size={22} />,
+  Q7_B: <UserCircle size={22} />,
+  // Q8 — Yenilik (Openness)
+  Q8_A: <Utensils size={22} />,
+  Q8_B: <Star size={22} />,
+  // Q9 — Yoldaş (Group)
+  Q9_A: <UserCircle size={22} />,
+  Q9_B: <Heart size={22} />,
+  Q9_C: <Users size={22} />,
+  Q9_D: <Zap size={22} />,
+  // Q10 — Highlight
+  Q10_A: <Map size={22} />,
+  Q10_B: <Compass size={22} />,
+  Q10_C: <Palmtree size={22} />,
 };
 
 const ARCHETYPE_ICONS: Record<Archetype, React.ReactNode> = {
@@ -66,7 +90,6 @@ export default function QuizWidget() {
   }, []);
 
   const question = QUIZ_QUESTIONS[currentQ];
-  const progress = (currentQ / QUIZ_QUESTIONS.length) * 100;
 
   function handleAnswer(option: { id: string; score_impact: Record<string, number | undefined> }) {
     const cleanImpact: Record<string, number> = {};

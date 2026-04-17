@@ -3,7 +3,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { processQuizResults, QUIZ_QUESTIONS, QuizAnswer } from "@/lib/quiz-processor";
+import { processQuizResults, buildDNAText, QUIZ_QUESTIONS, QuizAnswer } from "@/lib/quiz-processor";
+import { embed } from "@/lib/embeddings";
 
 // GET /api/quiz — Return quiz questions
 export async function GET() {
@@ -81,6 +82,18 @@ export async function POST(req: NextRequest) {
       quiz_completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
+
+    // 5. Travel DNA vektoru — background (xəta olsa cavabı bloklamasın)
+    try {
+      const dnaText = buildDNAText(profile);
+      const dnaVector = await embed(dnaText);
+      await supabase
+        .from("user_profiles")
+        .update({ travel_dna_vector: dnaVector })
+        .eq("user_id", userId);
+    } catch {
+      // Embedding xətası quiz cavabını pozmasın
+    }
 
     return NextResponse.json({
       success: true,
