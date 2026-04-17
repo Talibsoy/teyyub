@@ -2,45 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import NewsletterSection from "@/components/NewsletterSection";
-import QuizWidget from "@/components/personalization/QuizWidget";
-import {
-  Sparkles, Brain, Plane, Star, X, Loader2,
-  MapPin, Shield, TrendingUp, Headphones, ChevronRight,
-  ArrowRight, Zap,
-} from "lucide-react";
+import { Sparkles, X, Loader2, ArrowRight, MapPin } from "lucide-react";
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-const TAGS = [
-  "Romantik cütlük səyahəti",
-  "Ailə ilə Dubaya uçuş",
-  "Büdcəyə uyğun Antalya",
-  "Baliyə ekzotik tur",
-  "Parisə mədəniyyət səyahəti",
-  "Tokio macərası",
-];
-
-const DESTINATIONS = [
-  { name: "Dubai", country: "BƏƏ", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80", large: true },
-  { name: "Paris", country: "Fransa", img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80" },
-  { name: "Bali", country: "İndoneziya", img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80" },
-  { name: "Antalya", country: "Türkiyə", img: "https://images.unsplash.com/photo-1571366343168-631c5bcca7a4?w=600&q=80", wide: true },
-  { name: "Tokyo", country: "Yaponiya", img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80" },
-];
-
-const LOADING_STEPS = ["Təhlil edilir...", "Məkanlar axtarılır...", "Paket hazırlanır...", "Tamamlanır..."];
-
-// ─── BLOBS ────────────────────────────────────────────────────────────────────
-function AnimatedBlobs() {
-  return (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-      <div style={{ position: "absolute", top: "-10%", left: "-10%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(2,132,199,0.18) 0%, transparent 70%)", animation: "blob 8s ease-in-out infinite", filter: "blur(40px)" }} />
-      <div style={{ position: "absolute", top: "20%", right: "-5%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(79,70,229,0.15) 0%, transparent 70%)", animation: "blob 10s ease-in-out infinite 2s", filter: "blur(40px)" }} />
-      <div style={{ position: "absolute", bottom: "5%", left: "30%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(2,132,199,0.12) 0%, transparent 70%)", animation: "blob 12s ease-in-out infinite 4s", filter: "blur(40px)" }} />
-    </div>
-  );
-}
-
-// ─── RESULT MODAL ─────────────────────────────────────────────────────────────
+/* ─── Types ─────────────────────────────────────────── */
 interface SearchTour {
   id: string;
   name: string;
@@ -51,73 +15,107 @@ interface SearchTour {
   max_seats: number;
   booked_seats: number;
 }
-
 interface SearchResult {
   tours: SearchTour[];
   ai_intro: string;
   fallback: boolean;
 }
 
-function waLink(text: string) {
-  return `https://wa.me/994504888080?text=${encodeURIComponent(text)}`;
+/* ─── Helpers ────────────────────────────────────────── */
+function waLink(t: string) {
+  return `https://wa.me/994504888080?text=${encodeURIComponent(t)}`;
 }
 
+const TAGS = [
+  "Romantik cütlük səyahəti",
+  "Ailə ilə Dubaya uçuş",
+  "Büdcəyə uyğun Antalya",
+  "Baliyə ekzotik tur",
+  "Parisə mədəniyyət səyahəti",
+  "Tokio macərası",
+];
+
+const DESTINATIONS = [
+  { name: "Dubai",      country: "BƏƏ",        img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80",  big: true  },
+  { name: "Malediv",    country: "Hind Okeanı", img: "https://images.unsplash.com/photo-1499396010447-c75e58d61c2b?w=600&q=80"          },
+  { name: "Barselona",  country: "İspaniya",    img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80"          },
+  { name: "Antalya",    country: "Türkiyə",     img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80"            },
+  { name: "Tokio",      country: "Yaponiya",    img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80"         },
+  { name: "Kapri",      country: "İtaliya",     img: "https://images.unsplash.com/photo-1499678329028-101435549a4e?w=600&q=80"         },
+];
+
+const LOADING_STEPS = ["Təhlil edilir...", "Məkanlar axtarılır...", "Paket hazırlanır...", "Tamamlanır..."];
+
+/* ─── GlowOrbs ───────────────────────────────────────── */
+function GlowOrbs() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden -z-0">
+      <div className="blob absolute top-[-8rem] left-[-6rem] w-[500px] h-[500px] rounded-full bg-sky-400/20 blur-3xl" />
+      <div className="blob blob-delay absolute bottom-[5%] right-[-4rem] w-96 h-96 rounded-full bg-violet-400/20 blur-3xl" />
+      <div className="blob blob-delay2 absolute top-[40%] left-[35%] w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
+    </div>
+  );
+}
+
+/* ─── Result Modal ───────────────────────────────────── */
 function ResultModal({ onClose, result }: { onClose: () => void; result: SearchResult | null }) {
   if (!result) return null;
   const { tours, ai_intro } = result;
-
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.3s ease" }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "white", borderRadius: 28, maxWidth: 600, width: "100%", overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.3)", animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
+    <div
+      className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{ animation: "fadeIn .3s ease" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl"
+        style={{ animation: "slideUp .4s cubic-bezier(.34,1.56,.64,1)" }}>
         {/* Header */}
-        <div style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Sparkles size={18} color="white" />
-            <span style={{ color: "white", fontWeight: 700, fontSize: 16 }}>AI Tövsiyəsi</span>
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} className="text-white" />
+            <span className="text-white font-bold text-base">AI Tövsiyəsi</span>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition">
             <X size={16} />
           </button>
         </div>
 
-        <div style={{ padding: "20px 24px 24px", maxHeight: "70vh", overflowY: "auto" }}>
-          {/* AI intro */}
+        <div className="p-6 max-h-[70vh] overflow-y-auto">
           {ai_intro && (
-            <div style={{ background: "#f0f9ff", borderRadius: 12, padding: "12px 16px", marginBottom: 16, borderLeft: "3px solid #0284c7" }}>
-              <p style={{ margin: 0, color: "#0f172a", fontSize: 13, lineHeight: 1.7 }}>{ai_intro}</p>
+            <div className="bg-sky-50 border-l-4 border-sky-500 rounded-xl p-4 mb-4">
+              <p className="text-slate-700 text-sm leading-relaxed m-0">{ai_intro}</p>
             </div>
           )}
 
-          {/* Tour cards */}
           {tours.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+            <div className="flex flex-col gap-3 mb-4">
               {tours.map(tour => {
                 const seatsLeft = tour.max_seats - tour.booked_seats;
                 return (
-                  <div key={tour.id} style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "white" }}>
-                    <div style={{ padding: "14px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#0284c7", background: "rgba(2,132,199,0.08)", padding: "2px 10px", borderRadius: 20 }}>
-                          {tour.destination}
-                        </span>
-                        <p style={{ margin: "6px 0 4px", fontWeight: 700, fontSize: 14, color: "#0f172a", lineHeight: 1.3 }}>{tour.name}</p>
-                        {tour.hotel && <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>🏨 {tour.hotel}</p>}
+                  <div key={tour.id} className="border border-slate-100 rounded-2xl overflow-hidden">
+                    <div className="p-4 flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[11px] font-semibold text-sky-600 bg-sky-50 px-3 py-0.5 rounded-full">{tour.destination}</span>
+                        <p className="mt-2 font-bold text-slate-800 text-sm leading-snug">{tour.name}</p>
+                        {tour.hotel && <p className="text-xs text-slate-400 mt-1">🏨 {tour.hotel}</p>}
                         {seatsLeft > 0 && seatsLeft <= 3 && (
-                          <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>Son {seatsLeft} yer!</span>
+                          <span className="text-xs text-red-500 font-bold">Son {seatsLeft} yer!</span>
                         )}
                       </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 800, fontSize: 18, color: "#0284c7" }}>{tour.price_azn} AZN</p>
-                        <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>/nəfər</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-extrabold text-sky-600 text-lg">{tour.price_azn} AZN</p>
+                        <p className="text-xs text-slate-400">/nəfər</p>
                       </div>
                     </div>
-                    <div style={{ borderTop: "1px solid #f1f5f9", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
-                      <a href={`/turlar/${tour.id}`} style={{ padding: "10px 0", textAlign: "center", fontSize: 13, fontWeight: 600, color: "#0284c7", textDecoration: "none", borderRight: "1px solid #f1f5f9" }}>
+                    <div className="border-t border-slate-100 grid grid-cols-2">
+                      <a href={`/turlar/${tour.id}`}
+                        className="py-2.5 text-center text-sm font-semibold text-sky-600 hover:bg-sky-50 transition border-r border-slate-100">
                         Ətraflı bax
                       </a>
-                      <a href={waLink(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`)} target="_blank" rel="noopener noreferrer"
-                        style={{ padding: "10px 0", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#25D366", textDecoration: "none" }}>
+                      <a href={waLink(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`)}
+                        target="_blank" rel="noopener noreferrer"
+                        className="py-2.5 text-center text-sm font-bold text-emerald-600 hover:bg-emerald-50 transition">
                         WhatsApp
                       </a>
                     </div>
@@ -126,12 +124,13 @@ function ResultModal({ onClose, result }: { onClose: () => void; result: SearchR
               })}
             </div>
           ) : (
-            <p style={{ color: "#64748b", fontSize: 14, textAlign: "center", marginBottom: 16 }}>
+            <p className="text-slate-500 text-sm text-center mb-4">
               Hal-hazırda uyğun tur tapılmadı. Yeni turlar üçün bizi izləyin.
             </p>
           )}
 
-          <a href="/turlar" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+          <a href="/turlar"
+            className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-sm">
             Bütün Turlara Bax <ArrowRight size={16} />
           </a>
         </div>
@@ -140,47 +139,40 @@ function ResultModal({ onClose, result }: { onClose: () => void; result: SearchR
   );
 }
 
-// ─── PAGE ─────────────────────────────────────────────────────────────────────
+/* ─── Page ───────────────────────────────────────────── */
 export default function HomePage() {
   const [prompt, setPrompt] = useState("");
   const [loadingStep, setLoadingStep] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
-  // Quick search
-  const [qDest, setQDest]     = useState("hamisi");
-  const [qMonth, setQMonth]   = useState("");
+  /* quick search */
+  const [qDest, setQDest] = useState("hamisi");
+  const [qMonth, setQMonth] = useState("");
   const [qPersons, setQPersons] = useState(2);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isLoading) return;
     setIsLoading(true);
     setLoadingStep(0);
-
-    const stepTimers = LOADING_STEPS.map((_, i) => setTimeout(() => setLoadingStep(i), i * 900));
-
+    const timers = LOADING_STEPS.map((_, i) => setTimeout(() => setLoadingStep(i), i * 900));
     try {
       const sessionToken = typeof window !== "undefined"
-        ? (localStorage.getItem("nf_session_token") ?? undefined)
-        : undefined;
-
+        ? (localStorage.getItem("nf_session_token") ?? undefined) : undefined;
       const res = await fetch("/api/ai-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, session_token: sessionToken }),
       });
       const data = await res.json();
-      stepTimers.forEach(clearTimeout);
-
-      if (data.ok) {
-        setSearchResult({ tours: data.tours || [], ai_intro: data.ai_intro || "", fallback: data.fallback ?? false });
-      } else {
-        setSearchResult({ tours: [], ai_intro: "Axtarış zamanı xəta baş verdi. Turlar səhifəsinə baxın.", fallback: true });
-      }
+      timers.forEach(clearTimeout);
+      setSearchResult(data.ok
+        ? { tours: data.tours || [], ai_intro: data.ai_intro || "", fallback: data.fallback ?? false }
+        : { tours: [], ai_intro: "Axtarış zamanı xəta baş verdi. Turlar səhifəsinə baxın.", fallback: true });
       setShowModal(true);
     } catch {
-      stepTimers.forEach(clearTimeout);
-      setSearchResult({ tours: [], ai_intro: "Bağlantı xətası. Zəhmət olmasa yenidən cəhd edin.", fallback: true });
+      timers.forEach(clearTimeout);
+      setSearchResult({ tours: [], ai_intro: "Bağlantı xətası. Yenidən cəhd edin.", fallback: true });
       setShowModal(true);
     } finally {
       setIsLoading(false);
@@ -190,204 +182,211 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ── HERO ── */}
-      <section style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 24px" }}>
-        <AnimatedBlobs />
-        <div style={{ maxWidth: 780, width: "100%", textAlign: "center", position: "relative", zIndex: 1 }}>
+      <style>{`
+        @keyframes blob {
+          0%,100%{transform:translate(0,0) scale(1)}
+          33%{transform:translate(30px,-20px) scale(1.05)}
+          66%{transform:translate(-15px,15px) scale(.97)}
+        }
+        @keyframes fadeInUp {
+          from{opacity:0;transform:translateY(24px)}
+          to{opacity:1;transform:translateY(0)}
+        }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp {
+          from{opacity:0;transform:translateY(40px) scale(.95)}
+          to{opacity:1;transform:translateY(0) scale(1)}
+        }
+        .blob{animation:blob 7s ease-in-out infinite}
+        .blob-delay{animation-delay:2s}
+        .blob-delay2{animation-delay:4s}
+        .fade-in-up{animation:fadeInUp .6s ease both}
+      `}</style>
 
-          <div className="fade-in-up" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 16px", borderRadius: 50, background: "rgba(2,132,199,0.1)", marginBottom: 24, border: "1px solid rgba(2,132,199,0.2)" }}>
-            <Zap size={14} style={{ color: "#0284c7" }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#0284c7" }}>AI ilə Gücləndirilib</span>
-          </div>
+      {/* ── HERO ────────────────────────────────────────── */}
+      <section className="relative min-h-[92vh] flex flex-col items-center justify-center px-4 py-24 text-center overflow-hidden bg-[#f8fafc]">
+        <GlowOrbs />
+        <div className="relative z-10 w-full max-w-2xl mx-auto">
 
-          <h1 className="fade-in-up" style={{ fontSize: "clamp(36px, 6vw, 66px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 16, color: "#0f172a", animationDelay: "0.1s" }}>
+          <span className="fade-in-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold tracking-wide uppercase mb-6">
+            <Sparkles size={13} /> AI ilə Gücləndirilib
+          </span>
+
+          <h1 className="fade-in-up text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-slate-900 mb-5"
+            style={{ animationDelay: ".1s" }}>
             Dünyanı Kəşf Etməyin{" "}
-            <span style={{ background: "linear-gradient(135deg, #0284c7, #4f46e5)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span className="bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
               Ən Ağıllı Yolu
             </span>
           </h1>
 
-          <p className="fade-in-up" style={{ fontSize: 18, color: "#475569", marginBottom: 40, lineHeight: 1.6, animationDelay: "0.2s" }}>
+          <p className="fade-in-up text-lg text-slate-500 max-w-md mx-auto mb-10 leading-relaxed"
+            style={{ animationDelay: ".2s" }}>
             Sadəcə arzunuzu yazın — AI qalan hər şeyi planlaşdırır.
           </p>
 
-          {/* Prompt Box */}
-          <div className="fade-in-up" style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)", borderRadius: 24, padding: 6, boxShadow: "0 20px 60px rgba(0,0,0,0.1), 0 0 0 1px rgba(2,132,199,0.15)", animationDelay: "0.3s" }}>
+          {/* AI Prompt Box */}
+          <div className="fade-in-up bg-white/90 backdrop-blur-xl rounded-3xl p-2 shadow-xl ring-1 ring-sky-200/60 mb-5"
+            style={{ animationDelay: ".3s" }}>
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && e.ctrlKey) handleGenerate(); }}
               placeholder="Məsələn: Gələn ay yoldaşımla romantik və isti bir yerə getmək istəyirik, büdcəmiz 2000 AZN-dir..."
-              style={{ width: "100%", minHeight: 120, padding: "20px 24px", border: "none", outline: "none", resize: "none", fontSize: 16, color: "#1e293b", background: "transparent", fontFamily: "inherit", lineHeight: 1.6, borderRadius: 20 }}
+              className="w-full min-h-[110px] p-5 bg-transparent text-slate-800 text-base leading-relaxed resize-none outline-none placeholder:text-slate-400 rounded-2xl"
             />
-            <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 8px 8px" }}>
-              <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 28px", borderRadius: 16, border: "none", cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer", background: isLoading || !prompt.trim() ? "#cbd5e1" : "linear-gradient(135deg, #0284c7, #4f46e5)", color: "white", fontWeight: 700, fontSize: 16, transition: "all 0.2s", boxShadow: isLoading || !prompt.trim() ? "none" : "0 8px 25px rgba(2,132,199,0.4)" }}>
-                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                {isLoading ? LOADING_STEPS[loadingStep] || "..." : "Generasiya Et"}
+            <div className="flex items-center justify-between px-3 pb-3 gap-3">
+              <span className="text-xs text-slate-400">Ctrl+Enter ilə göndər</span>
+              <button
+                onClick={handleGenerate}
+                disabled={isLoading || !prompt.trim()}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-200"
+                style={{
+                  background: isLoading || !prompt.trim()
+                    ? "#cbd5e1"
+                    : "linear-gradient(135deg,#0284c7,#4f46e5)",
+                  boxShadow: isLoading || !prompt.trim() ? "none" : "0 8px 25px rgba(2,132,199,.4)",
+                  cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer",
+                }}>
+                {isLoading
+                  ? <><Loader2 size={16} className="animate-spin" />{LOADING_STEPS[loadingStep] || "..."}</>
+                  : <><Sparkles size={16} />Generasiya Et</>}
               </button>
             </div>
           </div>
 
           {/* Tags */}
-          <div className="fade-in-up" style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 20, animationDelay: "0.4s" }}>
+          <div className="fade-in-up flex flex-wrap gap-2 justify-center mb-8" style={{ animationDelay: ".4s" }}>
             {TAGS.map(tag => (
               <button key={tag} onClick={() => setPrompt(tag)}
-                style={{ padding: "8px 16px", borderRadius: 50, border: "1px solid rgba(2,132,199,0.2)", background: "rgba(255,255,255,0.8)", color: "#334155", fontSize: 14, fontWeight: 500, cursor: "pointer", backdropFilter: "blur(10px)", transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(2,132,199,0.1)"; e.currentTarget.style.borderColor = "#0284c7"; e.currentTarget.style.color = "#0284c7"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.8)"; e.currentTarget.style.borderColor = "rgba(2,132,199,0.2)"; e.currentTarget.style.color = "#334155"; }}>
+                className="px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-white/80 border border-sky-200/60 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-400 transition-all backdrop-blur">
                 {tag}
               </button>
             ))}
           </div>
 
           {/* Quick Search */}
-          <div className="fade-in-up" style={{ marginTop: 28, animationDelay: "0.45s" }}>
-            <div style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(16px)", borderRadius: 20, padding: "16px 20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08), 0 0 0 1px rgba(2,132,199,0.12)" }}>
-              <p style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, textAlign: "center", marginBottom: 14, letterSpacing: 1, textTransform: "uppercase" }}>Sürətli Axtarış</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "center" }}>
-                {/* Destination */}
-                <select value={qDest} onChange={e => setQDest(e.target.value)}
-                  style={{ flex: "1 1 130px", minWidth: 120, padding: "10px 14px", borderRadius: 12, border: "1px solid #e2e8f0", background: "white", fontSize: 14, color: "#0f172a", outline: "none", cursor: "pointer" }}>
-                  <option value="hamisi">İstiqamət seç</option>
-                  <option value="turkiye">🇹🇷 Türkiyə</option>
-                  <option value="ereb">🇦🇪 Dubai / ƏƏ</option>
-                  <option value="misir">🇪🇬 Misir</option>
-                  <option value="avropa">🇪🇺 Avropa</option>
-                </select>
-                {/* Month */}
-                <select value={qMonth} onChange={e => setQMonth(e.target.value)}
-                  style={{ flex: "1 1 130px", minWidth: 120, padding: "10px 14px", borderRadius: 12, border: "1px solid #e2e8f0", background: "white", fontSize: 14, color: qMonth ? "#0f172a" : "#94a3b8", outline: "none", cursor: "pointer" }}>
-                  <option value="">Ay seç</option>
-                  {Array.from({ length: 8 }, (_, i) => {
-                    const d = new Date(); d.setMonth(d.getMonth() + i);
-                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                    const label = d.toLocaleString("az-AZ", { month: "long", year: "numeric" });
-                    return <option key={val} value={val}>{label}</option>;
-                  })}
-                </select>
-                {/* Persons */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "8px 14px", flex: "0 0 auto" }}>
-                  <MapPin size={14} style={{ color: "#94a3b8" }} />
-                  <button onClick={() => setQPersons(p => Math.max(1, p - 1))}
-                    style={{ width: 24, height: 24, borderRadius: 6, border: "1px solid #e2e8f0", background: "white", cursor: "pointer", fontSize: 16, lineHeight: 1, color: "#475569" }}>−</button>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", minWidth: 28, textAlign: "center" }}>{qPersons} nəfər</span>
-                  <button onClick={() => setQPersons(p => Math.min(20, p + 1))}
-                    style={{ width: 24, height: 24, borderRadius: 6, border: "1px solid #e2e8f0", background: "white", cursor: "pointer", fontSize: 16, lineHeight: 1, color: "#475569" }}>+</button>
-                </div>
-                {/* Search button */}
-                <a href={`/turlar${qDest !== "hamisi" || qMonth ? `?${new URLSearchParams({ ...(qDest !== "hamisi" && { dest: qDest }), ...(qMonth && { month: qMonth }) }).toString()}` : ""}`}
-                  style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 6, padding: "10px 22px", borderRadius: 12, background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(2,132,199,0.3)" }}>
-                  <Star size={14} />
-                  Tur Axtar
-                </a>
+          <div className="fade-in-up bg-white/80 backdrop-blur-xl rounded-2xl p-4 ring-1 ring-slate-200/60 shadow-sm" style={{ animationDelay: ".5s" }}>
+            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest text-center mb-3">Sürətli Axtarış</p>
+            <div className="flex flex-wrap gap-2 items-center justify-center">
+              <select value={qDest} onChange={e => setQDest(e.target.value)}
+                className="flex-1 min-w-[130px] px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none cursor-pointer">
+                <option value="hamisi">İstiqamət seç</option>
+                <option value="turkiye">🇹🇷 Türkiyə</option>
+                <option value="ereb">🇦🇪 Dubai / BƏƏ</option>
+                <option value="misir">🇪🇬 Misir</option>
+                <option value="avropa">🇪🇺 Avropa</option>
+              </select>
+              <select value={qMonth} onChange={e => setQMonth(e.target.value)}
+                className="flex-1 min-w-[130px] px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none cursor-pointer">
+                <option value="">Ay seç</option>
+                {Array.from({ length: 8 }, (_, i) => {
+                  const d = new Date(); d.setMonth(d.getMonth() + i);
+                  const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                  return <option key={val} value={val}>{d.toLocaleString("az-AZ", { month: "long", year: "numeric" })}</option>;
+                })}
+              </select>
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+                <MapPin size={13} className="text-slate-400" />
+                <button onClick={() => setQPersons(p => Math.max(1, p - 1))}
+                  className="w-6 h-6 rounded-lg border border-slate-200 bg-white text-slate-500 text-lg leading-none flex items-center justify-center hover:bg-slate-50 transition">−</button>
+                <span className="text-sm font-semibold text-slate-700 w-[52px] text-center">{qPersons} nəfər</span>
+                <button onClick={() => setQPersons(p => Math.min(20, p + 1))}
+                  className="w-6 h-6 rounded-lg border border-slate-200 bg-white text-slate-500 text-lg leading-none flex items-center justify-center hover:bg-slate-50 transition">+</button>
               </div>
+              <a href={`/turlar${qDest !== "hamisi" || qMonth ? `?${new URLSearchParams({ ...(qDest !== "hamisi" && { dest: qDest }), ...(qMonth && { month: qMonth }) }).toString()}` : ""}`}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex-shrink-0 flex items-center gap-1.5"
+                style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", boxShadow: "0 4px 15px rgba(2,132,199,.3)" }}>
+                Tur Axtar
+              </a>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Quiz teaser — hero içində, dərhal görünür */}
-          <div className="fade-in-up" style={{ marginTop: 24, display: "flex", justifyContent: "center", animationDelay: "0.5s" }}>
-            <QuizWidget />
+      {/* ── BENTO GRID ──────────────────────────────────── */}
+      <section className="px-4 py-20 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Dünya Sizi Gözləyir</p>
+          <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-10">Populyar Məkanlar</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 auto-rows-[180px]">
+            {DESTINATIONS.map((d, i) => (
+              <a key={d.name} href={`/turlar?dest=${d.name.toLowerCase()}`}
+                className={`relative rounded-2xl overflow-hidden group block ${i === 0 ? "row-span-2" : ""}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={d.img} alt={d.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+                <div className="absolute bottom-3 left-3">
+                  <p className="text-white font-bold text-base leading-tight">{d.name}</p>
+                  <p className="text-white/70 text-xs">{d.country}</p>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
       </section>
 
-
-      {/* ── HOW IT WORKS ── */}
-      <section id="how" style={{ padding: "100px 24px", background: "#f8fafc" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <p style={{ color: "#1e40af", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Sadə Prosess</p>
-            <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, color: "#0f172a" }}>Necə İşləyir?</h2>
-          </div>
-          <div style={{ display: "flex", gap: 0, flexWrap: "wrap", justifyContent: "center" }}>
+      {/* ── HOW IT WORKS ────────────────────────────────── */}
+      <section className="px-4 py-20 bg-[#f8fafc]">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Sadə Prosess</p>
+          <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-12">Necə İşləyir?</h2>
+          <div className="grid sm:grid-cols-3 gap-6">
             {[
-              { icon: <Sparkles size={28} />, title: "İstəyini Bildir", desc: "Arzuladığın səyahəti sadə sözlərlə yazın. Tarix, büdcə, zövq — hər şeyi deyə bilərsiniz." },
-              { icon: <Brain size={28} />, title: "AI Analiz Edir", desc: "Süni intellektimiz minlərlə variantı saniyələr içində analiz edir, sizə uyğun paketləri tapır." },
-              { icon: <Plane size={28} />, title: "Təsdiqlə və Get", desc: "Paketi bəyənin, bir kliklə təsdiq edin. Qalanı biz edirik." },
-            ].map((step, i, arr) => (
-              <div key={i} style={{ display: "flex", alignItems: "stretch", flex: "1 1 260px" }}>
-                <div style={{ flex: 1, background: "white", borderRadius: 20, padding: 36, boxShadow: "0 4px 20px rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.06)", textAlign: "center", position: "relative" }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg,rgba(2,132,199,0.1),rgba(79,70,229,0.1))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: "#0284c7" }}>{step.icon}</div>
-                  <div style={{ position: "absolute", top: 20, left: 20, width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#0284c7,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 13 }}>{i + 1}</div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>{step.title}</h3>
-                  <p style={{ color: "#475569", lineHeight: 1.7, fontSize: 15 }}>{step.desc}</p>
-                </div>
-                {i < arr.length - 1 && <div className="hidden md:flex" style={{ alignItems: "center", padding: "0 8px", color: "#cbd5e1" }}><ChevronRight size={28} /></div>}
+              { n: "01", emoji: "🧠", title: "İstəyini Bildir",  desc: "Arzuladığın səyahəti sadə sözlərlə yazın. Tarix, büdcə, zövq — hər şeyi söyləyin." },
+              { n: "02", emoji: "⚡", title: "AI Analiz Edir",   desc: "Süni intellektimiz minlərlə variantı saniyələr içində analiz edir, sizə uyğun paketləri tapır." },
+              { n: "03", emoji: "✈️", title: "Təsdiqlə və Get", desc: "Paketi bəyənin, bir kliklə WhatsApp vasitəsilə rezervasiya edin." },
+            ].map(s => (
+              <div key={s.n} className="bg-white rounded-2xl p-7 border border-slate-100 shadow-sm text-center hover:shadow-md transition-shadow">
+                <div className="text-4xl mb-4">{s.emoji}</div>
+                <div className="text-xs text-sky-600 font-bold uppercase tracking-widest mb-2">{s.n}</div>
+                <h3 className="font-bold text-slate-800 text-lg mb-3">{s.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section style={{ padding: "100px 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <p style={{ color: "#1e40af", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Niyə Natoure?</p>
-            <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, color: "#0f172a" }}>Tam Səyahət Təcrübəsi</h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 24 }}>
+      {/* ── FEATURES ────────────────────────────────────── */}
+      <section className="px-4 py-20 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Niyə Natoure?</p>
+          <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-12">Tam Səyahət Təcrübəsi</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: <MapPin size={24} />, tag: "Pre-Trip", title: "Mükəmməl Plan", desc: "Viza, sığorta, otel, uçuş — hər şey bir yerdə.", color: "#0284c7" },
-              { icon: <Headphones size={24} />, tag: "On-Trip", title: "24/7 Dəstək", desc: "Səyahət zamanı istənilən problemdə AI köməyiniz hazırdır.", color: "#4f46e5" },
-              { icon: <TrendingUp size={24} />, tag: "Smart Pricing", title: "Ən Yaxşı Qiymət", desc: "AI real-time qiymət analizi aparır, ən sərfəli tarifi tapır.", color: "#0ea5e9" },
-              { icon: <Shield size={24} />, tag: "Post-Trip", title: "Xatirə & Növbəti", desc: "Rəylər, fotolar və növbəti mükəmməl tur tövsiyəsi.", color: "#6366f1" },
+              { emoji: "🗓️", tag: "Pre-Trip",     title: "Mükəmməl Plan",  desc: "Viza, sığorta, otel, uçuş — hər şey bir yerdə.", color: "#0284c7" },
+              { emoji: "🎧", tag: "On-Trip",      title: "24/7 Dəstək",    desc: "Səyahət zamanı istənilən problemdə AI köməyiniz hazırdır.", color: "#4f46e5" },
+              { emoji: "📈", tag: "Smart Price",  title: "Ən Yaxşı Qiymət",desc: "AI real-time qiymət analizi aparır, ən sərfəli tarifi tapır.", color: "#0ea5e9" },
+              { emoji: "⭐", tag: "Post-Trip",    title: "Xatirə & Növbəti",desc: "Rəylər, fotolar və növbəti mükəmməl tur tövsiyəsi.", color: "#6366f1" },
             ].map(f => (
               <div key={f.tag}
-                style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(20px)", borderRadius: 20, padding: 32, border: "1px solid rgba(255,255,255,0.8)", boxShadow: "0 8px 32px rgba(0,0,0,0.06)", transition: "transform 0.2s,box-shadow 0.2s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-6px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 20px 50px rgba(0,0,0,0.1)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px rgba(0,0,0,0.06)"; }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: `${f.color}15`, display: "flex", alignItems: "center", justifyContent: "center", color: f.color }}>{f.icon}</div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: f.color, letterSpacing: 1, textTransform: "uppercase" }}>{f.tag}</span>
-                </div>
-                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 10 }}>{f.title}</h3>
-                <p style={{ color: "#475569", lineHeight: 1.7, fontSize: 15 }}>{f.desc}</p>
+                className="bg-white/70 backdrop-blur rounded-2xl p-6 border border-slate-100 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-200">
+                <div className="text-3xl mb-4">{f.emoji}</div>
+                <span className="text-[11px] font-bold uppercase tracking-widest mb-2 block" style={{ color: f.color }}>{f.tag}</span>
+                <h3 className="font-bold text-slate-800 text-base mb-2">{f.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── BENTO GRID ── */}
-      <section style={{ padding: "100px 24px", background: "#f8fafc" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <p style={{ color: "#1e40af", fontWeight: 600, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Dünya Sizi Gözləyir</p>
-            <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, color: "#0f172a" }}>Populyar Məkanlar</h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gridTemplateRows: "repeat(2,220px)", gap: 16 }}>
-            {DESTINATIONS.map((d, i) => (
-              <div key={d.name} style={{ gridColumn: d.large ? "span 2" : d.wide ? "span 2" : "span 1", gridRow: d.large ? "span 2" : "span 1", borderRadius: 20, overflow: "hidden", position: "relative", cursor: "pointer" }}>
-                <img src={d.img} alt={d.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s ease" }}
-                  onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.07)")}
-                  onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")} />
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.1) 50%,transparent 100%)" }} />
-                <div style={{ position: "absolute", bottom: 20, left: 20 }}>
-                  <p style={{ color: "white", fontWeight: 800, fontSize: d.large ? 28 : 20, margin: 0 }}>{d.name}</p>
-                  <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, margin: 0 }}>{d.country}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section style={{ padding: "100px 24px" }}>
-        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", borderRadius: 32, padding: "64px 48px", boxShadow: "0 30px 80px rgba(2,132,199,0.3)" }}>
-            <h2 style={{ fontSize: "clamp(28px,4vw,42px)", fontWeight: 800, color: "white", marginBottom: 16 }}>Səyahətinizi Planlamağa Hazırsınız?</h2>
-            <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 17, lineHeight: 1.6, marginBottom: 36 }}>İlk AI ilə planlanmış turunu pulsuz sınayın. Heç bir ödəniş tələb olunmur.</p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                style={{ padding: "14px 32px", borderRadius: 14, border: "none", background: "white", color: "#0284c7", fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "transform 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-2px)")}
-                onMouseLeave={e => (e.currentTarget.style.transform = "translateY(0)")}>
+      {/* ── CTA ─────────────────────────────────────────── */}
+      <section className="px-4 py-20 bg-[#f8fafc]">
+        <div className="max-w-2xl mx-auto">
+          <div className="rounded-3xl p-16 text-center text-white"
+            style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", boxShadow: "0 30px 80px rgba(2,132,199,.3)" }}>
+            <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">Səyahətinizi Planlamağa Hazırsınız?</h2>
+            <p className="text-white/80 text-base mb-10 leading-relaxed">İlk AI ilə planlanmış turunu pulsuz sınayın. Heç bir ödəniş tələb olunmur.</p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="px-7 py-3.5 rounded-2xl bg-white text-sky-700 font-bold text-base hover:-translate-y-0.5 transition-transform flex items-center gap-2">
                 İndi Başla <ArrowRight size={18} />
               </button>
               <a href="/haqqimizda"
-                style={{ padding: "14px 32px", borderRadius: 14, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.4)", color: "white", fontWeight: 600, fontSize: 16, textDecoration: "none", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", gap: 8 }}>
+                className="px-7 py-3.5 rounded-2xl font-semibold text-base text-white border border-white/40 bg-white/15 hover:bg-white/25 transition backdrop-blur">
                 Bizi Tanı
               </a>
             </div>
@@ -396,6 +395,7 @@ export default function HomePage() {
       </section>
 
       <NewsletterSection />
+
       {showModal && <ResultModal onClose={() => setShowModal(false)} result={searchResult} />}
     </>
   );
