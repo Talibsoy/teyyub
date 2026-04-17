@@ -206,22 +206,22 @@ export const ARCHETYPE_LABELS: Record<Archetype, { name: string; desc: string; e
     emoji: "⚡",
   },
   deep_relaxer: {
-    name: "Dərin Dincələnən",
+    name: "İstirahət Sevən",
     desc: "Rahatlıq hər şeydən üstündür. Premium otel, yaxşı yemək, heç bir stress.",
     emoji: "🌴",
   },
   silent_explorer: {
-    name: "Səssiz Kəşfçi",
+    name: "Macəra Axtaran",
     desc: "Unikal təcrübə axtarırsan. Yerli mədəniyyət, autentik məkanlar, kütlədən uzaq.",
     emoji: "🗺️",
   },
   budget_optimizer: {
-    name: "Büdcə Ustası",
+    name: "Ağıllı Qənaətçi",
     desc: "Maksimum dəyər istəyirsən. Ən yaxşı qiymət/keyfiyyət nisbəti, ağıllı qənaət.",
     emoji: "🎯",
   },
   luxury_curator: {
-    name: "Lüks Seçici",
+    name: "Lüks Həvəskarı",
     desc: "Yalnız ən yaxşısı. 5 ulduz, biznes klas, eksklüziv təcrübələr.",
     emoji: "👑",
   },
