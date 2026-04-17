@@ -8,7 +8,7 @@ export default function WhatsAppButton() {
       href={waLink()}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 left-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl hover:scale-105 transition-transform"
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl hover:scale-105 transition-transform"
       style={{ background: "#25D366", color: "#fff", fontWeight: 600, fontSize: "14px" }}
       aria-label="WhatsApp ilə əlaqə"
     >

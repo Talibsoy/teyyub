@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { waLink } from "@/lib/whatsapp";
 
 const services = [
   { flag: "🇪🇺", title: "Avropa Turları",  items: ["İtaliya, Fransa, Almaniya", "Şəhər turları + mədəni təcrübələr", "Viza dəstəyi ilə paketlər"] },
@@ -139,10 +138,8 @@ export default function HaqqimızdaPage() {
               <div key={item} className="ns-check-item text-sm text-slate-600">{item}</div>
             ))}
           </div>
-          <a href={waLink("Salam, pulsuz məsləhət almaq istəyirəm")}
-            target="_blank" rel="noopener noreferrer"
-            className="ns-btn ns-btn-wa">
-            Pulsuz Məsləhət Al 💬
+          <a href="/elaqe" className="ns-btn ns-btn-primary">
+            Bizimlə Əlaqə
           </a>
         </div>
       </section>

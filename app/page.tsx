@@ -23,7 +23,7 @@ interface SearchResult {
 
 /* ─── Helpers ────────────────────────────────────────── */
 function waLink(t: string) {
-  return `https://wa.me/994504888080?text=${encodeURIComponent(t)}`;
+  return `https://wa.me/994517769632?text=${encodeURIComponent(t)}`;
 }
 
 const TAGS = [
@@ -108,15 +108,15 @@ function ResultModal({ onClose, result }: { onClose: () => void; result: SearchR
                         <p className="text-xs text-slate-400">/nəfər</p>
                       </div>
                     </div>
-                    <div className="border-t border-slate-100 grid grid-cols-2">
+                    <div className="border-t border-slate-100 flex items-center justify-between px-4 py-2.5">
                       <a href={`/turlar/${tour.id}`}
-                        className="py-2.5 text-center text-sm font-semibold text-sky-600 hover:bg-sky-50 transition border-r border-slate-100">
-                        Ətraflı bax
+                        className="text-sm font-semibold text-sky-600 hover:underline transition">
+                        Ətraflı bax →
                       </a>
                       <a href={waLink(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`)}
                         target="_blank" rel="noopener noreferrer"
-                        className="py-2.5 text-center text-sm font-bold text-emerald-600 hover:bg-emerald-50 transition">
-                        WhatsApp
+                        className="text-xs text-emerald-600 hover:underline transition">
+                        WhatsApp ↗
                       </a>
                     </div>
                   </div>
