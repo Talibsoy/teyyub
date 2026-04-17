@@ -120,10 +120,10 @@ export default function QuizWidget() {
         transform: visible ? "translateY(0)" : "translateY(16px)",
         transition: "opacity 0.5s ease, transform 0.5s ease",
         display: "inline-flex", alignItems: "center", gap: 12,
-        background: "rgba(255,255,255,0.12)", backdropFilter: "blur(16px)",
-        border: "1px solid rgba(255,255,255,0.25)",
+        background: "white", backdropFilter: "blur(16px)",
+        border: "1px solid #e2e8f0",
         borderRadius: 50, padding: "10px 20px 10px 14px",
-        cursor: "pointer",
+        cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
       }} onClick={resetQuiz}>
         <div style={{
           width: 36, height: 36, borderRadius: "50%",
@@ -134,10 +134,10 @@ export default function QuizWidget() {
           {ARCHETYPE_ICONS[archetype]}
         </div>
         <div style={{ textAlign: "left" }}>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Səyahət tipin</div>
-          <div style={{ fontSize: 14, color: "white", fontWeight: 700 }}>{label.name}</div>
+          <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Səyahət tipin</div>
+          <div style={{ fontSize: 14, color: "#0f172a", fontWeight: 700 }}>{label.name}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 4, color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 4, color: "#94a3b8", fontSize: 12 }}>
           <RotateCcw size={12} /> Dəyiş
         </div>
       </div>
@@ -152,19 +152,20 @@ export default function QuizWidget() {
         transform: visible ? "translateY(0)" : "translateY(16px)",
         transition: "opacity 0.6s ease, transform 0.6s ease",
         display: "inline-flex", alignItems: "center", gap: 14,
-        background: "rgba(255,255,255,0.10)", backdropFilter: "blur(20px)",
-        border: "1px solid rgba(255,255,255,0.2)",
+        background: "white",
+        border: "1.5px solid #e0f2fe",
         borderRadius: 50, padding: "10px 10px 10px 18px",
         position: "relative", overflow: "hidden",
+        boxShadow: "0 4px 20px rgba(2,132,199,0.12)",
       }}>
         {/* pulse glow */}
         <div style={{
           position: "absolute", inset: 0, borderRadius: 50,
-          background: "linear-gradient(90deg, rgba(2,132,199,0.15), rgba(79,70,229,0.15))",
+          background: "linear-gradient(90deg, rgba(2,132,199,0.06), rgba(79,70,229,0.06))",
           animation: "quizPulse 2.5s ease-in-out infinite",
         }} />
-        <Zap size={16} style={{ color: "#7dd3fc", flexShrink: 0, position: "relative" }} />
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", fontWeight: 600, position: "relative" }}>
+        <Zap size={16} style={{ color: "#0284c7", flexShrink: 0, position: "relative" }} />
+        <span style={{ fontSize: 14, color: "#0f172a", fontWeight: 600, position: "relative" }}>
           Sənə uyğun turları tapaq — 30 saniyə
         </span>
         <button
@@ -182,7 +183,7 @@ export default function QuizWidget() {
         </button>
         <style>{`
           @keyframes quizPulse {
-            0%, 100% { opacity: 0.4; }
+            0%, 100% { opacity: 0.3; }
             50% { opacity: 1; }
           }
         `}</style>
