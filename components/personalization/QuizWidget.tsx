@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Zap, Clock, Star, Wallet, Map, Palmtree, Wine, Users, ChevronRight, RotateCcw, ArrowRight, CheckCircle2, Calendar, UserCircle, Utensils, Heart, Compass } from "lucide-react";
 import { QUIZ_QUESTIONS, ARCHETYPE_LABELS, Archetype } from "@/lib/quiz-processor";
 
@@ -79,6 +80,11 @@ export default function QuizWidget() {
   const [archetype, setArchetype] = useState<Archetype | null>(null);
   const [alreadyDone, setAlreadyDone] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("nf_archetype");
@@ -216,7 +222,7 @@ export default function QuizWidget() {
 
   // ── Quiz modal overlay ─────────────────────────────────────────────────────
   if (step === "quiz") {
-    return (
+    const content = (
       <div style={{
         position: "fixed", inset: 0, zIndex: 999,
         background: "rgba(2,8,23,0.75)", backdropFilter: "blur(12px)",
@@ -308,11 +314,12 @@ export default function QuizWidget() {
         `}</style>
       </div>
     );
+    return mounted ? createPortal(content, document.body) : null;
   }
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (step === "loading") {
-    return (
+    const content = (
       <div style={{
         position: "fixed", inset: 0, zIndex: 999,
         background: "rgba(2,8,23,0.75)", backdropFilter: "blur(12px)",
@@ -340,12 +347,13 @@ export default function QuizWidget() {
         `}</style>
       </div>
     );
+    return mounted ? createPortal(content, document.body) : null;
   }
 
   // ── Result ─────────────────────────────────────────────────────────────────
   if (step === "result" && archetype) {
     const label = ARCHETYPE_LABELS[archetype];
-    return (
+    const content = (
       <div style={{
         position: "fixed", inset: 0, zIndex: 999,
         background: "rgba(2,8,23,0.75)", backdropFilter: "blur(12px)",
@@ -418,6 +426,7 @@ export default function QuizWidget() {
         </div>
       </div>
     );
+    return mounted ? createPortal(content, document.body) : null;
   }
 
   return null;
