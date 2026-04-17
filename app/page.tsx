@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import NewsletterSection from "@/components/NewsletterSection";
+import QuizWidget from "@/components/personalization/QuizWidget";
 import { Sparkles, X, Loader2, ArrowRight, MapPin } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -263,6 +264,11 @@ export default function HomePage() {
                 {tag}
               </button>
             ))}
+          </div>
+
+          {/* Quiz Widget */}
+          <div className="fade-in-up flex justify-center mb-6" style={{ animationDelay: ".45s" }}>
+            <QuizWidget />
           </div>
 
           {/* Quick Search */}
