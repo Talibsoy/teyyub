@@ -1,4 +1,5 @@
 import https from "node:https";
+import http from "node:http";
 
 // RATEHAWK_BASE funksiya içində hesablanır (modul-level sabit build-time inline olur)
 // RATEHAWK_PROXY_URL varsa Contabo proxy üzərindən keç (statik IP → ETG whitelist)
@@ -178,11 +179,14 @@ function ratehawkPost(endpoint: string, body: object): Promise<RatehawkResponse>
     const postData = JSON.stringify(body);
     const url = new URL(`${getRatehawkBase()}${endpoint}`);
     const isSandbox = process.env.RATEHAWK_SANDBOX === "true";
+    const isHttp = url.protocol === "http:";
+    const transport = isHttp ? http : https;
 
-    const req = https.request(
+    const req = transport.request(
       {
         hostname: url.hostname,
-        path: url.pathname,
+        port: url.port || (isHttp ? 80 : 443),
+        path: url.pathname + (url.search || ""),
         method: "POST",
         headers: {
           Authorization:      `Basic ${getAuth()}`,
@@ -193,7 +197,7 @@ function ratehawkPost(endpoint: string, body: object): Promise<RatehawkResponse>
             : {}),
         },
         // Sandbox-da TLS yoxlamasını söndür (self-signed cert)
-        rejectUnauthorized: !isSandbox && !process.env.RATEHAWK_PROXY_URL,
+        ...(isHttp ? {} : { rejectUnauthorized: !isSandbox && !process.env.RATEHAWK_PROXY_URL }),
       },
       (res) => {
         let data = "";
