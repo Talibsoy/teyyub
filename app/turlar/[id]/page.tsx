@@ -2,6 +2,7 @@ import { getSupabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import ItineraryButton from "@/components/ItineraryButton";
 
 interface Tour {
   id: string;
@@ -231,6 +232,21 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
               </div>
             </div>
           )}
+
+          {/* AI Itinerary */}
+          <div style={{ background: "#111", border: "1px solid #1a2a3a", borderRadius: 16, padding: "20px 24px" }}>
+            <p style={{ color: "#0ea5e9", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>YENİ</p>
+            <p style={{ color: "#fff", fontWeight: 700, fontSize: 15, marginBottom: 4 }}>AI ilə Günlük Proqram</p>
+            <p style={{ color: "#555", fontSize: 13, marginBottom: 0 }}>
+              Claude AI {tour.destination} üçün detallı günlük aktivlik proqramı hazırlayır — vaxt, yer, qiymət və məsləhətlərlə.
+            </p>
+            <ItineraryButton
+              destination={tour.destination}
+              start_date={tour.start_date}
+              end_date={tour.end_date}
+              duration_days={dur?.days ?? null}
+            />
+          </div>
 
           {/* CTA */}
           <div style={{ background: "#111", border: "1px solid #D4AF37", borderRadius: 16, padding: "24px 28px", textAlign: "center" }}>
