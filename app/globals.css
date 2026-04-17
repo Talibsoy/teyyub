@@ -45,3 +45,123 @@ body {
   opacity: 0;
   animation: fadeInUp 0.7s ease forwards;
 }
+
+/* ─── Natoure Design System ──────────────────────────────────
+   Use these classes on all pages and new pages going forward.
+   Colours: sky-600 (#0284c7) + indigo-600 (#4f46e5)
+   Backgrounds: #f8fafc (sections) / white (alt sections)
+   ─────────────────────────────────────────────────────────── */
+
+/* Page wrapper */
+.ns-page        { background: #f8fafc; min-height: 100vh; }
+
+/* Section backgrounds (alternate) */
+.ns-section     { padding: 80px 16px; background: #f8fafc; }
+.ns-section-w   { padding: 80px 16px; background: #ffffff; }
+
+/* Containers */
+.ns-container   { max-width: 1024px;  margin: 0 auto; }
+.ns-container-lg{ max-width: 1280px;  margin: 0 auto; }
+.ns-container-sm{ max-width:  680px;  margin: 0 auto; }
+
+/* Section labels & titles */
+.ns-label {
+  display: block;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: #0284c7; margin-bottom: 8px;
+}
+.ns-title {
+  font-size: clamp(24px, 4vw, 36px); font-weight: 800;
+  color: #0f172a; line-height: 1.2; margin: 0 0 8px;
+}
+.ns-subtitle {
+  color: #475569; font-size: 15px; line-height: 1.7; margin: 0;
+}
+
+/* Page header banner */
+.ns-page-header {
+  padding: 64px 16px;
+  text-align: center;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+.ns-page-header h1 {
+  font-size: clamp(26px, 5vw, 40px); font-weight: 800;
+  color: #1e40af; margin: 0 0 8px;
+}
+.ns-page-header p { color: #475569; font-size: 15px; margin: 0; }
+
+/* Cards */
+.ns-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+.ns-card-hover {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  transition: box-shadow .2s, transform .2s;
+}
+.ns-card-hover:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,.1);
+  transform: translateY(-4px);
+}
+
+/* Buttons */
+.ns-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: 14px;
+  font-weight: 700; font-size: 14px;
+  cursor: pointer; border: none; text-decoration: none;
+  transition: opacity .2s, transform .2s;
+}
+.ns-btn:hover { opacity: .9; transform: translateY(-1px); }
+
+.ns-btn-primary {
+  background: linear-gradient(135deg, #0284c7, #4f46e5);
+  color: white;
+  box-shadow: 0 6px 20px rgba(2,132,199,.3);
+}
+.ns-btn-outline {
+  background: transparent;
+  color: #0284c7;
+  border: 2px solid #bae6fd !important;
+}
+.ns-btn-outline:hover { background: #f0f9ff; }
+
+.ns-btn-wa {
+  background: #25D366;
+  color: white;
+}
+
+/* Form inputs */
+.ns-input {
+  width: 100%; padding: 11px 14px;
+  border-radius: 10px; border: 1.5px solid #e2e8f0;
+  font-size: 14px; color: #0f172a;
+  background: white;
+  outline: none; box-sizing: border-box;
+  transition: border-color .2s;
+}
+.ns-input:focus { border-color: #0284c7; }
+.ns-input::placeholder { color: #94a3b8; }
+
+.ns-label-field {
+  display: block; font-size: 12px; font-weight: 600;
+  color: #374151; margin-bottom: 5px;
+}
+
+/* Check list item */
+.ns-check-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: white; border-radius: 12px; padding: 14px 16px;
+  border: 1px solid #f1f5f9;
+}
+.ns-check-item::before {
+  content: "✓";
+  color: #0284c7; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}

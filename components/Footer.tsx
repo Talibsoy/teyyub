@@ -1,51 +1,56 @@
 import Link from "next/link";
-import { Globe } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer style={{ background: "#0f172a", color: "white" }} className="pt-16 pb-8">
+    <footer className="bg-white border-t border-slate-200 pt-14 pb-8">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: "linear-gradient(135deg, #0284c7, #4f46e5)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <Globe size={18} color="white" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)" }}>
+                <span className="text-white text-sm font-bold">N</span>
               </div>
-              <span className="font-bold text-lg">Natoure</span>
+              <span className="font-bold text-lg bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
+                Natoure
+              </span>
             </div>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: "#94a3b8" }}>
-              AI ilə gücləndirilen növbəti nəsil turizm platforması.
+            <p className="text-sm text-slate-500 leading-relaxed mb-5">
+              AI ilə gücləndirilen növbəti nəsil turizm platforması. Bakıdan dünyaya.
             </p>
-            <div className="flex items-center gap-3">
-              <a href="https://www.facebook.com/profile.php?id=61563875994345" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold transition-opacity hover:opacity-80"
+            <div className="flex items-center gap-2">
+              <a href="https://www.facebook.com/profile.php?id=61563875994345"
+                target="_blank" rel="noopener noreferrer"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold hover:opacity-80 transition"
                 style={{ background: "#1877F2" }}>f</a>
-              <a href="https://wa.me/994517769632" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs transition-opacity hover:opacity-80"
+              <a href="https://wa.me/994517769632"
+                target="_blank" rel="noopener noreferrer"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-semibold hover:opacity-80 transition"
                 style={{ background: "#25D366" }}>WA</a>
-              <a href="https://instagram.com/natoure.fly" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs transition-opacity hover:opacity-80"
-                style={{ background: "linear-gradient(135deg, #f09433, #e6683c, #bc1888)" }}>IG</a>
+              <a href="https://instagram.com/natoure.fly"
+                target="_blank" rel="noopener noreferrer"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-semibold hover:opacity-80 transition"
+                style={{ background: "linear-gradient(135deg,#f09433,#e6683c,#bc1888)" }}>IG</a>
             </div>
           </div>
 
           {/* Links */}
           <div>
-            <h4 className="font-semibold mb-4">Keçidlər</h4>
-            <ul className="space-y-3 text-sm" style={{ color: "#64748b" }}>
+            <h4 className="font-semibold text-slate-700 mb-4 text-sm">Keçidlər</h4>
+            <ul className="space-y-2.5">
               {[
-                { href: "/", label: "Ana Səhifə" },
-                { href: "/turlar", label: "Turlar" },
+                { href: "/",           label: "Ana Səhifə" },
+                { href: "/turlar",     label: "Turlar" },
+                { href: "/oteller",    label: "Otellər" },
                 { href: "/haqqimizda", label: "Haqqımızda" },
-                { href: "/elaqe", label: "Əlaqə" },
+                { href: "/elaqe",      label: "Əlaqə" },
               ].map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className="transition-colors hover:text-slate-300" style={{ textDecoration: "none", color: "inherit" }}>
+                  <Link href={l.href}
+                    className="text-sm text-slate-500 hover:text-sky-600 transition-colors"
+                    style={{ textDecoration: "none" }}>
                     {l.label}
                   </Link>
                 </li>
@@ -55,10 +60,10 @@ export default function Footer() {
 
           {/* Services */}
           <div>
-            <h4 className="font-semibold mb-4">Xidmətlər</h4>
-            <ul className="space-y-3 text-sm" style={{ color: "#64748b" }}>
+            <h4 className="font-semibold text-slate-700 mb-4 text-sm">Xidmətlər</h4>
+            <ul className="space-y-2.5 text-sm text-slate-500">
               <li>🇹🇷 Türkiyə Turları</li>
-              <li>🇦🇪 Dubai & Ərəbistan</li>
+              <li>🇦🇪 Dubai & BƏƏ</li>
               <li>🇪🇬 Misir Turları</li>
               <li>🇪🇺 Avropa Turları</li>
               <li>🧳 Fərdi Planlama</li>
@@ -67,16 +72,20 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold mb-4">Əlaqə</h4>
-            <ul className="space-y-3 text-sm" style={{ color: "#64748b" }}>
+            <h4 className="font-semibold text-slate-700 mb-4 text-sm">Əlaqə</h4>
+            <ul className="space-y-2.5 text-sm text-slate-500">
               <li>📍 Bakı, Azərbaycan</li>
               <li>
-                <a href="tel:+994517769632" className="transition-colors hover:text-slate-300" style={{ textDecoration: "none", color: "inherit" }}>
+                <a href="tel:+994517769632"
+                  className="hover:text-sky-600 transition-colors"
+                  style={{ textDecoration: "none", color: "inherit" }}>
                   📞 +994 51 776 96 32
                 </a>
               </li>
               <li>
-                <a href="mailto:info@natourefly.com" className="transition-colors hover:text-slate-300" style={{ textDecoration: "none", color: "inherit" }}>
+                <a href="mailto:info@natourefly.com"
+                  className="hover:text-sky-600 transition-colors"
+                  style={{ textDecoration: "none", color: "inherit" }}>
                   ✉️ info@natourefly.com
                 </a>
               </li>
@@ -85,11 +94,19 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-2 text-xs" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", color: "#475569" }}>
+        <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-2 border-t border-slate-100 text-xs text-slate-400">
           <span>© {new Date().getFullYear()} Natoure. Bütün hüquqlar qorunur.</span>
           <div className="flex items-center gap-4">
-            <Link href="/privacy-policy" className="hover:text-slate-400 transition-colors" style={{ textDecoration: "none", color: "inherit" }}>Gizlilik Siyasəti</Link>
-            <Link href="/terms-of-service" className="hover:text-slate-400 transition-colors" style={{ textDecoration: "none", color: "inherit" }}>İstifadə Şərtləri</Link>
+            <Link href="/privacy-policy"
+              className="hover:text-slate-600 transition-colors"
+              style={{ textDecoration: "none", color: "inherit" }}>
+              Gizlilik Siyasəti
+            </Link>
+            <Link href="/terms-of-service"
+              className="hover:text-slate-600 transition-colors"
+              style={{ textDecoration: "none", color: "inherit" }}>
+              İstifadə Şərtləri
+            </Link>
           </div>
         </div>
       </div>

@@ -146,7 +146,9 @@ export default function PanelHubPage() {
       {/* ── WELCOME BANNER ── */}
       <div style={{
         borderRadius: 20, padding: "28px 32px",
-        background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e40af 100%)",
+        background: d
+          ? "linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e40af 100%)"
+          : "linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)",
         position: "relative", overflow: "hidden",
       }}>
         {/* Decorative circles */}
