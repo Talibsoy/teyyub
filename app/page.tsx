@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import NewsletterSection from "@/components/NewsletterSection";
 import QuizWidget from "@/components/personalization/QuizWidget";
 import DNAProfileCard from "@/components/DNAProfileCard";
-import AIChatPanel from "@/components/AIChatPanel";
 import { Sparkles, X, Loader2, ArrowRight, MapPin, Brain, Zap, Plane, Calendar, Shield, TrendingUp } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -21,7 +20,7 @@ const TAGS = ["Romantik cütlük", "Ailə ilə Dubai", "Büdcəyə uyğun Antaly
 
 const DESTINATIONS = [
   { name: "Dubai",     country: "BƏƏ",        img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80", big: true },
-  { name: "Malediv",   country: "Hind Okeanı", img: "https://images.unsplash.com/photo-1499396010447-c75e58d61c2b?w=600&q=80" },
+  { name: "Maldiv Adaları", country: "Hind Okeanı", img: "https://images.unsplash.com/photo-1499396010447-c75e58d61c2b?w=600&q=80" },
   { name: "Barselona", country: "İspaniya",    img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" },
   { name: "Antalya",   country: "Türkiyə",     img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80" },
   { name: "Tokio",     country: "Yaponiya",    img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80" },
@@ -178,7 +177,7 @@ export default function HomePage() {
 
         <div className="relative z-10 w-full max-w-2xl mx-auto">
           <div className="fade-in-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-bold tracking-widest uppercase mb-8">
-            <Sparkles size={12} /> AI-Powered Decision Engine
+            <Sparkles size={12} /> AI Qərar Mühərriki
           </div>
 
           {/* Main headline */}
@@ -451,10 +450,10 @@ export default function HomePage() {
           <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-12">Tam Səyahət Təcrübəsi</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: <Calendar size={24} className="text-sky-600" />, tag: "Pre-Trip", title: "Mükəmməl Plan", desc: "Viza, sığorta, otel, uçuş — hər şey bir yerdə.", bg: "bg-sky-50", border: "border-sky-100" },
-              { icon: <Shield size={24} className="text-indigo-600" />, tag: "On-Trip",  title: "24/7 Dəstək",  desc: "Səyahət zamanı istənilən problemdə AI köməyiniz hazırdır.", bg: "bg-indigo-50", border: "border-indigo-100" },
-              { icon: <TrendingUp size={24} className="text-sky-500" />, tag: "Smart Price", title: "Ən Yaxşı Qiymət", desc: "AI real-time qiymət analizi aparır, ən sərfəli tarifi tapır.", bg: "bg-sky-50", border: "border-sky-100" },
-              { icon: <Sparkles size={24} className="text-violet-600" />, tag: "Post-Trip", title: "Növbəti Tövsiyə", desc: "Rəylər, fotolar və növbəti mükəmməl tur tövsiyəsi.", bg: "bg-violet-50", border: "border-violet-100" },
+              { icon: <Calendar size={24} className="text-sky-600" />, tag: "Səyahət Öncəsi", title: "Mükəmməl Plan", desc: "Viza, sığorta, otel, uçuş — hər şey bir yerdə.", bg: "bg-sky-50", border: "border-sky-100" },
+              { icon: <Shield size={24} className="text-indigo-600" />, tag: "Səyahətdə",  title: "24/7 Dəstək",  desc: "Səyahət zamanı istənilən problemdə AI köməyiniz hazırdır.", bg: "bg-indigo-50", border: "border-indigo-100" },
+              { icon: <TrendingUp size={24} className="text-sky-500" />, tag: "Ağıllı Qiymət", title: "Ən Yaxşı Qiymət", desc: "AI real-time qiymət analizi aparır, ən sərfəli tarifi tapır.", bg: "bg-sky-50", border: "border-sky-100" },
+              { icon: <Sparkles size={24} className="text-violet-600" />, tag: "Səyahət Sonrası", title: "Növbəti Tövsiyə", desc: "Rəylər, fotolar və növbəti mükəmməl tur tövsiyəsi.", bg: "bg-violet-50", border: "border-violet-100" },
             ].map(f => (
               <div key={f.tag} className={`${f.bg} rounded-2xl p-6 border ${f.border} hover:-translate-y-1 hover:shadow-lg transition-all duration-200`}>
                 <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center mb-4">{f.icon}</div>
@@ -488,8 +487,7 @@ export default function HomePage() {
 
       <NewsletterSection />
 
-      {/* Chat + Result Modal */}
-      <AIChatPanel />
+      {/* Result Modal */}
       {showModal && <ResultModal onClose={() => setShowModal(false)} result={searchResult} />}
     </>
   );

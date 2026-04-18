@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Calendar, Users, Lock, AlertTriangle } from "lucide-react";
 
 interface Tour {
   id: string;
@@ -140,8 +141,8 @@ function RezervasiyaForm() {
     }
   }
 
-  if (loading) return <Screen><p style={{ color: "#555" }}>Yüklənir...</p></Screen>;
-  if (!tour) return <Screen><p style={{ color: "#f87171" }}>Tur tapılmadı</p></Screen>;
+  if (loading) return <Screen><p style={{ color: "#64748b" }}>Yüklənir...</p></Screen>;
+  if (!tour) return <Screen><p style={{ color: "#ef4444" }}>Tur tapılmadı</p></Screen>;
 
   const seatsLeft = tour.max_seats - tour.booked_seats;
   const childPrice = Math.round(tour.price_azn * CHILD_PRICE_RATIO);
@@ -150,21 +151,27 @@ function RezervasiyaForm() {
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", paddingBottom: 80 }}>
       {/* Header */}
-      <div style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0", padding: "16px 24px" }}>
+      <div style={{ background: "white", borderBottom: "1px solid #e2e8f0", padding: "16px 24px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", alignItems: "center", gap: 16 }}>
           <button onClick={() => step > 1 ? setStep((step - 1) as 1 | 2 | 3) : router.back()}
-            style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 22, padding: 0 }}>←</button>
+            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 22, padding: 0 }}>←</button>
           <div>
-            <p style={{ color: "#555", fontSize: 12, margin: 0 }}>Addım {step} / 3 — {["Sərnişin sayı", "Sərnişin məlumatları", "Əlaqə və ödəniş"][step - 1]}</p>
-            <h1 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>{tour.name}</h1>
+            <p style={{ color: "#64748b", fontSize: 12, margin: 0 }}>Addım {step} / 3 — {["Sərnişin sayı", "Sərnişin məlumatları", "Əlaqə və ödəniş"][step - 1]}</p>
+            <h1 style={{ fontSize: 17, fontWeight: 800, margin: 0, color: "#0f172a" }}>{tour.name}</h1>
           </div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0", display: "flex", maxWidth: "100%" }}>
+      <div style={{ background: "white", borderBottom: "1px solid #e2e8f0", display: "flex", maxWidth: "100%" }}>
         {[1, 2, 3].map(s => (
-          <div key={s} style={{ flex: 1, height: 3, background: s <= step ? "#D4AF37" : "#1a1a1a", transition: "background 0.3s" }} />
+          <div key={s} style={{
+            flex: 1, height: 3,
+            background: s <= step
+              ? "linear-gradient(90deg, #0284c7, #4f46e5)"
+              : "#e2e8f0",
+            transition: "background 0.3s",
+          }} />
         ))}
       </div>
 
@@ -183,11 +190,11 @@ function RezervasiyaForm() {
 
             {children > 0 && (
               <div style={card}>
-                <p style={label}>Uşaqların yaşı</p>
+                <p style={labelStyle}>Uşaqların yaşı</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 10 }}>
                   {childAges.map((age, i) => (
                     <div key={i}>
-                      <p style={{ color: "#555", fontSize: 11, marginBottom: 4 }}>Uşaq {i + 1}</p>
+                      <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4 }}>Uşaq {i + 1}</p>
                       <select value={age} onChange={e => {
                         const a = [...childAges]; a[i] = parseInt(e.target.value); setChildAges(a);
                       }} style={selectStyle}>
@@ -198,7 +205,7 @@ function RezervasiyaForm() {
                     </div>
                   ))}
                 </div>
-                <p style={{ color: "#444", fontSize: 11, marginTop: 10 }}>* 0–1 yaş körpə — yataq tutmur, pulsuz</p>
+                <p style={{ color: "#64748b", fontSize: 11, marginTop: 10 }}>* 0–1 yaş körpə — yataq tutmur, pulsuz</p>
               </div>
             )}
 
@@ -211,12 +218,12 @@ function RezervasiyaForm() {
         {step === 2 && (
           <div>
             <h2 style={sectionTitle}>Sərnişin məlumatları</h2>
-            <p style={{ color: "#555", fontSize: 13, marginBottom: 20 }}>Pasport məlumatları bilet tərtibatı üçün lazımdır</p>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>Pasport məlumatları bilet tərtibatı üçün lazımdır</p>
 
             {passengers.map((p, idx) => (
               <div key={idx} style={{ ...card, marginBottom: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <p style={{ color: "#D4AF37", fontSize: 13, fontWeight: 700, margin: 0 }}>
+                  <p style={{ color: "#0284c7", fontSize: 13, fontWeight: 700, margin: 0 }}>
                     {p.type === "adult" ? `Böyük ${idx + 1}` : `Uşaq ${idx - adults + 1}${p.age ? ` (${p.age} yaş)` : ""}`}
                   </p>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -224,9 +231,9 @@ function RezervasiyaForm() {
                       <button key={g} type="button" onClick={() => updatePassenger(idx, "gender", g)}
                         style={{
                           padding: "4px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer",
-                          background: p.gender === g ? "#D4AF37" : "#1a1a1a",
-                          color: p.gender === g ? "#000" : "#555",
-                          border: `1px solid ${p.gender === g ? "#D4AF37" : "#333"}`,
+                          background: p.gender === g ? "#0284c7" : "#f8fafc",
+                          color: p.gender === g ? "white" : "#64748b",
+                          border: `1px solid ${p.gender === g ? "#0284c7" : "#e2e8f0"}`,
                           fontWeight: 600,
                         }}>
                         {g === "male" ? "Kişi" : "Qadın"}
@@ -252,15 +259,16 @@ function RezervasiyaForm() {
               </div>
             ))}
 
-            <div style={{ ...card, background: "#f1f5f9", marginTop: 8 }}>
-              <p style={{ color: "#555", fontSize: 12, margin: 0 }}>
-                ⚠️ Pasport məlumatları düzgün daxil edilməlidir. Yanlış məlumat bilet ləğvinə səbəb ola bilər.
+            <div style={{ ...card, background: "#fefce8", border: "1px solid #fef08a", marginTop: 8, display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <AlertTriangle size={16} color="#ca8a04" style={{ flexShrink: 0, marginTop: 1 }} />
+              <p style={{ color: "#92400e", fontSize: 12, margin: 0 }}>
+                Pasport məlumatları düzgün daxil edilməlidir. Yanlış məlumat bilet ləğvinə səbəb ola bilər.
               </p>
             </div>
 
             <button onClick={() => step2Valid() ? setStep(3) : setError("Bütün vacib sahələri doldurun")}
               style={btn(false)}>Davam Et →</button>
-            {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 10 }}>{error}</p>}
+            {error && <p style={{ color: "#ef4444", fontSize: 13, marginTop: 10 }}>{error}</p>}
           </div>
         )}
 
@@ -277,7 +285,7 @@ function RezervasiyaForm() {
               <F label="Telefon *" value={contact.phone} onChange={v => setContact({ ...contact, phone: v })} placeholder="+994 50 000 00 00" type="tel" required />
               <F label="Email" value={contact.email} onChange={v => setContact({ ...contact, email: v })} placeholder="email@example.com" type="email" />
               <div>
-                <label style={label}>Qeyd</label>
+                <label style={labelStyle}>Qeyd</label>
                 <textarea value={contact.notes} onChange={e => setContact({ ...contact, notes: e.target.value })}
                   placeholder="Xüsusi tələblər, suallar..." rows={3}
                   style={{ ...inputStyle, resize: "none" }} />
@@ -287,15 +295,18 @@ function RezervasiyaForm() {
             <PriceSummary adults={adults} children={children} adultPrice={tour.price_azn} childPrice={childPrice} total={totalPrice} />
 
             {error && (
-              <div style={{ background: "#1a0000", border: "1px solid #7f1d1d", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
-                <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
+                <p style={{ color: "#ef4444", fontSize: 13, margin: 0 }}>{error}</p>
               </div>
             )}
 
             <button type="submit" disabled={submitting} style={btn(submitting)}>
               {submitting ? "Emal edilir..." : `Ödənişə Keç — ${totalPrice} ₼`}
             </button>
-            <p style={{ color: "#333", fontSize: 12, textAlign: "center", marginTop: 10 }}>🔒 Epoint.az təhlükəsiz ödəniş</p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10 }}>
+              <Lock size={12} color="#94a3b8" />
+              <p style={{ color: "#94a3b8", fontSize: 12, margin: 0 }}>Epoint.az təhlükəsiz ödəniş</p>
+            </div>
           </form>
         )}
       </div>
@@ -313,11 +324,19 @@ function TourCard({ tour, seatsLeft }: { tour: Tour; seatsLeft: number }) {
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
         {tour.image_url && <img src={tour.image_url} alt={tour.name} style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />}
         <div style={{ flex: 1 }}>
-          <p style={{ color: "#D4AF37", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", margin: "0 0 4px" }}>{tour.destination}</p>
-          <p style={{  fontSize: 15, fontWeight: 700, margin: "0 0 6px" }}>{tour.name}</p>
+          <p style={{ color: "#0284c7", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", margin: "0 0 4px" }}>{tour.destination}</p>
+          <p style={{ color: "#0f172a", fontSize: 15, fontWeight: 700, margin: "0 0 6px" }}>{tour.name}</p>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            {startDate && <span style={{ color: "#777", fontSize: 12 }}>📅 {startDate}{endDate ? ` — ${endDate}` : ""}</span>}
-            <span style={{ color: seatsLeft > 5 ? "#4ade80" : "#facc15", fontSize: 12 }}>💺 {seatsLeft} boş yer</span>
+            {startDate && (
+              <span style={{ color: "#64748b", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
+                <Calendar size={12} />
+                {startDate}{endDate ? ` — ${endDate}` : ""}
+              </span>
+            )}
+            <span style={{ color: seatsLeft > 5 ? "#16a34a" : "#ca8a04", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
+              <Users size={12} />
+              {seatsLeft} boş yer
+            </span>
           </div>
         </div>
       </div>
@@ -332,16 +351,16 @@ function PassengerRow({ label: lbl, sublabel, price, priceNote, count, min, max,
   return (
     <div style={{ ...card, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <div>
-        <p style={{  fontSize: 15, fontWeight: 600, margin: 0 }}>{lbl}</p>
-        <p style={{ color: "#555", fontSize: 12, margin: "2px 0 0" }}>{sublabel}</p>
-        <p style={{ color: "#D4AF37", fontSize: 13, fontWeight: 700, margin: "4px 0 0" }}>
-          {price} ₼{priceNote && <span style={{ color: "#4ade80", fontSize: 11, marginLeft: 6 }}>{priceNote}</span>}
+        <p style={{ color: "#0f172a", fontSize: 15, fontWeight: 600, margin: 0 }}>{lbl}</p>
+        <p style={{ color: "#64748b", fontSize: 12, margin: "2px 0 0" }}>{sublabel}</p>
+        <p style={{ color: "#0284c7", fontSize: 13, fontWeight: 700, margin: "4px 0 0" }}>
+          {price} ₼{priceNote && <span style={{ color: "#16a34a", fontSize: 11, marginLeft: 6 }}>{priceNote}</span>}
         </p>
       </div>
       <div style={{ display: "flex", alignItems: "center" }}>
         <button type="button" onClick={() => count > min && onChange(count - 1)} disabled={count <= min}
           style={counterBtn(count <= min)}>−</button>
-        <span style={{ width: 36, textAlign: "center", fontSize: 16, fontWeight: 700 }}>{count}</span>
+        <span style={{ width: 36, textAlign: "center", fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{count}</span>
         <button type="button" onClick={() => count < max && onChange(count + 1)} disabled={count >= max}
           style={counterBtn(count >= max)}>+</button>
       </div>
@@ -354,21 +373,21 @@ function PriceSummary({ adults, children, adultPrice, childPrice, total }: {
 }) {
   return (
     <div style={{ ...card, margin: "20px 0" }}>
-      <p style={{ color: "#555", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Qiymət</p>
+      <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Qiymət</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span style={{ color: "#64748b", fontSize: 13 }}>Böyük × {adults}</span>
-          <span style={{  fontSize: 13 }}>{adultPrice * adults} ₼</span>
+          <span style={{ color: "#0f172a", fontSize: 13 }}>{adultPrice * adults} ₼</span>
         </div>
         {children > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ color: "#64748b", fontSize: 13 }}>Uşaq × {children}</span>
-            <span style={{  fontSize: 13 }}>{childPrice * children} ₼</span>
+            <span style={{ color: "#0f172a", fontSize: 13 }}>{childPrice * children} ₼</span>
           </div>
         )}
         <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 10, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-          <span style={{  fontWeight: 700 }}>Cəmi</span>
-          <span style={{ color: "#D4AF37", fontSize: 22, fontWeight: 800 }}>{total} ₼</span>
+          <span style={{ color: "#0f172a", fontWeight: 700 }}>Cəmi</span>
+          <span style={{ color: "#0284c7", fontSize: 22, fontWeight: 800 }}>{total} ₼</span>
         </div>
       </div>
     </div>
@@ -381,7 +400,7 @@ function F({ label: lbl, value, onChange, placeholder, type = "text", required =
 }) {
   return (
     <div>
-      <label style={label}>{lbl}</label>
+      <label style={labelStyle}>{lbl}</label>
       <input required={required} type={type} value={value} onChange={e => onChange(e.target.value)}
         placeholder={placeholder} style={inputStyle} />
     </div>
@@ -394,24 +413,25 @@ function Screen({ children }: { children: React.ReactNode }) {
 
 /* ── Styles ── */
 const card: React.CSSProperties = { background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" };
-const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, marginBottom: 16 };
-const label: React.CSSProperties = { color: "#64748b", fontSize: 12, display: "block", marginBottom: 6 };
-const inputStyle: React.CSSProperties = { width: "100%", background: "white", border: "1px solid #e2e8f0", borderRadius: 10, padding: "11px 14px", fontSize: 14, outline: "none", boxSizing: "border-box" };
-const selectStyle: React.CSSProperties = { background: "#f8fafc", border: "1px solid #333", borderRadius: 8, padding: "8px 12px", fontSize: 13 };
+const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#0f172a" };
+const labelStyle: React.CSSProperties = { color: "#64748b", fontSize: 12, display: "block", marginBottom: 6, fontWeight: 600 };
+const inputStyle: React.CSSProperties = { width: "100%", background: "white", border: "1px solid #e2e8f0", borderRadius: 10, padding: "11px 14px", fontSize: 14, outline: "none", boxSizing: "border-box", color: "#0f172a" };
+const selectStyle: React.CSSProperties = { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0f172a" };
 const btn = (disabled: boolean): React.CSSProperties => ({
   width: "100%", padding: "15px 0", borderRadius: 12, marginTop: 8,
-  background: disabled ? "#333" : "#D4AF37", color: disabled ? "#666" : "#000",
+  background: disabled ? "#e2e8f0" : "linear-gradient(135deg, #0284c7, #4f46e5)",
+  color: disabled ? "#94a3b8" : "white",
   fontWeight: 800, fontSize: 16, border: "none", cursor: disabled ? "not-allowed" : "pointer",
 });
 const counterBtn = (disabled: boolean): React.CSSProperties => ({
-  width: 36, height: 36, borderRadius: "50%", border: "1px solid #333",
-  background: "#f8fafc", color: disabled ? "#333" : "#fff", fontSize: 20,
+  width: 36, height: 36, borderRadius: "50%", border: "1px solid #e2e8f0",
+  background: disabled ? "#f8fafc" : "white", color: disabled ? "#94a3b8" : "#0f172a", fontSize: 20,
   cursor: disabled ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
 });
 
 export default function RezervasiyaPage() {
   return (
-    <Suspense fallback={<Screen><p style={{ color: "#555" }}>Yüklənir...</p></Screen>}>
+    <Suspense fallback={<Screen><p style={{ color: "#64748b" }}>Yüklənir...</p></Screen>}>
       <RezervasiyaForm />
     </Suspense>
   );

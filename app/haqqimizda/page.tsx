@@ -1,18 +1,19 @@
 import Link from "next/link";
+import { Globe2, MapPin, Sun, Building2, Briefcase, Zap, RefreshCw, Target, TrendingUp, CheckCircle } from "lucide-react";
 
 const services = [
-  { flag: "🇪🇺", title: "Avropa Turları",  items: ["İtaliya, Fransa, Almaniya", "Şəhər turları + mədəni təcrübələr", "Viza dəstəyi ilə paketlər"] },
-  { flag: "🇹🇷", title: "Türkiyə Turları", items: ["Antalya, Bodrum, İstanbul", "Ailəvi və premium resort paketləri", "Hər büdcəyə uyğun seçimlər"] },
-  { flag: "🇪🇬", title: "Misir Turları",   items: ["Şarm El-Şeyx, Hurqada", "All-inclusive otellər", "Dəniz və istirahət paketləri"] },
-  { flag: "🇦🇪", title: "Dubai Turları",   items: ["Lüks və premium paketlər", "Şəhər + əyləncə kombinasiyaları", "Shopping və experience turları"] },
-  { flag: "🧳",  title: "Fərdi Planlama", items: ["Müştəriyə xüsusi itinerary", "Büdcəyə uyğun optimizasiya", "Full service (bilet+otel+transfer)"] },
+  { Icon: Globe2,    title: "Avropa Turları",  items: ["İtaliya, Fransa, Almaniya", "Şəhər turları + mədəni təcrübələr", "Viza dəstəyi ilə paketlər"] },
+  { Icon: MapPin,    title: "Türkiyə Turları", items: ["Antalya, Bodrum, İstanbul", "Ailəvi və premium resort paketləri", "Hər büdcəyə uyğun seçimlər"] },
+  { Icon: Sun,       title: "Misir Turları",   items: ["Şarm El-Şeyx, Hurqada", "Hər şey daxil otellər", "Dəniz və istirahət paketləri"] },
+  { Icon: Building2, title: "Dubai Turları",   items: ["Lüks və premium paketlər", "Şəhər + əyləncə kombinasiyaları", "Alış-veriş və təcrübə turları"] },
+  { Icon: Briefcase, title: "Fərdi Planlama",  items: ["Müştəriyə xüsusi proqram", "Büdcəyə uyğun optimizasiya", "Tam xidmət (bilet+otel+transfer)"] },
 ];
 
 const usps = [
-  { icon: "⚡", title: "AI əsaslı sistem",           desc: "Müştəri ilə chatbot danışır, tələbatı analiz edir, avtomatik uyğun paket təklif edir." },
-  { icon: "🔄", title: "Avtomatlaşdırılmış prosess", desc: "Lead-lər avtomatik toplanır, CRM inteqrasiyası, satış prosesi optimallaşdırılır." },
-  { icon: "🎯", title: "Fərdi yanaşma",              desc: "Hər müştəri üçün xüsusi plan. Büdcəyə uyğun maksimum dəyər." },
-  { icon: "📈", title: "Satış yönümlü",              desc: "Sadəcə məlumat verilmir — müştəri qərar mərhələsinə gətirilir." },
+  { Icon: Zap,        title: "AI əsaslı sistem",           desc: "Müştəri ilə chatbot danışır, tələbatı analiz edir, avtomatik uyğun paket təklif edir." },
+  { Icon: RefreshCw,  title: "Avtomatlaşdırılmış prosess", desc: "Lead-lər avtomatik toplanır, CRM inteqrasiyası, satış prosesi optimallaşdırılır." },
+  { Icon: Target,     title: "Fərdi yanaşma",              desc: "Hər müştəri üçün xüsusi plan. Büdcəyə uyğun maksimum dəyər." },
+  { Icon: TrendingUp, title: "Satış yönümlü",              desc: "Sadəcə məlumat verilmir — müştəri qərar mərhələsinə gətirilir." },
 ];
 
 const stats = [
@@ -92,7 +93,9 @@ export default function HaqqimızdaPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {services.map(s => (
               <div key={s.title} className="ns-card-hover p-6">
-                <div className="text-4xl mb-3">{s.flag}</div>
+                <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center mb-3">
+                  <s.Icon size={20} className="text-sky-600" />
+                </div>
                 <h3 className="font-bold text-slate-800 text-base mb-3">{s.title}</h3>
                 <ul className="space-y-2">
                   {s.items.map(item => (
@@ -117,7 +120,9 @@ export default function HaqqimızdaPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {usps.map(u => (
               <div key={u.title} className="ns-card-hover flex gap-4 p-6">
-                <div className="text-3xl flex-shrink-0">{u.icon}</div>
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                  <u.Icon size={20} className="text-indigo-600" />
+                </div>
                 <div>
                   <h3 className="font-bold text-sky-700 text-sm mb-1">{u.title}</h3>
                   <p className="text-sm text-slate-500 leading-relaxed">{u.desc}</p>
@@ -135,7 +140,10 @@ export default function HaqqimızdaPage() {
           <h2 className="ns-title mb-10">Niyə Natoure?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-10">
             {whyItems.map(item => (
-              <div key={item} className="ns-check-item text-sm text-slate-600">{item}</div>
+              <div key={item} className="flex items-start gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm">
+                <CheckCircle size={16} className="text-sky-500 flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-slate-600">{item}</span>
+              </div>
             ))}
           </div>
           <a href="/elaqe" className="ns-btn ns-btn-primary">

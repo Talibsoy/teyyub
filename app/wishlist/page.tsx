@@ -4,7 +4,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { waLink } from "@/lib/whatsapp";
 import WishlistButton from "@/components/WishlistButton";
-import { Heart, ArrowLeft, Inbox } from "lucide-react";
+import { Heart, ArrowLeft, Inbox, Clock, Building2 } from "lucide-react";
 
 const KEY = "natoure_wishlist";
 
@@ -183,8 +183,16 @@ export default function WishlistPage() {
                           {tour.name}
                         </h3>
                       </Link>
-                      {durationLabel && <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 4px" }}>⏱ {durationLabel}</p>}
-                      {tour.hotel && <p style={{ fontSize: 12, color: "#94a3b8", margin: "0 0 4px" }}>🏨 {tour.hotel}</p>}
+                      {durationLabel && (
+                        <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 4px", display: "flex", alignItems: "center", gap: 4 }}>
+                          <Clock size={11} /> {durationLabel}
+                        </p>
+                      )}
+                      {tour.hotel && (
+                        <p style={{ fontSize: 12, color: "#94a3b8", margin: "0 0 4px", display: "flex", alignItems: "center", gap: 4 }}>
+                          <Building2 size={11} /> {tour.hotel}
+                        </p>
+                      )}
                       {tour.description && (
                         <p style={{
                           fontSize: 12, color: "#94a3b8", lineHeight: 1.5, margin: "4px 0 0",

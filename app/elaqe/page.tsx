@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { waLink } from "@/lib/whatsapp";
+import { MapPin, Phone, Mail, Clock, CheckCircle } from "lucide-react";
 
 export default function ElaqePage() {
   const [form, setForm] = useState({ ad: "", telefon: "", email: "", tur: "", mesaj: "" });
@@ -21,6 +22,13 @@ export default function ElaqePage() {
     finally { setLoading(false); }
   };
 
+  const contactItems = [
+    { Icon: MapPin,  title: "Ünvan",              lines: ["Bakı, Azərbaycan"] },
+    { Icon: Phone,   title: "Telefon / WhatsApp", lines: ["+994 51 776 96 32"] },
+    { Icon: Mail,    title: "Email",              lines: ["info@natourefly.com"] },
+    { Icon: Clock,   title: "İş Saatları",        lines: ["B.e – Şənbə: 09:00 – 18:00"] },
+  ];
+
   return (
     <div className="ns-page">
 
@@ -39,15 +47,10 @@ export default function ElaqePage() {
             <div>
               <h2 className="ns-title mb-7">Bizimlə Əlaqə</h2>
               <div className="space-y-5">
-                {[
-                  { icon: "📍", title: "Ünvan",              lines: ["Bakı, Azərbaycan"] },
-                  { icon: "📞", title: "Telefon / WhatsApp", lines: ["+994 51 776 96 32"] },
-                  { icon: "✉️", title: "Email",              lines: ["info@natourefly.com"] },
-                  { icon: "🕐", title: "İş Saatları",        lines: ["B.e – Şənbə: 09:00 – 18:00"] },
-                ].map(item => (
+                {contactItems.map(item => (
                   <div key={item.title} className="flex gap-4 items-start">
-                    <div className="ns-card w-10 h-10 flex items-center justify-center text-lg flex-shrink-0">
-                      {item.icon}
+                    <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center flex-shrink-0">
+                      <item.Icon size={18} className="text-sky-600" />
                     </div>
                     <div>
                       <div className="text-xs font-semibold text-slate-700 mb-0.5">{item.title}</div>
@@ -73,8 +76,8 @@ export default function ElaqePage() {
                 <p className="ns-label mb-3">Sosial Media</p>
                 <div className="flex gap-2">
                   {[
-                    { label: "Instagram", href: "https://instagram.com/natoure.fly",                              bg: "#E1306C" },
-                    { label: "Facebook",  href: "https://www.facebook.com/profile.php?id=61563875994345",          bg: "#1877F2" },
+                    { label: "Instagram", href: "https://instagram.com/natoure.fly",                             bg: "#E1306C" },
+                    { label: "Facebook",  href: "https://www.facebook.com/profile.php?id=61563875994345",         bg: "#1877F2" },
                   ].map(s => (
                     <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
                       className="text-xs font-semibold px-4 py-2 rounded-xl text-white hover:opacity-80 transition"
@@ -90,7 +93,9 @@ export default function ElaqePage() {
             <div className="ns-card p-7">
               {sent ? (
                 <div className="text-center py-12">
-                  <div className="text-5xl mb-4">✅</div>
+                  <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle size={32} className="text-green-500" />
+                  </div>
                   <h3 className="text-lg font-bold text-slate-800 mb-2">Müraciətiniz Göndərildi!</h3>
                   <p className="text-sm text-slate-500 mb-6">24 saat ərzində sizinlə əlaqə saxlayacağıq.</p>
                   <button
@@ -130,11 +135,11 @@ export default function ElaqePage() {
                         onChange={e => setForm({ ...form, tur: e.target.value })}
                         className="ns-input cursor-pointer">
                         <option value="">İstiqamət seçin</option>
-                        <option value="turkiye">🇹🇷 Türkiyə</option>
-                        <option value="ereb">🇦🇪 Dubai / BƏƏ</option>
-                        <option value="misir">🇪🇬 Misir</option>
-                        <option value="avropa">🇪🇺 Avropa</option>
-                        <option value="ferdi">🧳 Fərdi Tur</option>
+                        <option value="turkiye">Türkiyə</option>
+                        <option value="ereb">Dubai / BƏƏ</option>
+                        <option value="misir">Misir</option>
+                        <option value="avropa">Avropa</option>
+                        <option value="ferdi">Fərdi Tur</option>
                       </select>
                     </div>
                     <div>
@@ -145,7 +150,7 @@ export default function ElaqePage() {
                     </div>
                     <button type="submit" disabled={loading}
                       className="ns-btn ns-btn-primary w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-                      {loading ? "Göndərilir..." : "Müraciət Göndər ✈"}
+                      {loading ? "Göndərilir..." : "Müraciət Göndər"}
                     </button>
                     <p className="text-xs text-center text-slate-400">Məlumatlarınız gizli saxlanılır</p>
                   </form>

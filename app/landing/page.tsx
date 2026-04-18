@@ -43,7 +43,7 @@ const MODAL_RESULT: ModalData = {
   img: "https://images.unsplash.com/photo-1571366343168-631c5bcca7a4?w=900&q=85",
   price: "3.250 AZN",
   rating: 5,
-  review: "Sizin istəyinizə əsasən Rixos Premium Belek ideal seçimdir — ultraall-inclusive, şəxsi çimərlik və romantik atmosfer. Gidiş-dönüş uçuş daxildir.",
+  review: "Sizin istəyinizə əsasən Rixos Premium Belek ideal seçimdir — hər şey daxil, şəxsi çimərlik və romantik atmosfer. Gediş-dönüş uçuş daxildir.",
 };
 
 // ─── BLOB COMPONENT ───────────────────────────────────────────────────────────
@@ -318,10 +318,10 @@ function HowItWorksSection() {
 // ─── FEATURES ─────────────────────────────────────────────────────────────────
 function FeaturesSection() {
   const features = [
-    { icon: <MapPin size={24} />, tag: "Pre-Trip", title: "Mükəmməl Plan", desc: "Viza, sığorta, otel, uçuş — hər şey bir yerdə. Çaşdırıcı seçimləri unudun.", color: "#0284c7" },
-    { icon: <Headphones size={24} />, tag: "On-Trip", title: "24/7 Dəstək", desc: "Səyahət zamanı istənilən problemdə AI köməyiniz hazırdır. Dil maneəsi yoxdur.", color: "#4f46e5" },
-    { icon: <TrendingUp size={24} />, tag: "Smart Pricing", title: "Ən Yaxşı Qiymət", desc: "AI real-time qiymət analizi aparır, sizi həmişə ən sərfəli tarifə yönləndirir.", color: "#0ea5e9" },
-    { icon: <Shield size={24} />, tag: "Post-Trip", title: "Xatirə & Növbəti", desc: "Səyahətiniz bitdikdən sonra rəylər, fotolar və növbəti mükəmməl tur tövsiyəsi.", color: "#6366f1" },
+    { icon: <MapPin size={24} />, tag: "Səyahət Öncəsi", title: "Mükəmməl Plan", desc: "Viza, sığorta, otel, uçuş — hər şey bir yerdə. Çaşdırıcı seçimləri unudun.", color: "#0284c7" },
+    { icon: <Headphones size={24} />, tag: "Səyahətdə", title: "24/7 Dəstək", desc: "Səyahət zamanı istənilən problemdə AI köməyiniz hazırdır. Dil maneəsi yoxdur.", color: "#4f46e5" },
+    { icon: <TrendingUp size={24} />, tag: "Ağıllı Qiymət", title: "Ən Yaxşı Qiymət", desc: "AI real-time qiymət analizi aparır, sizi həmişə ən sərfəli tarifə yönləndirir.", color: "#0ea5e9" },
+    { icon: <Shield size={24} />, tag: "Səyahət Sonrası", title: "Xatirə & Növbəti", desc: "Səyahətiniz bitdikdən sonra rəylər, fotolar və növbəti mükəmməl tur tövsiyəsi.", color: "#6366f1" },
   ];
 
   return (
