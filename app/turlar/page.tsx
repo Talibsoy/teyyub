@@ -129,6 +129,7 @@ function TurlarContent() {
   const [tours, setTours]         = useState<Tour[]>([]);
   const [loading, setLoading]     = useState(true);
   const [archetype, setArchetype] = useState<Archetype | null>(null);
+  const [rankedIds, setRankedIds] = useState<string[] | null>(null);
 
   useEffect(() => {
     supabase.from("tours").select("*").eq("is_active", true)
@@ -137,6 +138,15 @@ function TurlarContent() {
 
     const saved = localStorage.getItem("nf_archetype");
     if (saved) setArchetype(saved as Archetype);
+
+    // pgvector sıralama — yalnız quiz tamamlanmışsa
+    const token = localStorage.getItem("nf_session_token");
+    if (token) {
+      fetch(`/api/tours/ranked?session_token=${token}`)
+        .then(r => r.json())
+        .then(d => { if (d.ranked?.length) setRankedIds(d.ranked.map((r: { id: string }) => r.id)); })
+        .catch(() => {});
+    }
 
     tracker.init();
   }, []);
@@ -173,14 +183,20 @@ function TurlarContent() {
       return true;
     });
 
-    // Arxetipə görə auto-sort
+    // pgvector sıralama (travel_dna_vector əsaslı) — birinci prioritet
+    if (rankedIds && rankedIds.length > 0) {
+      const order = new Map(rankedIds.map((id, i) => [id, i]));
+      list.sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+      return list;
+    }
+
+    // Fallback: heuristik arxetip sıralama
     if (archetype && archetype !== "undetermined") {
       if (archetype === "budget_optimizer") {
         list.sort((a, b) => a.price_azn - b.price_azn);
       } else if (archetype === "luxury_curator") {
         list.sort((a, b) => b.price_azn - a.price_azn);
       } else {
-        // Digər arxetiplər üçün match score-a görə sırala
         list.sort((a, b) => {
           const sa = calcTourMatchScore(a, archetype) ?? 0;
           const sb = calcTourMatchScore(b, archetype) ?? 0;
@@ -190,7 +206,7 @@ function TurlarContent() {
     }
 
     return list;
-  }, [tours, active, search, minPrice, maxPrice, durFilter, archetype]);
+  }, [tours, active, search, minPrice, maxPrice, durFilter, archetype, rankedIds]);
 
   const hasFilters = search || minPrice || maxPrice || active !== "hamisi" || durFilter !== "hamisi";
 

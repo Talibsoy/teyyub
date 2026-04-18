@@ -136,6 +136,68 @@ function DaySection({ dayData, index }: { dayData: ItineraryDay; index: number }
   );
 }
 
+function parseCostAzn(str: string | undefined): number | null {
+  if (!str) return null;
+  const lower = str.toLowerCase();
+  if (lower.includes("pulsuz") || lower.includes("free")) return 0;
+  const match = lower.match(/(\d[\d\s]*(?:\.\d+)?)/);
+  if (!match) return null;
+  const val = parseFloat(match[1].replace(/\s/g, ""));
+  if (lower.includes("usd") || lower.includes("$")) return Math.round(val * 1.70);
+  if (lower.includes("eur") || lower.includes("€")) return Math.round(val * 1.87);
+  return Math.round(val);
+}
+
+function BudgetCard({ days, guests }: { days: ItineraryDay[]; guests: number }) {
+  const all = days.flatMap(d => d.activities);
+  const groups: Record<Activity["type"], { label: string; color: string; total: number; count: number }> = {
+    transport:     { label: "Nəqliyyat",  color: "text-blue-600",   total: 0, count: 0 },
+    accommodation: { label: "Qalacaq",    color: "text-purple-600", total: 0, count: 0 },
+    food:          { label: "Yemək",      color: "text-orange-600", total: 0, count: 0 },
+    activity:      { label: "Fəaliyyət",  color: "text-emerald-600",total: 0, count: 0 },
+    free:          { label: "Digər",      color: "text-slate-500",  total: 0, count: 0 },
+  };
+
+  for (const act of all) {
+    const azn = parseCostAzn(act.cost_estimate);
+    if (azn !== null && azn > 0) {
+      groups[act.type].total += azn;
+      groups[act.type].count++;
+    }
+  }
+
+  const grandTotal = Object.values(groups).reduce((s, g) => s + g.total, 0);
+  if (grandTotal === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+      <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+        <svg className="w-4 h-4 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        Büdcə Bölgüsü
+      </h3>
+      <div className="space-y-2.5 mb-4">
+        {(Object.entries(groups) as [Activity["type"], typeof groups[Activity["type"]]][])
+          .filter(([, g]) => g.total > 0)
+          .map(([type, g]) => (
+            <div key={type} className="flex items-center justify-between">
+              <span className={`text-sm font-medium ${g.color}`}>{g.label}</span>
+              <span className="text-sm text-slate-700 font-semibold">~{g.total} AZN</span>
+            </div>
+          ))}
+      </div>
+      <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+        <span className="text-sm font-bold text-slate-800">Cəmi</span>
+        <span className="text-base font-bold text-sky-600">~{grandTotal} AZN</span>
+      </div>
+      {guests > 1 && (
+        <p className="text-xs text-slate-400 mt-1 text-right">{guests} nəfərə ≈ {grandTotal * guests} AZN</p>
+      )}
+    </div>
+  );
+}
+
 export default async function ItineraryPage(
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -223,6 +285,9 @@ export default async function ItineraryPage(
                 Bütün turları gör
               </Link>
             </div>
+
+            {/* Budget breakdown */}
+            <BudgetCard days={itin.days} guests={itin.guests} />
 
             {/* Travel tips */}
             {itin.travel_tips?.length > 0 && (
