@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Zap, Clock, Star, Wallet, Map, Palmtree, Wine, Users, ChevronRight, RotateCcw, ArrowRight, CheckCircle2, Calendar, UserCircle, Utensils, Heart, Compass } from "lucide-react";
-import { QUIZ_QUESTIONS, ARCHETYPE_LABELS, Archetype } from "@/lib/quiz-processor";
+import { QUIZ_QUESTIONS, ARCHETYPE_LABELS, Archetype, processQuizResults } from "@/lib/quiz-processor";
+import { parseDNAScores } from "@/components/DNAProfileCard";
 
 function getSessionToken(): string {
   if (typeof window === "undefined") return "";
@@ -73,7 +74,7 @@ const ARCHETYPE_ICONS: Record<Archetype, React.ReactNode> = {
   undetermined: <ChevronRight size={32} />,
 };
 
-export default function QuizWidget() {
+export default function QuizWidget({ onComplete }: { onComplete?: () => void } = {}) {
   const [step, setStep] = useState<Step>("intro");
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<SelectedAnswer[]>([]);
@@ -127,8 +128,11 @@ export default function QuizWidget() {
         localStorage.setItem("nf_archetype", data.archetype);
         setArchetype(data.archetype);
       }
+      // DNA scores-u localStorage-ə yaz (DNAProfileCard üçün)
+      const scores = processQuizResults(answers.map(a => ({ question_id: a.question_id, answer_id: a.answer_id, score_impact: a.score_impact })));
+      localStorage.setItem("nf_dna_scores", JSON.stringify(parseDNAScores(scores as unknown as Record<string, number>)));
     } catch { /* fallback: use client-side result */ }
-    setTimeout(() => setStep("result"), 1000);
+    setTimeout(() => { setStep("result"); onComplete?.(); }, 1000);
   }
 
   function resetQuiz() {
@@ -353,75 +357,89 @@ export default function QuizWidget() {
   // ── Result ─────────────────────────────────────────────────────────────────
   if (step === "result" && archetype) {
     const label = ARCHETYPE_LABELS[archetype];
+    const dnaScores = (() => {
+      try { return JSON.parse(localStorage.getItem("nf_dna_scores") || "null"); } catch { return null; }
+    })();
+    const DNA_BARS = [
+      { key: "adventure", label: "Macəra" },
+      { key: "cultural",  label: "Mədəniyyət" },
+      { key: "comfort",   label: "Rahatlıq" },
+      { key: "social",    label: "Sosiallik" },
+      { key: "budget",    label: "Büdcə" },
+    ];
     const content = (
       <div style={{
         position: "fixed", inset: 0, zIndex: 999,
-        background: "rgba(2,8,23,0.75)", backdropFilter: "blur(12px)",
+        background: "rgba(2,8,23,0.8)", backdropFilter: "blur(14px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 24,
       }}
         onClick={(e) => { if (e.target === e.currentTarget) setStep("intro"); }}>
         <div style={{
-          background: "white", borderRadius: 28, width: "100%", maxWidth: 420,
+          background: "#0f172a", borderRadius: 28, width: "100%", maxWidth: 400,
           overflow: "hidden", animation: "slideUpModal 0.4s cubic-bezier(0.34,1.4,0.64,1)",
-          boxShadow: "0 40px 100px rgba(0,0,0,0.4)",
+          boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
+          padding: "28px 28px 24px",
         }}>
-          {/* Gradient top */}
-          <div style={{
-            background: "linear-gradient(135deg, #0284c7, #4f46e5)",
-            padding: "36px 32px 28px", textAlign: "center",
-          }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: 22,
-              background: "rgba(255,255,255,0.2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px", color: "white",
-            }}>
-              {ARCHETYPE_ICONS[archetype]}
-            </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-              Səyahət Tipin
-            </div>
-            <h3 style={{ fontSize: 26, fontWeight: 900, color: "white", margin: 0 }}>
-              {label.name}
-            </h3>
+          {/* Close */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <p style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", margin: 0, fontWeight: 600 }}>
+              TRAVEL DNA — PSİXOMETRİK PROFİL
+            </p>
+            <button onClick={() => setStep("intro")} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 28, height: 28, color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>×</button>
           </div>
 
-          <div style={{ padding: "24px 28px 28px" }}>
-            <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.7, margin: "0 0 20px", textAlign: "center" }}>
-              {label.desc}
-            </p>
+          {/* Archetype name */}
+          <h3 style={{ fontSize: 28, fontWeight: 900, color: "white", margin: "0 0 6px", lineHeight: 1.2 }}>
+            {label.name.split(" ").map((word: string, i: number) =>
+              i === 1 ? <em key={i} style={{ fontStyle: "italic", color: "#60a5fa" }}> {word}</em> : <span key={i}>{word}</span>
+            )}
+          </h3>
+          <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 20px", lineHeight: 1.6 }}>{label.desc}</p>
 
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              background: "rgba(2,132,199,0.06)", borderRadius: 12,
-              padding: "12px 16px", marginBottom: 20,
+          {/* Progress bars */}
+          {dnaScores && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+              {DNA_BARS.map(b => (
+                <div key={b.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ width: 80, fontSize: 12, color: "#94a3b8", flexShrink: 0 }}>{b.label}</span>
+                  <div style={{ flex: 1, height: 4, background: "#1e293b", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", width: `${dnaScores[b.key] ?? 50}%`,
+                      background: "linear-gradient(90deg, #3b82f6, #6366f1)",
+                      borderRadius: 4, transition: "width 1s cubic-bezier(0.4,0,0.2,1)",
+                    }} />
+                  </div>
+                  <span style={{ width: 36, fontSize: 12, color: "#94a3b8", textAlign: "right" }}>{dnaScores[b.key] ?? 50}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* OCEAN badge */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#1e3a5f", borderRadius: 20, padding: "6px 14px", marginBottom: 20 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3b82f6" }} />
+            <span style={{ fontSize: 11, color: "#93c5fd", fontWeight: 600, letterSpacing: 1 }}>OCEAN + Plog modeli</span>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <a href="/turlar" style={{
+              flex: 1, background: "linear-gradient(135deg, #0284c7, #4f46e5)",
+              color: "white", textDecoration: "none", borderRadius: 14,
+              padding: "14px", fontSize: 14, fontWeight: 700, textAlign: "center",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              boxShadow: "0 8px 24px rgba(2,132,199,0.35)",
             }}>
-              <CheckCircle2 size={16} style={{ color: "#0284c7", flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>
-                Tur nəticələrin sənin profilinə görə sıralanacaq
-              </span>
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <a href="/turlar" style={{
-                flex: 1, background: "linear-gradient(135deg, #0284c7, #4f46e5)",
-                color: "white", textDecoration: "none", borderRadius: 14,
-                padding: "14px", fontSize: 14, fontWeight: 700, textAlign: "center",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                boxShadow: "0 8px 24px rgba(2,132,199,0.35)",
-              }}>
-                Turlarıma Bax <ArrowRight size={16} />
-              </a>
-              <button onClick={resetQuiz} style={{
-                background: "#f1f5f9", border: "none", borderRadius: 14,
-                padding: "14px 18px", fontSize: 13, color: "#64748b",
-                cursor: "pointer", fontWeight: 600,
-                display: "flex", alignItems: "center", gap: 6,
-              }}>
-                <RotateCcw size={14} /> Yenidən
-              </button>
-            </div>
+              Turlarıma Bax <ArrowRight size={16} />
+            </a>
+            <button onClick={resetQuiz} style={{
+              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 14, padding: "14px 18px", fontSize: 13, color: "#94a3b8",
+              cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 6,
+            }}>
+              <RotateCcw size={14} /> Yenidən
+            </button>
           </div>
         </div>
       </div>
