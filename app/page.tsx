@@ -168,14 +168,14 @@ export default function HomePage() {
       `}</style>
 
       {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="relative min-h-[95vh] flex flex-col items-center justify-center px-4 py-20 text-center overflow-hidden bg-[#f8fafc]">
+      <section className="relative min-h-[75vh] flex flex-col items-center justify-center px-4 py-14 text-center overflow-hidden bg-[#f8fafc]">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="blob absolute top-[-8rem] left-[-6rem] w-[500px] h-[500px] rounded-full bg-sky-400/20 blur-3xl" />
           <div className="blob blob-delay absolute bottom-[5%] right-[-4rem] w-96 h-96 rounded-full bg-violet-400/20 blur-3xl" />
           <div className="blob blob-delay2 absolute top-[40%] left-[35%] w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full max-w-2xl mx-auto">
+        <div className="relative z-10 w-full max-w-3xl mx-auto">
           <div className="fade-in-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-bold tracking-widest uppercase mb-8">
             <Sparkles size={12} /> AI Qərar Mühərriki
           </div>
@@ -326,7 +326,7 @@ export default function HomePage() {
       )}
 
       {/* ── ITINERARY PREVIEW ─────────────────────────── */}
-      <section className="px-4 py-20 bg-white">
+      <section className="px-4 py-14 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col lg:flex-row items-center gap-12">
             {/* Left: text */}
@@ -393,14 +393,14 @@ export default function HomePage() {
       </section>
 
       {/* ── BENTO GRID ──────────────────────────────────── */}
-      <section className="px-4 py-20 bg-[#f8fafc]">
+      <section className="px-4 py-14 bg-[#f8fafc]">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Dünya Sizi Gözləyir</p>
           <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-10">Populyar Məkanlar</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 auto-rows-[180px]">
+          <div className="grid grid-cols-3 gap-3 auto-rows-[190px]">
             {DESTINATIONS.map((d, i) => (
               <a key={d.name} href={`/turlar?dest=${d.name.toLowerCase()}`}
-                className={`relative rounded-2xl overflow-hidden group block ${i === 0 ? "row-span-2" : ""}`}>
+                className={`relative rounded-2xl overflow-hidden group block ${i === 0 ? "col-span-2 row-span-2" : ""}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={d.img} alt={d.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
@@ -415,7 +415,7 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ────────────────────────────────── */}
-      <section className="px-4 py-20 bg-white">
+      <section className="px-4 py-14 bg-white">
         <div className="max-w-4xl mx-auto">
           <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Sadə Prosess</p>
           <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-14">Necə İşləyir?</h2>
@@ -444,7 +444,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FEATURES ────────────────────────────────────── */}
-      <section className="px-4 py-20 bg-[#f8fafc]">
+      <section className="px-4 py-14 bg-[#f8fafc]">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Niyə Natoure?</p>
           <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-12">Tam Səyahət Təcrübəsi</h2>
@@ -467,8 +467,8 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA ─────────────────────────────────────────── */}
-      <section className="px-4 py-20 bg-white">
-        <div className="max-w-2xl mx-auto">
+      <section className="px-4 py-14 bg-white">
+        <div className="max-w-3xl mx-auto">
           <div className="rounded-3xl p-14 text-center text-white" style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", boxShadow: "0 30px 80px rgba(2,132,199,.3)" }}>
             <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">Səyahətinizi Planlamağa Hazırsınız?</h2>
             <p className="text-white/80 text-base mb-10 leading-relaxed">İlk AI ilə planlanmış turunu pulsuz sınayın. Heç bir ödəniş tələb olunmur.</p>
