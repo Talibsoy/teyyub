@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // Meta webhook-u həmişə 200 almalıdır — 500 qaytarsan retry loop başlayır
   try {
     if (body.object === "whatsapp_business_account") {
       for (const entry of body.entry || []) {
@@ -110,8 +111,9 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ status: "ok" });
   } catch (error) {
-    console.error("WhatsApp webhook xətası:", error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    // 200 qaytarırıq — 500 göndərsək Meta webhook-u yenidən göndərir (retry loop)
+    console.error("[WA Webhook] Xəta:", error);
+    return NextResponse.json({ status: "ok" });
   }
 }
 
@@ -145,32 +147,51 @@ async function fetchWAMedia(
 }
 
 async function handleWhatsApp(from: string, userMessage: string, media?: MediaInput) {
-  const historyKey = `WA_${from}`;
-  const history = await getHistory(historyKey);
-
-  // CRM-dən müştəri profilini çək (telefon nömrəsinə görə)
-  const crmProfile = await getCRMProfileByPhone(from);
-
-  const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media, crmProfile);
-
   const mediaLabel = media?.mediaType || "media";
-  history.push({ role: "user", content: userMessage || `[${mediaLabel}]` });
-  history.push({ role: "assistant", content: aiMessage });
-  await saveHistory(historyKey, history);
 
-  await sendWhatsAppMessage(from, aiMessage);
+  try {
+    const historyKey = `WA_${from}`;
+    const history = await getHistory(historyKey);
 
-  if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
-    await Promise.all([
-      addCustomerToSheet("WhatsApp", from, customerData, userMessage),
-      saveLead("WhatsApp", from, customerData, userMessage),
-    ]);
+    const crmProfile = await getCRMProfileByPhone(from).catch(() => null);
+
+    const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media, crmProfile);
+
+    history.push({ role: "user", content: userMessage || `[${mediaLabel}]` });
+    history.push({ role: "assistant", content: aiMessage });
+    await saveHistory(historyKey, history);
+
+    await sendWhatsAppMessage(from, aiMessage);
+
+    if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
+      await Promise.all([
+        addCustomerToSheet("WhatsApp", from, customerData, userMessage).catch(e =>
+          console.error("[WA] Google Sheets xətası:", e)
+        ),
+        saveLead("WhatsApp", from, customerData, userMessage).catch(e =>
+          console.error("[WA] CRM lead xətası:", e)
+        ),
+      ]);
+    }
+
+    await sendTelegramAlert("WhatsApp", userMessage || `[${mediaLabel} göndərdi]`, customerData).catch(() => {});
+  } catch (err) {
+    console.error(`[WA handleWhatsApp] from=${from} xəta:`, err);
+    // Müştəriyə fallback mesaj göndər
+    await sendWhatsAppMessage(
+      from,
+      "Bağlantı xətası baş verdi. Zəhmət olmasa bir az sonra yenidən yazın və ya +994517769632 nömrəsinə zəng edin."
+    ).catch(() => {});
   }
-  await sendTelegramAlert("WhatsApp", userMessage || `[${mediaLabel} göndərdi]`, customerData);
 }
 
 async function sendWhatsAppMessage(to: string, message: string) {
-  await fetch(`https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`, {
+  if (!WA_TOKEN || !WA_PHONE_ID) {
+    console.error("[WA] WA_ACCESS_TOKEN və ya WA_PHONE_NUMBER_ID env var yoxdur!");
+    return;
+  }
+
+  const res = await fetch(`https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -183,4 +204,9 @@ async function sendWhatsAppMessage(to: string, message: string) {
       text: { body: message },
     }),
   });
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    console.error(`[WA] Mesaj göndərmə xətası — status=${res.status} to=${to} body=${errBody}`);
+  }
 }
