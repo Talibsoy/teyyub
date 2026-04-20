@@ -41,18 +41,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  console.log("[WA] webhook gəldi:", JSON.stringify(body).slice(0, 200));
+
   // Meta webhook-u həmişə 200 almalıdır — 500 qaytarsan retry loop başlayır
   try {
     if (body.object === "whatsapp_business_account") {
       for (const entry of body.entry || []) {
         for (const change of entry.changes || []) {
           const messages = change.value?.messages || [];
+          console.log("[WA] mesaj sayı:", messages.length, "field:", change.field);
           for (const msg of messages) {
             const from = msg.from;
+            console.log("[WA] mesaj tipi:", msg.type, "from:", from);
 
             // Rate limit yoxla
             const allowed = await checkRateLimit(`wa:${from}`);
-            if (!allowed) continue;
+            if (!allowed) { console.log("[WA] rate limit:", from); continue; }
 
             // Deduplication — eyni mesajı iki dəfə işləmə (webhook retry)
             const msgId: string = msg.id;
@@ -66,6 +70,7 @@ export async function POST(req: NextRequest) {
             if (msg.type === "text") {
               const text = msg.text?.body;
               if (!text) continue;
+              console.log("[WA] after() çağırılır, text:", text.slice(0, 50));
               after(() => handleWhatsApp(from, text));
             } else if (msg.type === "image") {
               const mediaId = msg.image?.id;
@@ -160,11 +165,13 @@ async function handleWhatsApp(from: string, userMessage: string, media?: MediaIn
   const mediaLabel = media?.mediaType || "media";
 
   try {
+    console.log("[WA handleWhatsApp] başladı, from:", from);
     const historyKey = `WA_${from}`;
     const history = await getHistory(historyKey);
 
     const crmProfile = await getCRMProfileByPhone(from).catch(() => null);
 
+    console.log("[WA] AI çağırılır...");
     const { message: aiMessage, customerData } = await getAIResponse(
       userMessage, history, media, crmProfile,
       { maxRounds: 3, maxTokens: 2048 }
@@ -174,6 +181,7 @@ async function handleWhatsApp(from: string, userMessage: string, media?: MediaIn
     history.push({ role: "assistant", content: aiMessage });
     await saveHistory(historyKey, history);
 
+    console.log("[WA] AI cavabı:", aiMessage.slice(0, 80));
     await sendWhatsAppMessage(from, aiMessage);
 
     if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
