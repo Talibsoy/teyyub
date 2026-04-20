@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
+import { requireStaff, isAuthError } from "@/lib/require-auth";
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
   ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
   : null;
 
 export async function POST(req: NextRequest) {
+  const auth = await requireStaff(req);
+  if (isAuthError(auth)) return auth;
+
   if (!redis) return NextResponse.json({ error: "Redis yoxdur" }, { status: 500 });
 
   const { sessionId, message, pauseAI } = await req.json();
@@ -29,6 +33,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const auth = await requireStaff(req);
+  if (isAuthError(auth)) return auth;
+
   if (!redis) return NextResponse.json({ error: "Redis yoxdur" }, { status: 500 });
   const { sessionId } = await req.json();
   if (!sessionId) return NextResponse.json({ error: "sessionId lazımdır" }, { status: 400 });

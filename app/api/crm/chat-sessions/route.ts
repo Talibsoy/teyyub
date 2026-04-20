@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
+import { requireStaff, isAuthError } from "@/lib/require-auth";
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
   ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
   : null;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireStaff(req);
+  if (isAuthError(auth)) return auth;
+
   if (!redis) return NextResponse.json([]);
 
   // Son 50 aktiv sessiya — ən yeni əvvəldə
