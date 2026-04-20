@@ -15,6 +15,6 @@ export async function register() {
       return Reflect.set(target, prop, value);
     },
   };
-  // @ts-expect-error proxy on process.env
+  // @ts-ignore
   process.env = new Proxy(process.env, handler);
 }
