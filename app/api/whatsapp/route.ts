@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
@@ -62,51 +62,58 @@ export async function POST(req: NextRequest) {
               await redis.set(`wa_seen:${msgId}`, 1, { ex: 300 }); // 5 dəqiqə
             }
 
+            // after() — Meta-ya dərhal 200 qaytarırıq, AI fonunda işləyir
             if (msg.type === "text") {
               const text = msg.text?.body;
               if (!text) continue;
-              await handleWhatsApp(from, text);
+              after(() => handleWhatsApp(from, text));
             } else if (msg.type === "image") {
               const mediaId = msg.image?.id;
               const mimeType = msg.image?.mime_type || "image/jpeg";
-              const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "şəkil") : undefined;
-              await handleWhatsApp(from, "", media);
+              after(async () => {
+                const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "şəkil") : undefined;
+                await handleWhatsApp(from, "", media);
+              });
             } else if (msg.type === "video") {
               const mediaId = msg.video?.id;
               const mimeType = msg.video?.mime_type || "video/mp4";
               if (mediaId) {
-                const fetched = await fetchWAMedia(mediaId, mimeType, "video");
-                if (fetched?.data) {
-                  const description = await analyzeMedia(fetched.data, mimeType, "video");
-                  await handleWhatsApp(from, `[Müştəri video göndərdi. Gemini təsviri: ${description}]`);
-                } else {
-                  await handleWhatsApp(from, "[Müştəri video göndərdi]");
-                }
+                after(async () => {
+                  const fetched = await fetchWAMedia(mediaId, mimeType, "video");
+                  const text = fetched?.data
+                    ? `[Müştəri video göndərdi. Gemini təsviri: ${await analyzeMedia(fetched.data, mimeType, "video")}]`
+                    : "[Müştəri video göndərdi]";
+                  await handleWhatsApp(from, text);
+                });
               }
             } else if (msg.type === "audio" || msg.type === "voice") {
               const mediaId = msg.audio?.id || msg.voice?.id;
               const mimeType = msg.audio?.mime_type || msg.voice?.mime_type || "audio/ogg";
               if (mediaId) {
-                const fetched = await fetchWAMedia(mediaId, mimeType, "ses");
-                if (fetched?.data) {
-                  const transcript = await analyzeMedia(fetched.data, mimeType, "ses");
-                  await handleWhatsApp(from, transcript);
-                } else {
-                  await handleWhatsApp(from, "[Müştəri ses mesajı göndərdi, transkript alınmadı]");
-                }
+                after(async () => {
+                  const fetched = await fetchWAMedia(mediaId, mimeType, "ses");
+                  const text = fetched?.data
+                    ? await analyzeMedia(fetched.data, mimeType, "ses")
+                    : "[Müştəri ses mesajı göndərdi, transkript alınmadı]";
+                  await handleWhatsApp(from, text);
+                });
               }
             } else if (msg.type === "document") {
               const mediaId = msg.document?.id;
               const mimeType = msg.document?.mime_type || "application/pdf";
-              const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "fayl") : undefined;
-              await handleWhatsApp(from, "", media);
+              after(async () => {
+                const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "fayl") : undefined;
+                await handleWhatsApp(from, "", media);
+              });
             } else if (msg.type === "sticker") {
               const mediaId = msg.sticker?.id;
               const mimeType = msg.sticker?.mime_type || "image/webp";
-              const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "şəkil") : undefined;
-              await handleWhatsApp(from, "", media);
+              after(async () => {
+                const media = mediaId ? await fetchWAMedia(mediaId, mimeType, "şəkil") : undefined;
+                await handleWhatsApp(from, "", media);
+              });
             } else {
-              await sendWhatsAppMessage(from, "Zəhmət olmasa mətn, şəkil, video və ya ses göndərin! 🙏");
+              after(() => sendWhatsAppMessage(from, "Zəhmət olmasa mətn, şəkil, video və ya ses göndərin!"));
             }
           }
         }
