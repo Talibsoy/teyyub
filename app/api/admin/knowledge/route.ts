@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { addKnowledge, deleteKnowledge } from "@/lib/knowledge";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
+function checkSecret(req: NextRequest): boolean {
+  const auth = req.headers.get("authorization");
+  return auth === `Bearer ${process.env.CRON_SECRET}`;
+}
+
 // Bütün biliklərə bax
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (secret !== process.env.CRON_SECRET) {
+  if (!checkSecret(req)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -20,8 +24,7 @@ export async function GET(req: NextRequest) {
 
 // Yeni bilik əlavə et
 export async function POST(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (secret !== process.env.CRON_SECRET) {
+  if (!checkSecret(req)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -36,8 +39,7 @@ export async function POST(req: NextRequest) {
 
 // Bilik sil
 export async function DELETE(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (secret !== process.env.CRON_SECRET) {
+  if (!checkSecret(req)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

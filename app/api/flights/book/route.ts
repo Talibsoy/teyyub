@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder } from "@/lib/duffel";
 import { supabaseAdmin } from "@/lib/supabase";
+import { requireAuth, isAuthError } from "@/lib/require-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (isAuthError(auth)) return auth;
+
   try {
     const { offer_id, given_name, family_name, born_on, email, phone, tour_booking_id } = await req.json();
 
@@ -31,6 +35,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Duffel Book]", msg);
-    return NextResponse.json({ error: "Bilet sifariş zamanı xəta baş verdi", detail: msg }, { status: 500 });
+    return NextResponse.json({ error: "Bilet sifariş zamanı xəta baş verdi" }, { status: 500 });
   }
 }

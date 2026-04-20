@@ -4,10 +4,10 @@ import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
-    const { bookingId, amount, description } = await req.json();
+    const { bookingId, description } = await req.json();
 
-    if (!bookingId || !amount || amount <= 0) {
-      return NextResponse.json({ error: "bookingId və amount tələb olunur" }, { status: 400 });
+    if (!bookingId) {
+      return NextResponse.json({ error: "bookingId tələb olunur" }, { status: 400 });
     }
 
     // Auth istifadəçini müəyyən et
@@ -16,6 +16,22 @@ export async function POST(req: NextRequest) {
     if (authHeader?.startsWith("Bearer ")) {
       const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.slice(7));
       if (user) userId = user.id;
+    }
+
+    // Amount-u DB-dən al — client-dən gələn dəyərə etibar etmə
+    const { data: booking, error: bookingErr } = await supabaseAdmin
+      .from("bookings")
+      .select("total_price, status")
+      .eq("id", bookingId)
+      .maybeSingle();
+
+    if (bookingErr || !booking) {
+      return NextResponse.json({ error: "Rezervasiya tapılmadı" }, { status: 404 });
+    }
+
+    const amount: number = booking.total_price;
+    if (!amount || amount <= 0) {
+      return NextResponse.json({ error: "Rezervasiya məbləği yanlışdır" }, { status: 400 });
     }
 
     const order = await createEpointOrder({ amount, bookingId, description });
