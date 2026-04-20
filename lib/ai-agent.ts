@@ -527,7 +527,8 @@ export async function getAIResponse(
   userMessage: string,
   conversationHistory: { role: "user" | "assistant"; content: string }[] = [],
   media?: MediaInput,
-  crmProfile?: CRMProfile | null
+  crmProfile?: CRMProfile | null,
+  options?: { maxRounds?: number; maxTokens?: number }
 ): Promise<AIResponse> {
   let userContent: Anthropic.MessageParam["content"];
 
@@ -587,14 +588,15 @@ export async function getAIResponse(
   const examples = await getExamples(destinationMatch?.[0] ?? null);
   const systemFinal = systemWithContext + formatExamplesForPrompt(examples);
 
-  // Agentic loop — tool_use bitənə qədər davam et (max 5 dövr)
+  // Agentic loop — tool_use bitənə qədər davam et
   let currentMessages = messages;
-  const MAX_ROUNDS = 5;
+  const MAX_ROUNDS = options?.maxRounds ?? 5;
+  const MAX_TOKENS = options?.maxTokens ?? 8000;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 8000,
+      max_tokens: MAX_TOKENS,
       system: systemFinal,
       messages: currentMessages,
       tools: ALL_TOOLS,

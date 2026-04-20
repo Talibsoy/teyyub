@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
+
+export const maxDuration = 60;
 import { addCustomerToSheet } from "@/lib/google-sheets";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
@@ -155,7 +157,10 @@ async function handleWhatsApp(from: string, userMessage: string, media?: MediaIn
 
     const crmProfile = await getCRMProfileByPhone(from).catch(() => null);
 
-    const { message: aiMessage, customerData } = await getAIResponse(userMessage, history, media, crmProfile);
+    const { message: aiMessage, customerData } = await getAIResponse(
+      userMessage, history, media, crmProfile,
+      { maxRounds: 3, maxTokens: 2048 }
+    );
 
     history.push({ role: "user", content: userMessage || `[${mediaLabel}]` });
     history.push({ role: "assistant", content: aiMessage });
