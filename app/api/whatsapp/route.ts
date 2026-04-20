@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
-
-export const maxDuration = 60;
-import { addCustomerToSheet } from "@/lib/google-sheets";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory } from "@/lib/conversation-store";
@@ -10,6 +7,10 @@ import { saveLead } from "@/lib/crm";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getCRMProfileByPhone } from "@/lib/crm-profile";
 import { Redis } from "@upstash/redis";
+// google-sheets dinamik import — googleapis modulu TLS qlobal dəyişdirir,
+// statik import bütün prosesi yoluxdurur (NODE_TLS_REJECT_UNAUTHORIZED=0)
+
+export const maxDuration = 60;
 
 const redis =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
@@ -170,9 +171,9 @@ async function handleWhatsApp(from: string, userMessage: string, media?: MediaIn
 
     if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
       await Promise.all([
-        addCustomerToSheet("WhatsApp", from, customerData, userMessage).catch(e =>
-          console.error("[WA] Google Sheets xətası:", e)
-        ),
+        import("@/lib/google-sheets").then(m =>
+          m.addCustomerToSheet("WhatsApp", from, customerData, userMessage)
+        ).catch(e => console.error("[WA] Google Sheets xətası:", e)),
         saveLead("WhatsApp", from, customerData, userMessage).catch(e =>
           console.error("[WA] CRM lead xətası:", e)
         ),

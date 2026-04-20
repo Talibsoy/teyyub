@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
-import { addCustomerToSheet } from "@/lib/google-sheets";
+// google-sheets dinamik import — googleapis TLS qlobal dəyişdirir
 import { sendTelegramAlert, sendConversationSummary } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
 import { getHistory, saveHistory, saveConvMeta, getConvMeta, markSummarySent } from "@/lib/conversation-store";
@@ -178,7 +178,9 @@ async function handleMessage(platform: string, senderId: string, userMessage: st
 
   if (customerData.name || customerData.phone || customerData.email || customerData.destination) {
     await Promise.all([
-      addCustomerToSheet(platform, senderId, customerData, userMessage),
+      import("@/lib/google-sheets").then(m =>
+        m.addCustomerToSheet(platform, senderId, customerData, userMessage)
+      ).catch(e => console.error("[Webhook] Google Sheets xətası:", e)),
       saveLead(platform, senderId, customerData, userMessage),
     ]);
   }
