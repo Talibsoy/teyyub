@@ -109,7 +109,6 @@ export default function HomePage() {
   const [prompt, setPrompt]           = useState("");
   const [loadingStep, setLoadingStep] = useState(-1);
   const [isLoading, setIsLoading]     = useState(false);
-  const [showModal, setShowModal]     = useState(false);
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [quizDone, setQuizDone]       = useState(false);
   const [archetypeName, setArchetypeName] = useState("");
@@ -142,15 +141,15 @@ export default function HomePage() {
       });
       const data = await res.json();
       timers.forEach(clearTimeout);
+      setIsLoading(false); setLoadingStep(-1);
       setSearchResult(data.ok
         ? { tours: data.tours || [], ai_intro: data.ai_intro || "", fallback: data.fallback ?? false }
         : { tours: [], ai_intro: "Axtarış zamanı xəta baş verdi.", fallback: true });
-      setShowModal(true);
     } catch {
       timers.forEach(clearTimeout);
+      setIsLoading(false); setLoadingStep(-1);
       setSearchResult({ tours: [], ai_intro: "Bağlantı xətası. Yenidən cəhd edin.", fallback: true });
-      setShowModal(true);
-    } finally { setIsLoading(false); setLoadingStep(-1); }
+    }
   };
 
   return (
@@ -510,7 +509,7 @@ export default function HomePage() {
       <NewsletterSection />
 
       {/* Result Modal */}
-      {showModal && <ResultModal onClose={() => setShowModal(false)} result={searchResult} />}
+      {searchResult && <ResultModal onClose={() => setSearchResult(null)} result={searchResult} />}
     </>
   );
 }
