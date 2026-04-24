@@ -7,7 +7,7 @@ import {
   MapPin, Calendar, ArrowUpRight, ArrowDownRight,
   Shield, Gift,
 } from "lucide-react";
-import { usePanelContext, TIERS } from "@/lib/panel-context";
+import { usePanelContext } from "@/lib/panel-context";
 import { getSupabase } from "@/lib/supabase";
 
 interface Trip {
@@ -277,7 +277,7 @@ export default function PanelHubPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {trips.map((trip) => {
-              const days = daysUntil(trip.checkin);
+              const days = trip.checkin ? daysUntil(trip.checkin) : null;
               const st   = STATUS_MAP[trip.status] || STATUS_MAP.pending;
               return (
                 <div key={trip.id} style={{
@@ -310,7 +310,7 @@ export default function PanelHubPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 12 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: d ? "#94a3b8" : "#64748b" }}>
                         <Calendar size={11} color={d ? "#64748b" : "#94a3b8"} />
-                        {formatDate(trip.checkin)}
+                        {trip.checkin ? formatDate(trip.checkin) : "—"}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: d ? "#94a3b8" : "#64748b" }}>
                         <Users size={11} color={d ? "#64748b" : "#94a3b8"} />
@@ -318,9 +318,9 @@ export default function PanelHubPage() {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: d ? "#94a3b8" : "#64748b" }}>
                         <DollarSign size={11} color={d ? "#64748b" : "#94a3b8"} />
-                        ${trip.price_usd.toLocaleString()}
+                        {trip.price_usd != null ? `$${trip.price_usd.toLocaleString()}` : "—"}
                       </div>
-                      {days > 0 && (
+                      {days != null && days > 0 && (
                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#0284c7", fontWeight: 600 }}>
                           <Clock size={11} color="#0284c7" />
                           {days} gün qaldı
