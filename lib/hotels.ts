@@ -77,12 +77,8 @@ export async function searchHotels(params: {
     languagecode:   "en-gb",
     order_by:       "popularity",
     units:          "metric",
+    page_number:    "0",
   };
-
-  // Ulduz filtri — Booking.com categories_filter_ids ilə
-  if (params.stars) {
-    searchParams.categories_filter_ids = `class::${params.stars}`;
-  }
 
   let data: { data?: { hotels?: unknown[] } };
   try {
@@ -91,7 +87,19 @@ export async function searchHotels(params: {
     return [];
   }
 
-  const hotels = (data.data?.hotels || []) as Record<string, unknown>[];
+  let hotels = (data.data?.hotels || []) as Record<string, unknown>[];
+
+  // Ulduz filtri — client-side (API filter etibarsız olduqda)
+  if (params.stars) {
+    const minStars = params.stars;
+    const filtered = hotels.filter((h) => {
+      const prop = (h.property || {}) as Record<string, unknown>;
+      const cls = Number(prop.propertyClass) || 0;
+      return cls >= minStars;
+    });
+    // Filtrlənmiş nəticə varsa istifadə et, yoxsa orijinal siyahı qalsın
+    if (filtered.length > 0) hotels = filtered;
+  }
 
   return hotels.slice(0, 6).map((h) => {
     const prop = (h.property || {}) as Record<string, unknown>;
