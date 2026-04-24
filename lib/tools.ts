@@ -150,34 +150,27 @@ export async function getExchangeRate(): Promise<string> {
 
 // ─── 4. PAKET QİYMƏT HESABLAMA ───────────────────────────────────────────────
 export function calculatePackage(params: {
-  flight_price_usd: number;
-  hotel_price_usd_per_night: number;
-  nights: number;
+  flight_total_azn: number;       // Duffel total qiyməti (bütün nəfərlər, markup daxil)
+  hotel_total_azn: number;        // Otel total qiyməti (bütün gecələr, markup daxil)
   passengers: number;
+  nights: number;
   include_transfer?: boolean;
 }): string {
-  const { flight_price_usd, hotel_price_usd_per_night, nights, passengers, include_transfer } = params;
-  const COMMISSION = 1.15;
-  const AZN_RATE = 1.70;
+  const { flight_total_azn, hotel_total_azn, nights, passengers, include_transfer } = params;
 
-  const flightTotal = flight_price_usd * passengers;
-  const hotelTotal = hotel_price_usd_per_night * nights;
-  const transferUsd = include_transfer ? 30 * passengers : 0;
-  const subtotalUsd = flightTotal + hotelTotal + transferUsd;
-  const totalUsd = Math.ceil(subtotalUsd * COMMISSION);
-  const totalAzn = Math.ceil(totalUsd * AZN_RATE);
-  const perPersonUsd = Math.ceil(totalUsd / passengers);
-  const perPersonAzn = Math.ceil(perPersonUsd * AZN_RATE);
+  const transferAzn = include_transfer ? 50 * passengers : 0;
+  const totalAzn = Math.ceil(flight_total_azn + hotel_total_azn + transferAzn);
+  const perPersonAzn = Math.ceil(totalAzn / passengers);
 
   return [
     `Paket hesablaması (${passengers} nəfər, ${nights} gecə):`,
-    `• Uçuş: $${flightTotal} (${passengers} nəfər)`,
-    `• Otel: $${hotelTotal} (${nights} gecə × $${hotel_price_usd_per_night})`,
-    include_transfer ? `• Transfer: $${transferUsd}` : null,
-    `• Komissiya (15%): $${Math.ceil(subtotalUsd * 0.15)}`,
+    `• Uçuş (${passengers} nəfər, cəmi): ${flight_total_azn} AZN`,
+    `• Otel (${nights} gecə, cəmi): ${hotel_total_azn} AZN`,
+    include_transfer ? `• Transfer: ${transferAzn} AZN` : null,
     `─────────────────`,
-    `💰 Cəmi: ${totalAzn} AZN (~$${totalUsd})`,
-    `💰 Nəfər başına: ${perPersonAzn} AZN (~$${perPersonUsd})`,
+    `Cəmi: ${totalAzn} AZN`,
+    `Nəfər başına: ${perPersonAzn} AZN`,
+    `(Bütün qiymətlərə xidmət haqqı daxildir)`,
   ].filter(Boolean).join("\n");
 }
 

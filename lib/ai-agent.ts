@@ -345,17 +345,18 @@ Tarix və nəfər sayı olmadan çağırma — əvvəl müştəridən al.`,
   {
     name: "calculate_package",
     description: `Uçuş + otel + transfer birləşdirərək ümumi paket qiymətini hesabla.
-Müştəriyə konkret ümumi xərc göstərəndə çağır. 15% komissiya avtomatik əlavə edilir.`,
+VACIB: flight_total_azn = Duffel-dən gələn price_azn (artıq bütün nəfərlər + markup daxildir — yenidən vurma!).
+hotel_total_azn = otel price_marked_up (artıq bütün gecələr + markup daxildir).`,
     input_schema: {
       type: "object" as const,
       properties: {
-        flight_price_usd: { type: "number", description: "Nəfər başına uçuş qiyməti (USD)" },
-        hotel_price_usd_per_night: { type: "number", description: "Gecə başına otel qiyməti (USD)" },
-        nights: { type: "number", description: "Gecə sayı" },
-        passengers: { type: "number", description: "Nəfər sayı" },
+        flight_total_azn: { type: "number", description: "Uçuşun CƏMİ qiyməti AZN-lə (bütün nəfərlər, markup daxil) — Duffel price_azn-dən al" },
+        hotel_total_azn:  { type: "number", description: "Otelin CƏMİ qiyməti AZN-lə (bütün gecələr, markup daxil) — hotel price_marked_up-dan al" },
+        nights:           { type: "number", description: "Gecə sayı" },
+        passengers:       { type: "number", description: "Nəfər sayı" },
         include_transfer: { type: "boolean", description: "Transfer daxil edilsin? (default: false)" }
       },
-      required: ["flight_price_usd", "hotel_price_usd_per_night", "nights", "passengers"]
+      required: ["flight_total_azn", "hotel_total_azn", "nights", "passengers"]
     }
   },
   {
@@ -495,10 +496,10 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
 
     case "calculate_package":
       return calculatePackage({
-        flight_price_usd: input.flight_price_usd as number,
-        hotel_price_usd_per_night: input.hotel_price_usd_per_night as number,
-        nights: input.nights as number,
-        passengers: input.passengers as number,
+        flight_total_azn: input.flight_total_azn as number,
+        hotel_total_azn:  input.hotel_total_azn  as number,
+        nights:           input.nights           as number,
+        passengers:       input.passengers       as number,
         include_transfer: input.include_transfer as boolean | undefined,
       });
 
