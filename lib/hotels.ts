@@ -167,7 +167,7 @@ export async function debugSearch(query: string) {
       languagecode: "en-us", sort_by: "popularity",
     });
     const hotels = data?.data?.hotels || [];
-    hotelsRaw = { count: hotels.length, first: hotels[0]?.property?.name };
+    hotelsRaw = { count: hotels.length, first_raw: hotels[0] };
   } catch (e) {
     return { step: "SEARCH_ERROR", keySet, dest, error: String(e) };
   }
