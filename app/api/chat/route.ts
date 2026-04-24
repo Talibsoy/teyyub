@@ -66,16 +66,23 @@ export async function POST(req: NextRequest) {
     // Operator keçidi aşkar et
     const isHandoff = raw.startsWith("OPERATOR_HANDOFF:");
 
-    // Tur paketi aşkar et — cavabın sonundakı TOUR_PACKAGE:{...} bloku
+    // Tur paketi aşkar et
     let tourPackage: Record<string, unknown> | null = null;
     const tourMatch = raw.match(/TOUR_PACKAGE:(\{[^}]+\})/);
     if (tourMatch) {
-      try { tourPackage = JSON.parse(tourMatch[1]); } catch { /* ignore malformed */ }
+      try { tourPackage = JSON.parse(tourMatch[1]); } catch { /* ignore */ }
+    }
+
+    // Otel paketi aşkar et
+    let hotelPackage: Record<string, unknown> | null = null;
+    const hotelMatch = raw.match(/HOTEL_PACKAGE:(\{[^}]+\})/);
+    if (hotelMatch) {
+      try { hotelPackage = JSON.parse(hotelMatch[1]); } catch { /* ignore */ }
     }
 
     const reply = isHandoff
       ? raw.replace("OPERATOR_HANDOFF:", "").trim()
-      : raw.replace(/TOUR_PACKAGE:\{[^}]+\}/, "").trim();
+      : raw.replace(/TOUR_PACKAGE:\{[^}]+\}/, "").replace(/HOTEL_PACKAGE:\{[^}]+\}/, "").trim();
 
     const updated = [
       ...history,
@@ -100,7 +107,7 @@ export async function POST(req: NextRequest) {
     // Telegram bildirişi
     notifyTelegram(sessionId, message, reply, isHandoff).catch(() => {});
 
-    return NextResponse.json({ reply, handoff: isHandoff, tourPackage });
+    return NextResponse.json({ reply, handoff: isHandoff, tourPackage, hotelPackage });
   } catch (err) {
     console.error("[CHAT API]", err);
     return NextResponse.json({ reply: "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin." });

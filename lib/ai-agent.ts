@@ -109,31 +109,34 @@ Cavab:
   [Aviaşirkət] — [Qiymət] AZN
   "Bilet ayırdımmı?"
 
-── 2. TUR + PAKET SORĞUSU ───────────────────────────────
-Sözlər: "otel", "tur", "paket", "qalmaq", "istirahət", "all inclusive",
-        "neçə günlük", "hər şey daxil", "kompleks", "hansı oteldə"
+── 2. TUR SORĞUSU ───────────────────────────────────────
+Sözlər: "tur", "paket", "all inclusive", "neçə günlük", "hər şey daxil"
+  → check_tour_availability çağır
+  → Tur tapıldıqda TOUR_PACKAGE: bloku əlavə et
+
+── 3. OTEL SORĞUSU ──────────────────────────────────────
+Sözlər: "otel", "qalmaq", "oteldə yer", "hansı otel", "otel tap", "mehmanxana"
 Bu sorğularda search_flights ÇAĞIRILMAZ.
+  → search_hotels çağır (tarix + nəfər sayı + məkan lazımdır)
+  → Tarix yoxdursa müştəridən soruş, sonra çağır
+  → Qiymətlər ARTIQ 15% xidmət haqqı daxildir — belə qeyd et
 
-  Tur/otel/paket soruşursa → YALNIZ check_tour_availability
-  Mövcud turda otel varsa → calculate_package ilə ümumi qiymət hesabla
+Otel tapıldıqda cavabın SONUNA əlavə et:
+HOTEL_PACKAGE:{"hotel_id":"<ID>","hotel_name":"<ad>","destination":"<məkan>","checkin":"<YYYY-MM-DD>","checkout":"<YYYY-MM-DD>","nights":<gecə>,"price_azn":<qiymət_with_markup>,"rating":<reytinq>,"stars":<ulduz>,"booking_url":"<url>"}
 
-Cavab (tur/otel):
-  check_tour_availability nəticəsindən məlumat ver.
-  Konkret otel/qiymət yoxdursa: "Komandamız sizin üçün ən uyğun variantı hazırlayacaq — nömrənizi ala bilərəmmi?"
+Müştəri "başqa otel", "daha ucuz", "başqa variant" desə → search_hotels yenidən çağır.
 
-Cavab (tur):
-  [Tur adı] | [Tarix] | [Qiymət] AZN
-  "Bu tura yer ayırdımmı?"
-
-── 3. DİGƏR ALƏTLƏR ────────────────────────────────────
+── 4. DİGƏR ALƏTLƏR ────────────────────────────────────
 get_weather       → Hava soruşanda
 get_exchange_rate → Valyuta çevirməsi
 get_visa_info     → Viza soruşanda
 save_lead         → Müştəri AÇIQ razılaşanda
 
 ƏSAS QAYDA:
-- Uçuş soruşanda → YALNIZ search_flights, otel/tur göstərmə
-- Otel/tur/paket soruşanda → search_flights ÇAĞIRILMAZ
+- Uçuş soruşanda → YALNIZ search_flights
+- Tur soruşanda → check_tour_availability
+- Otel soruşanda → search_hotels
+- Heç vaxt qarışdırma
 
 === OPERATOR KEÇİDİ ===
 Müştəri "real adam", "operator", "insan", "siz deyil", "canli", "manager", "rəhbər", "özünüz" kimi sözlər işlədəndə:
@@ -298,6 +301,23 @@ Müştəri konkret tura, mövcudluğa, start tarixinə soruşanda çağır.`,
     }
   },
   {
+    name: "search_hotels",
+    description: `Booking.com-dan real otel qiymətlərini axtar. Qiymətlərə 15% xidmət haqqı artıq daxildir.
+Müştəri "otel tap", "qalmaq", "mehmanxana", "hansı otel" soruşanda çağır.
+Tarix və nəfər sayı olmadan çağırma — əvvəl müştəridən al.`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        destination: { type: "string", description: "Şəhər adı ingilis dilində: Antalya, Dubai, Istanbul, Barcelona..." },
+        checkin:     { type: "string", description: "Giriş tarixi YYYY-MM-DD formatı" },
+        checkout:    { type: "string", description: "Çıxış tarixi YYYY-MM-DD formatı" },
+        adults:      { type: "number", description: "Böyük sayı (default: 2)" },
+        rooms:       { type: "number", description: "Otaq sayı (default: 1)" },
+      },
+      required: ["destination", "checkin", "checkout"]
+    }
+  },
+  {
     name: "get_weather",
     description: `Müştərinin getmək istədiyi şəhərin hava proqnozunu göstər.
 "Hava necədir?", "İsti olacaqmı?", "Nə geyinim?", "Yağış yağır?" sualları üçün çağır.`,
@@ -434,6 +454,32 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
         input.destination as string | undefined,
         input.month as string | undefined
       );
+
+    case "search_hotels": {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.natourefly.com"}/api/hotels/search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            destination: input.destination,
+            checkin:     input.checkin,
+            checkout:    input.checkout,
+            adults:      input.adults || 2,
+            rooms:       input.rooms  || 1,
+            currency:    "AZN",
+          }),
+          signal: AbortSignal.timeout(12000),
+        });
+        const data = await res.json();
+        const hotels = data.hotels || [];
+        if (hotels.length === 0) return "Bu tarixlərə uyğun otel tapılmadı. Başqa tarix və ya məkan sınayın.";
+        return hotels.map((h: { name: string; price_marked_up: number; nights: number; rating: number | null; stars: number | null; id: string }) =>
+          `[HOTEL_ID:${h.id}] ${h.name} | ${h.price_marked_up} AZN (${h.nights} gecə, xidmət haqqı daxil) | Reytinq: ${h.rating ?? "—"}/10 | ${h.stars ? h.stars + "★" : ""}`
+        ).join("\n");
+      } catch {
+        return "Otel axtarışı zamanı xəta. Yenidən cəhd edin.";
+      }
+    }
 
     case "get_weather":
       return getWeatherForecast(input.city as string, input.date as string | undefined);
