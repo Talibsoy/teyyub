@@ -1,257 +1,317 @@
-import { getSupabaseAdmin } from "@/lib/supabase";
-import Link from "next/link";
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Otel Rezervasiyası | Natoure",
-  description: "Antalya, Dubai, İstanbul, Bali və daha çox istiqamətdə ən yaxşı otel qiymətləri. Natoure ilə sərfəli otel rezervasiyası.",
-};
+import { useState } from "react";
+import type { HotelOffer } from "@/lib/hotels";
 
-export const revalidate = 3600; // 1 saat cache
+const DESTINATIONS = [
+  "Antalya", "Dubai", "Istanbul", "Bali", "Paris",
+  "Barcelona", "Rome", "Maldives", "Bangkok", "Cairo",
+];
 
-interface Hotel {
-  id: string;
-  hotel_key: string;
-  hotel_name: string;
-  destination: string;
-  checkin: string;
-  checkout: string;
-  price_usd: number;
-  stars: number;
-  room_type: string;
-  meal: string;
-  updated_at: string;
-  status: string;
+const STAR_OPTIONS = [
+  { value: 0, label: "Hamısı" },
+  { value: 3, label: "⭐⭐⭐ 3+" },
+  { value: 4, label: "⭐⭐⭐⭐ 4+" },
+  { value: 5, label: "⭐⭐⭐⭐⭐ 5" },
+];
+
+function todayPlus(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
 }
 
-const AZN_RATE = 1.70;
-
-function starsLabel(n: number) {
-  return "★".repeat(Math.min(5, Math.max(1, n)));
-}
-
-function mealLabel(meal: string): string {
-  const MAP: Record<string, string> = {
-    "breakfast": "Səhər yeməyi",
-    "half_board": "Yarım pansion",
-    "full_board": "Tam pansion",
-    "all_inclusive": "Hər şey daxil",
-    "room_only": "Yalnız otaq",
-    "no_meals": "Yemək daxil deyil",
-  };
-  return MAP[meal?.toLowerCase()] ?? meal ?? "—";
-}
-
-function nights(checkin: string, checkout: string): number {
-  return Math.max(1, Math.round(
-    (new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000
-  ));
-}
-
-const DEST_ICONS: Record<string, string> = {
-  "istanbul":  "🕌",
-  "antalya":   "🌊",
-  "dubai":     "🏙️",
-  "bali":      "🌴",
-  "barcelona": "🗼",
-  "paris":     "🗼",
-  "rome":      "🏛️",
-  "maldives":  "🐚",
-  "maldiv":    "🐚",
-  "sharm":     "🌅",
-};
-
-function destIcon(dest: string): string {
-  const key = dest.toLowerCase().split(/[, ]/)[0];
-  for (const [k, v] of Object.entries(DEST_ICONS)) {
-    if (key.includes(k)) return v;
-  }
-  return "📍";
-}
-
-function HotelCard({ hotel }: { hotel: Hotel }) {
-  const n = nights(hotel.checkin, hotel.checkout);
-  const priceAzn = Math.round(hotel.price_usd * AZN_RATE);
-  const perNight = Math.round(priceAzn / n);
-  const waMsg = encodeURIComponent(
-    `Salam! ${hotel.hotel_name} — ${hotel.destination}, ${hotel.checkin} tarixinə otel rezervasiyası haqqında məlumat almaq istəyirəm.`
-  );
-  const checkinStr = new Date(hotel.checkin).toLocaleDateString("az-AZ", { day: "numeric", month: "short" });
-  const checkoutStr = new Date(hotel.checkout).toLocaleDateString("az-AZ", { day: "numeric", month: "short" });
+function HotelCard({ hotel }: { hotel: HotelOffer }) {
+  const perNight = Math.ceil(hotel.price_marked_up / hotel.nights);
+  const stars = hotel.stars ? "⭐".repeat(Math.min(hotel.stars, 5)) : "";
+  const waMsg = `Salam! "${hotel.name}" oteli ilə maraqlanıram.\nMəkan: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıxış: ${hotel.checkout} (${hotel.nights} gecə)\nQiymət: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasiya etmək istəyirəm.`;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
-      {/* Stars bar */}
-      <div className="h-1.5 bg-gradient-to-r from-sky-500 to-indigo-500" style={{ width: `${(hotel.stars / 5) * 100}%` }} />
-      <div className="p-5">
-        {/* Stars + Name */}
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <span className="text-amber-400 text-sm tracking-tight">{starsLabel(hotel.stars)}</span>
-          {hotel.meal && hotel.meal !== "room_only" && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
-              {mealLabel(hotel.meal)}
+    <div
+      style={{
+        background: "white", borderRadius: 20,
+        border: "1px solid #e2e8f0", overflow: "hidden",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        transition: "all 0.2s", display: "flex", flexDirection: "column",
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(0,0,0,0.12)";
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)";
+      }}
+    >
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", padding: "18px 20px 14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: "0 0 3px", fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: 1 }}>
+              {hotel.destination}
+            </p>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "white", lineHeight: 1.3 }}>
+              {hotel.name}
+            </h3>
+          </div>
+          {stars && (
+            <span style={{ fontSize: 11, background: "#1e293b", border: "1px solid #334155", borderRadius: 8, padding: "4px 8px", color: "#fbbf24", whiteSpace: "nowrap" }}>
+              {stars}
             </span>
           )}
         </div>
-        <h3 className="font-bold text-slate-900 leading-snug mb-3">{hotel.hotel_name}</h3>
-
-        {/* Dates + Room */}
-        <div className="text-xs text-slate-500 space-y-1 mb-4">
-          <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-            </svg>
-            {checkinStr} — {checkoutStr} ({n} gecə)
+        {hotel.rating && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+            <span style={{
+              background: hotel.rating >= 9 ? "#16a34a" : hotel.rating >= 8 ? "#0284c7" : "#64748b",
+              color: "white", borderRadius: 6, padding: "2px 8px", fontSize: 13, fontWeight: 700,
+            }}>
+              {hotel.rating.toFixed(1)}
+            </span>
+            <span style={{ fontSize: 12, color: "#94a3b8" }}>
+              {hotel.rating >= 9 ? "Əla" : hotel.rating >= 8 ? "Çox yaxşı" : "Yaxşı"}
+              {hotel.review_count > 0 && ` · ${hotel.review_count.toLocaleString()} rəy`}
+            </span>
           </div>
-          {hotel.room_type && (
-            <div className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-4 9 4"/>
-              </svg>
-              {hotel.room_type}
+        )}
+      </div>
+
+      {/* Dates */}
+      <div style={{ padding: "14px 20px 0" }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[
+            { label: "Giriş", val: new Date(hotel.checkin).toLocaleDateString("az-AZ", { day: "numeric", month: "short" }) },
+            { label: "Çıxış", val: new Date(hotel.checkout).toLocaleDateString("az-AZ", { day: "numeric", month: "short" }) },
+            { label: "Gecə", val: String(hotel.nights), highlight: true },
+          ].map(item => (
+            <div key={item.label} style={{
+              flex: item.highlight ? "0 0 auto" : 1,
+              background: item.highlight ? "#f0f9ff" : "#f8fafc",
+              borderRadius: 10, padding: "9px 12px",
+            }}>
+              <p style={{ margin: 0, fontSize: 10, color: item.highlight ? "#0284c7" : "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>{item.label}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 13, fontWeight: 700, color: item.highlight ? "#0284c7" : "#0f172a" }}>{item.val}</p>
             </div>
-          )}
+          ))}
         </div>
+      </div>
 
-        {/* Price */}
-        <div className="flex items-end justify-between">
-          <div>
-            <span className="text-2xl font-bold text-sky-600">{priceAzn.toLocaleString()}</span>
-            <span className="text-sm text-slate-500 ml-1">AZN</span>
-            <p className="text-xs text-slate-400">≈ {perNight} AZN/gecə</p>
-          </div>
-          <a
-            href={`https://wa.me/994517769632?text=${waMsg}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
-          >
-            Rezervasiya
-          </a>
+      {/* Price */}
+      <div style={{ padding: "14px 20px", flex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>Gecəlik</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, color: "#64748b", fontWeight: 600 }}>{perNight.toLocaleString()} AZN</p>
         </div>
+        <div style={{ textAlign: "right" }}>
+          <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>{hotel.nights} gecə üçün</p>
+          <p style={{ margin: "2px 0 0", fontSize: 24, fontWeight: 800, color: "#0284c7", lineHeight: 1 }}>
+            {hotel.price_marked_up.toLocaleString()} <span style={{ fontSize: 14 }}>AZN</span>
+          </p>
+          <p style={{ margin: "2px 0 0", fontSize: 10, color: "#94a3b8" }}>Xidmət haqqı daxil</p>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div style={{ padding: "0 16px 16px" }}>
+        <a
+          href={`https://wa.me/994517769632?text=${encodeURIComponent(waMsg)}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            background: "#25D366", color: "white", borderRadius: 12,
+            padding: "12px", fontWeight: 700, fontSize: 14, textDecoration: "none",
+            boxShadow: "0 4px 15px rgba(37,211,102,0.3)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          WhatsApp-da Rezervasiya Et
+        </a>
       </div>
     </div>
   );
 }
 
-export default async function OtellerPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ dest?: string }>;
-}) {
-  const { dest } = await searchParams;
+export default function OtellerPage() {
+  const [destination, setDestination] = useState("");
+  const [checkin,  setCheckin]  = useState(todayPlus(14));
+  const [checkout, setCheckout] = useState(todayPlus(21));
+  const [adults,   setAdults]   = useState(2);
+  const [stars,    setStars]    = useState(0);
+  const [hotels,   setHotels]   = useState<HotelOffer[]>([]);
+  const [loading,  setLoading]  = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [error,    setError]    = useState("");
 
-  const supabase = getSupabaseAdmin();
-  const { data: hotels } = await supabase
-    .from("hotels")
-    .select("*")
-    .eq("status", "active")
-    .order("stars", { ascending: false })
-    .returns<Hotel[]>();
-
-  const allHotels = hotels ?? [];
-
-  // Unikal destinasiyalar
-  const destinations = [...new Set(allHotels.map((h) => h.destination))].sort();
-
-  // Aktiv filter
-  const activeFilter = dest || "all";
-  const filtered = activeFilter === "all"
-    ? allHotels
-    : allHotels.filter((h) => h.destination.toLowerCase() === activeFilter.toLowerCase());
-
-  // Destinasiyaya görə qruplaşdır
-  const grouped: Record<string, Hotel[]> = {};
-  for (const h of filtered) {
-    if (!grouped[h.destination]) grouped[h.destination] = [];
-    grouped[h.destination].push(h);
+  async function search() {
+    if (!destination.trim()) { setError("Zəhmət olmasa məkan daxil edin"); return; }
+    if (checkin >= checkout)  { setError("Çıxış tarixi giriş tarixindən sonra olmalıdır"); return; }
+    setError(""); setLoading(true); setSearched(true);
+    try {
+      const res = await fetch("/api/hotels/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destination, checkin, checkout, adults, rooms: 1, stars: stars || undefined }),
+      });
+      const data = await res.json();
+      setHotels(data.hotels || []);
+    } catch {
+      setError("Axtarış zamanı xəta baş verdi. Yenidən cəhd edin.");
+    } finally {
+      setLoading(false);
+    }
   }
 
+  const nights = Math.max(1, Math.ceil(
+    (new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000
+  ));
+
+  const inputStyle = {
+    width: "100%", padding: "11px 14px", borderRadius: 10,
+    border: "1.5px solid #e2e8f0", fontSize: 14, color: "#0f172a",
+    outline: "none", boxSizing: "border-box" as const, background: "white",
+  };
+  const labelStyle = {
+    display: "block" as const, fontSize: 11, fontWeight: 600 as const,
+    color: "#64748b", marginBottom: 6, textTransform: "uppercase" as const, letterSpacing: 0.5,
+  };
+
   return (
-    <main className="min-h-screen bg-slate-50">
-      {/* Hero */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-10">
-          <p className="text-sky-600 text-sm font-semibold mb-2 uppercase tracking-widest">Otel Rezervasiyası</p>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
-            Ən Yaxşı Otel Qiymətləri
-          </h1>
-          <p className="text-slate-500 max-w-xl">
-            RateHawk vasitəsilə hər gün yenilənən real qiymətlər. Rezervasiya üçün WhatsApp-a yazın.
+    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+
+      {/* Hero + Search */}
+      <div style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0284c7 100%)", padding: "56px 24px 44px" }}>
+        <div style={{ maxWidth: 920, margin: "0 auto" }}>
+          <p style={{ color: "#38bdf8", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, margin: "0 0 8px" }}>
+            Booking.com · Real Qiymətlər
           </p>
+          <h1 style={{ color: "white", fontWeight: 900, fontSize: 34, margin: "0 0 6px", lineHeight: 1.2 }}>
+            Otel Axtarışı
+          </h1>
+          <p style={{ color: "#94a3b8", fontSize: 15, margin: "0 0 28px" }}>
+            Dünya üzrə minlərlə otel — xidmət haqqı daxil qiymətlər
+          </p>
+
+          {/* Form */}
+          <div style={{ background: "white", borderRadius: 20, padding: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+
+              <div style={{ gridColumn: "span 2" }}>
+                <label style={labelStyle}>Məkan</label>
+                <input
+                  list="dest-list"
+                  value={destination}
+                  onChange={e => setDestination(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && search()}
+                  placeholder="Antalya, Dubai, Istanbul..."
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                />
+                <datalist id="dest-list">
+                  {DESTINATIONS.map(d => <option key={d} value={d} />)}
+                </datalist>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Giriş</label>
+                <input type="date" value={checkin} min={todayPlus(1)}
+                  onChange={e => setCheckin(e.target.value)} style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")} />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Çıxış · {nights} gecə</label>
+                <input type="date" value={checkout} min={checkin}
+                  onChange={e => setCheckout(e.target.value)} style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")} />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Nəfər</label>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0" }}>
+                  <button onClick={() => setAdults(a => Math.max(1, a - 1))}
+                    style={{ width: 26, height: 26, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                  <span style={{ flex: 1, textAlign: "center", fontSize: 14, fontWeight: 600 }}>{adults}</span>
+                  <button onClick={() => setAdults(a => Math.min(10, a + 1))}
+                    style={{ width: 26, height: 26, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Ulduz</label>
+                <select value={stars} onChange={e => setStars(Number(e.target.value))} style={inputStyle}>
+                  {STAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "flex-end" }}>
+                <button onClick={search} disabled={loading} style={{
+                  width: "100%", padding: "12px", borderRadius: 12, border: "none",
+                  background: loading ? "#cbd5e1" : "linear-gradient(135deg,#0284c7,#4f46e5)",
+                  color: "white", fontWeight: 700, fontSize: 15,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  boxShadow: loading ? "none" : "0 4px 15px rgba(2,132,199,0.35)",
+                  transition: "all 0.2s",
+                }}>
+                  {loading ? "Axtarılır..." : "Axtar"}
+                </button>
+              </div>
+            </div>
+
+            {error && <p style={{ color: "#dc2626", fontSize: 13, marginTop: 10, textAlign: "center" }}>{error}</p>}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {allHotels.length === 0 ? (
-          <div className="text-center py-24">
-            <p className="text-5xl mb-4">🏨</p>
-            <h2 className="text-xl font-bold text-slate-700 mb-2">Otel məlumatları yüklənir</h2>
-            <p className="text-slate-500 mb-6">Sistem hər gün saat 08:00-da otel qiymətlərini yeniləyir.</p>
-            <a
-              href="https://wa.me/994517769632?text=Salam%2C%20otel%20rezervasiyası%20haqqında%20məlumat%20almaq%20istəyirəm"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors"
-            >
-              WhatsApp-da Soruşun
-            </a>
+      {/* Results */}
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+
+        {loading && (
+          <div style={{ textAlign: "center", padding: "60px 0" }}>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0284c7", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ color: "#64748b" }}>Booking.com-dan otellər yüklənir...</p>
           </div>
-        ) : (
+        )}
+
+        {!loading && searched && hotels.length > 0 && (
           <>
-            {/* Destination filter */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              <Link
-                href="/oteller"
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === "all" ? "bg-sky-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:border-sky-300"}`}
-              >
-                Hamısı ({allHotels.length})
-              </Link>
-              {destinations.map((d) => (
-                <Link
-                  key={d}
-                  href={`/oteller?dest=${encodeURIComponent(d)}`}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === d ? "bg-sky-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:border-sky-300"}`}
-                >
-                  {destIcon(d)} {d} ({allHotels.filter((h) => h.destination === d).length})
-                </Link>
-              ))}
-            </div>
-
-            {/* Hotel groups */}
-            {Object.entries(grouped).map(([destName, destHotels]) => (
-              <section key={destName} className="mb-12">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-5">
-                  <span>{destIcon(destName)}</span>
-                  {destName}
-                  <span className="text-sm font-normal text-slate-400">({destHotels.length} otel)</span>
-                </h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {destHotels.map((hotel) => (
-                    <HotelCard key={hotel.id} hotel={hotel} />
-                  ))}
-                </div>
-              </section>
-            ))}
-
-            {/* CTA */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center mt-4">
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Axtardığınızı Tapmadınız?</h3>
-              <p className="text-slate-500 text-sm mb-5">
-                Fərdi istək üçün komandamız sizə uyğun oteli tapır.
-              </p>
-              <a
-                href="https://wa.me/994517769632?text=Salam%2C%20xüsusi%20otel%20sorğusu%20ilə%20yardım%20istəyirəm"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors"
-              >
-                WhatsApp-da Yazın
-              </a>
+            <p style={{ fontSize: 15, color: "#475569", fontWeight: 600, marginBottom: 20 }}>
+              <span style={{ color: "#0284c7", fontWeight: 800 }}>{hotels.length} otel</span> tapıldı
+              {" · "}{destination} · {nights} gecə · {adults} nəfər
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+              {hotels.map(h => <HotelCard key={h.id} hotel={h} />)}
             </div>
           </>
         )}
+
+        {!loading && searched && hotels.length === 0 && (
+          <div style={{ textAlign: "center", padding: "60px 0" }}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>🏨</div>
+            <p style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Nəticə tapılmadı</p>
+            <p style={{ color: "#64748b", fontSize: 14, marginBottom: 20 }}>Tarixləri dəyişin və ya ulduz filtrini azaldın</p>
+            <a href={`https://wa.me/994517769632?text=${encodeURIComponent(`Salam! ${destination} üçün ${checkin}–${checkout} tarixlərə ${adults} nəfər otel axtarıram.`)}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#25D366", color: "white", borderRadius: 12, padding: "12px 24px", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+              Komandamızla əlaqə saxlayın
+            </a>
+          </div>
+        )}
+
+        {!loading && !searched && (
+          <div style={{ textAlign: "center", padding: "80px 0" }}>
+            <div style={{ fontSize: 56, marginBottom: 14 }}>🏨</div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Otel axtarışını başladın</h2>
+            <p style={{ color: "#64748b", fontSize: 15 }}>Məkan, tarix və nəfər sayını seçin — real qiymətlər göstəriləcək</p>
+          </div>
+        )}
       </div>
-    </main>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
   );
 }
