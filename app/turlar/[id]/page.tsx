@@ -21,8 +21,8 @@ interface Tour {
   description: string | null;
   image_url: string | null;
   itinerary: string | null;
-  includes: string | null;
-  excludes: string | null;
+  includes: string | string[] | null;
+  excludes: string | string[] | null;
 }
 
 function getDuration(start: string | null, end: string | null) {
@@ -79,12 +79,13 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
   const seatsLeft = tour.max_seats - tour.booked_seats;
   const waMsg = encodeURIComponent(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`);
 
-  const includesList = tour.includes
-    ? tour.includes.split("\n").map(s => s.trim()).filter(Boolean)
-    : [];
-  const excludesList = tour.excludes
-    ? tour.excludes.split("\n").map(s => s.trim()).filter(Boolean)
-    : [];
+  function toList(v: string | string[] | null): string[] {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.filter(Boolean);
+    return v.split("\n").map(s => s.trim()).filter(Boolean);
+  }
+  const includesList  = toList(tour.includes);
+  const excludesList  = toList(tour.excludes);
   const itineraryList = tour.itinerary
     ? tour.itinerary.split("\n").map(s => s.trim()).filter(Boolean)
     : [];
