@@ -156,13 +156,13 @@ export default function OtellerPage() {
           {/* Başlıq */}
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <span style={{ display: "inline-block", background: "rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.9)", fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", padding: "5px 16px", borderRadius: 20, marginBottom: 14 }}>
-              Booking.com · Real Qiymətlər
+              Canlı Qiymətlər · Dünya Üzrə
             </span>
             <h1 style={{ color: "white", fontWeight: 900, fontSize: 36, margin: "0 0 8px" }}>
               Otel Axtarışı
             </h1>
             <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 15, margin: 0 }}>
-              Dünya üzrə minlərlə otel — xidmət haqqı daxil
+              Minlərlə otel — anlıq qiymətlər, xidmət haqqı daxil
             </p>
           </div>
 
@@ -292,7 +292,7 @@ export default function OtellerPage() {
               </svg>
             </div>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Otel axtarışını başladın</h2>
-            <p style={{ color: "#64748b", fontSize: 15, maxWidth: 360, margin: "0 auto" }}>Məkan, tarix və nəfər sayını seçin — Booking.com-dan real qiymətlər göstəriləcək</p>
+            <p style={{ color: "#64748b", fontSize: 15, maxWidth: 360, margin: "0 auto" }}>Məkan, tarix və nəfər sayını seçin — anlıq qiymətlər göstəriləcək</p>
           </div>
         )}
       </div>
