@@ -268,7 +268,11 @@ export default function OtellerPage() {
 
         {!loading && searched && hotels.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>🏨</div>
+            <div style={{ width: 60, height: 60, borderRadius: 16, background: "#f1f5f9", border: "1.5px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
             <p style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Nəticə tapılmadı</p>
             <p style={{ color: "#64748b", fontSize: 14, marginBottom: 20 }}>Tarixləri dəyişin və ya ulduz filtrini azaldın</p>
             <a href={`https://wa.me/994517769632?text=${encodeURIComponent(`Salam! ${destination} üçün ${checkin}–${checkout} tarixlərə ${adults} nəfər otel axtarıram.`)}`}
@@ -280,10 +284,15 @@ export default function OtellerPage() {
         )}
 
         {!loading && !searched && (
-          <div style={{ textAlign: "center", padding: "80px 0" }}>
-            <div style={{ fontSize: 56, marginBottom: 14 }}>🏨</div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Otel axtarışını başladın</h2>
-            <p style={{ color: "#64748b", fontSize: 15 }}>Məkan, tarix və nəfər sayını seçin — real qiymətlər göstəriləcək</p>
+          <div style={{ textAlign: "center", padding: "64px 0" }}>
+            <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg,#0284c7,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: "0 8px 24px rgba(2,132,199,0.3)" }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Otel axtarışını başladın</h2>
+            <p style={{ color: "#64748b", fontSize: 15, maxWidth: 360, margin: "0 auto" }}>Məkan, tarix və nəfər sayını seçin — Booking.com-dan real qiymətlər göstəriləcək</p>
           </div>
         )}
       </div>
