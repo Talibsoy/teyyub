@@ -55,6 +55,7 @@ export async function searchHotels(params: {
   adults?:     number;
   rooms?:      number;
   currency?:   string;
+  stars?:      number;   // 3, 4 və ya 5
 }): Promise<HotelOffer[]> {
   if (!RAPIDAPI_KEY) return [];
 
@@ -65,20 +66,27 @@ export async function searchHotels(params: {
     (new Date(params.checkout).getTime() - new Date(params.checkin).getTime()) / 86400000
   ));
 
+  const searchParams: Record<string, string> = {
+    dest_id:        dest.dest_id,
+    dest_type:      dest.dest_type,
+    checkin_date:   params.checkin,
+    checkout_date:  params.checkout,
+    adults_number:  String(params.adults || 2),
+    room_number:    String(params.rooms || 1),
+    currency_code:  params.currency || "AZN",
+    languagecode:   "en-gb",
+    order_by:       "popularity",
+    units:          "metric",
+  };
+
+  // Ulduz filtri — Booking.com categories_filter_ids ilə
+  if (params.stars) {
+    searchParams.categories_filter_ids = `class::${params.stars}`;
+  }
+
   let data: { data?: { hotels?: unknown[] } };
   try {
-    data = await rapidGet("searchHotels", {
-      dest_id:        dest.dest_id,
-      dest_type:      dest.dest_type,
-      checkin_date:   params.checkin,
-      checkout_date:  params.checkout,
-      adults_number:  String(params.adults || 2),
-      room_number:    String(params.rooms || 1),
-      currency_code:  params.currency || "AZN",
-      languagecode:   "az",
-      order_by:       "popularity",
-      units:          "metric",
-    });
+    data = await rapidGet("searchHotels", searchParams);
   } catch {
     return [];
   }

@@ -314,6 +314,7 @@ Tarix və nəfər sayı olmadan çağırma — əvvəl müştəridən al.`,
         checkout:    { type: "string", description: "Çıxış tarixi YYYY-MM-DD formatı" },
         adults:      { type: "number", description: "Böyük sayı (default: 2)" },
         rooms:       { type: "number", description: "Otaq sayı (default: 1)" },
+        stars:       { type: "number", description: "Ulduz sayı: 3, 4 və ya 5. Müştəri xüsusi ulduz istərsə doldur." },
       },
       required: ["destination", "checkin", "checkout"]
     }
@@ -468,6 +469,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
             adults:      input.adults || 2,
             rooms:       input.rooms  || 1,
             currency:    "AZN",
+            stars:       input.stars  || undefined,
           }),
           signal: AbortSignal.timeout(12000),
         });
