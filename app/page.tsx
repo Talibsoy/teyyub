@@ -262,7 +262,21 @@ export default function HomePage() {
 
           {/* Quiz section */}
           <div id="quiz-section" className="fade-in-up flex justify-center mb-6" style={{ animationDelay: ".45s" }}>
-            <QuizWidget onComplete={() => { setQuizDone(true); window.location.reload(); }} />
+            <QuizWidget onComplete={() => {
+              const arch   = localStorage.getItem("nf_archetype");
+              const scores = localStorage.getItem("nf_dna_scores");
+              if (arch && scores) {
+                const labels: Record<string, string> = {
+                  efficiency_seeker: "Dinamik Səyahətçi",
+                  deep_relaxer:      "Dərin Relaksator",
+                  silent_explorer:   "Sakit Explorer",
+                  budget_optimizer:  "Büdcə Ustası",
+                  luxury_curator:    "Lüks Kurator",
+                };
+                setQuizDone(true);
+                setArchetypeName(labels[arch] || arch);
+              }
+            }} />
           </div>
 
         </div>
