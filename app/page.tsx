@@ -51,8 +51,7 @@ function ResultModal({ onClose, result }: { onClose: () => void; result: SearchR
   const { tours, ai_intro } = result;
   return (
     <div className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-      style={{ animation: "fadeIn .3s ease" }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      style={{ animation: "fadeIn .3s ease" }}>
       <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl" style={{ animation: "slideUp .4s cubic-bezier(.34,1.56,.64,1)" }}>
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600">
           <div className="flex items-center gap-2">
