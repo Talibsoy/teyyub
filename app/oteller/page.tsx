@@ -178,97 +178,127 @@ export default function OtellerPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+    <div style={{ minHeight: "100vh", background: "#f1f5f9" }}>
 
-      {/* Hero + Search */}
-      <div style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0284c7 100%)", padding: "56px 24px 44px" }}>
-        <div style={{ maxWidth: 920, margin: "0 auto" }}>
-          <p style={{ color: "#38bdf8", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, margin: "0 0 8px" }}>
-            Booking.com · Real Qiymətlər
-          </p>
-          <h1 style={{ color: "white", fontWeight: 900, fontSize: 34, margin: "0 0 6px", lineHeight: 1.2 }}>
-            Otel Axtarışı
-          </h1>
-          <p style={{ color: "#94a3b8", fontSize: 15, margin: "0 0 28px" }}>
-            Dünya üzrə minlərlə otel — xidmət haqqı daxil qiymətlər
-          </p>
+      {/* Hero */}
+      <div style={{
+        background: "linear-gradient(135deg,#0284c7 0%,#4f46e5 100%)",
+        padding: "52px 24px 80px", textAlign: "center",
+      }}>
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", margin: "0 0 10px" }}>
+          Booking.com · Real Qiymətlər
+        </p>
+        <h1 style={{ color: "white", fontWeight: 900, fontSize: 38, margin: "0 0 8px", lineHeight: 1.15 }}>
+          Otel Axtarışı
+        </h1>
+        <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 16, margin: 0 }}>
+          Dünya üzrə minlərlə otel — xidmət haqqı daxil
+        </p>
+      </div>
 
-          {/* Form */}
-          <div style={{ background: "white", borderRadius: 20, padding: 20 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
-
-              <div style={{ gridColumn: "span 2" }}>
-                <label style={labelStyle}>Məkan</label>
-                <input
-                  list="dest-list"
-                  value={destination}
-                  onChange={e => setDestination(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && search()}
-                  placeholder="Antalya, Dubai, Istanbul..."
-                  style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
-                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
-                />
-                <datalist id="dest-list">
-                  {DESTINATIONS.map(d => <option key={d} value={d} />)}
-                </datalist>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Giriş</label>
-                <input type="date" value={checkin} min={todayPlus(1)}
-                  onChange={e => setCheckin(e.target.value)} style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
-                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Çıxış · {nights} gecə</label>
-                <input type="date" value={checkout} min={checkin}
-                  onChange={e => setCheckout(e.target.value)} style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
-                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Nəfər</label>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0" }}>
-                  <button onClick={() => setAdults(a => Math.max(1, a - 1))}
-                    style={{ width: 26, height: 26, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                  <span style={{ flex: 1, textAlign: "center", fontSize: 14, fontWeight: 600 }}>{adults}</span>
-                  <button onClick={() => setAdults(a => Math.min(10, a + 1))}
-                    style={{ width: 26, height: 26, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-                </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Ulduz</label>
-                <select value={stars} onChange={e => setStars(Number(e.target.value))} style={inputStyle}>
-                  {STAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "flex-end" }}>
-                <button onClick={search} disabled={loading} style={{
-                  width: "100%", padding: "12px", borderRadius: 12, border: "none",
-                  background: loading ? "#cbd5e1" : "linear-gradient(135deg,#0284c7,#4f46e5)",
-                  color: "white", fontWeight: 700, fontSize: 15,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  boxShadow: loading ? "none" : "0 4px 15px rgba(2,132,199,0.35)",
-                  transition: "all 0.2s",
-                }}>
-                  {loading ? "Axtarılır..." : "Axtar"}
-                </button>
-              </div>
+      {/* Search card — hero-nun üstündə üzür */}
+      <div style={{ maxWidth: 960, margin: "-44px auto 0", padding: "0 20px 32px" }}>
+        <div style={{
+          background: "white", borderRadius: 20,
+          boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
+          padding: "28px 28px 24px",
+        }}>
+          {/* Row 1 — Məkan + tarixlər + nəfər */}
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+            {/* Məkan */}
+            <div>
+              <label style={labelStyle}>📍 Məkan</label>
+              <input
+                list="dest-list"
+                value={destination}
+                onChange={e => setDestination(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && search()}
+                placeholder="Antalya, Dubai, Istanbul..."
+                style={{ ...inputStyle, fontSize: 15 }}
+                onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+              />
+              <datalist id="dest-list">
+                {DESTINATIONS.map(d => <option key={d} value={d} />)}
+              </datalist>
             </div>
 
-            {error && <p style={{ color: "#dc2626", fontSize: 13, marginTop: 10, textAlign: "center" }}>{error}</p>}
+            {/* Giriş */}
+            <div>
+              <label style={labelStyle}>📅 Giriş</label>
+              <input type="date" value={checkin} min={todayPlus(1)}
+                onChange={e => setCheckin(e.target.value)}
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")} />
+            </div>
+
+            {/* Çıxış */}
+            <div>
+              <label style={labelStyle}>📅 Çıxış · <span style={{ color: "#0284c7" }}>{nights} gecə</span></label>
+              <input type="date" value={checkout} min={checkin}
+                onChange={e => setCheckout(e.target.value)}
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")} />
+            </div>
+
+            {/* Nəfər */}
+            <div>
+              <label style={labelStyle}>👥 Nəfər</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "white" }}>
+                <button onClick={() => setAdults(a => Math.max(1, a - 1))}
+                  style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 18, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontWeight: 700 }}>−</button>
+                <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{adults}</span>
+                <button onClick={() => setAdults(a => Math.min(10, a + 1))}
+                  style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 18, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontWeight: 700 }}>+</button>
+              </div>
+            </div>
           </div>
+
+          {/* Row 2 — Ulduz + Axtar */}
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
+            <div style={{ flex: "0 0 200px" }}>
+              <label style={labelStyle}>⭐ Ulduz kateqoriyası</label>
+              <select value={stars} onChange={e => setStars(Number(e.target.value))}
+                style={{ ...inputStyle, fontSize: 14 }}>
+                {STAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }} />
+            <button onClick={search} disabled={loading} style={{
+              padding: "13px 40px", borderRadius: 12, border: "none",
+              background: loading ? "#cbd5e1" : "linear-gradient(135deg,#0284c7,#4f46e5)",
+              color: "white", fontWeight: 800, fontSize: 16,
+              cursor: loading ? "not-allowed" : "pointer",
+              boxShadow: loading ? "none" : "0 6px 20px rgba(2,132,199,0.4)",
+              transition: "all 0.2s", whiteSpace: "nowrap" as const,
+              display: "flex", alignItems: "center", gap: 10,
+            }}>
+              {loading ? (
+                <>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite" }} />
+                  Axtarılır...
+                </>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  Otel Axtar
+                </>
+              )}
+            </button>
+          </div>
+
+          {error && (
+            <p style={{ color: "#dc2626", fontSize: 13, marginTop: 12, padding: "10px 14px", background: "#fef2f2", borderRadius: 8, border: "1px solid #fecaca" }}>{error}</p>
+          )}
         </div>
       </div>
 
       {/* Results */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px 40px" }}>
 
         {loading && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
