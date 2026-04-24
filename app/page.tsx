@@ -22,7 +22,7 @@ const TAGS = ["Romantik cütlük", "Ailə ilə Dubai", "Büdcəyə uyğun Antaly
 const DESTINATIONS = [
   { name: "Dubai",         country: "BƏƏ",         img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80", big: true },
   { name: "Maldiv Adaları",country: "Hind Okeanı", img: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80" },
-  { name: "Antalya",       country: "Türkiyə",     img: "https://images.unsplash.com/photo-1600183740878-a39a7cf7a3b0?w=600&q=80" },
+  { name: "Antalya",       country: "Türkiyə",     img: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&q=80" },
   { name: "Paris",         country: "Fransa",      img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80" },
   { name: "Bali",          country: "İndoneziya",  img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80" },
   { name: "Barselona",     country: "İspaniya",    img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" },
