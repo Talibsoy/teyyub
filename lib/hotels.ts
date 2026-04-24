@@ -39,10 +39,12 @@ async function rapidGet(path: string, params: Record<string, string>) {
 // Destination ID-ni tap (şəhər adı → Booking.com dest_id)
 async function getDestId(query: string): Promise<{ dest_id: string; dest_type: string } | null> {
   try {
-    const data = await rapidGet("searchDestination", { query, languagecode: "az" });
+    const data = await rapidGet("searchDestination", { query, languagecode: "en-us" });
     const first = data.data?.[0];
     if (!first) return null;
-    return { dest_id: String(first.dest_id), dest_type: first.dest_type || "city" };
+    // search_type üçün CITY, HOTEL, DISTRICT formatı lazımdır
+    const rawType = String(first.dest_type || "CITY").toUpperCase();
+    return { dest_id: String(first.dest_id), dest_type: rawType };
   } catch {
     return null;
   }
@@ -67,17 +69,17 @@ export async function searchHotels(params: {
   ));
 
   const searchParams: Record<string, string> = {
-    dest_id:        dest.dest_id,
-    dest_type:      dest.dest_type,
-    checkin_date:   params.checkin,
-    checkout_date:  params.checkout,
-    adults_number:  String(params.adults || 2),
-    room_number:    String(params.rooms || 1),
-    currency_code:  params.currency || "AZN",
-    languagecode:   "en-gb",
-    order_by:       "popularity",
-    units:          "metric",
-    page_number:    "0",
+    dest_id:      dest.dest_id,
+    search_type:  dest.dest_type,
+    arrival_date:   params.checkin,
+    departure_date: params.checkout,
+    adults:       String(params.adults || 2),
+    room_qty:     String(params.rooms || 1),
+    currency_code: params.currency || "AZN",
+    languagecode: "en-us",
+    sort_by:      "popularity",
+    units:        "metric",
+    page_number:  "0",
   };
 
   let data: { data?: { hotels?: unknown[] } };
