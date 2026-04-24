@@ -1,6 +1,6 @@
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || "";
 const DUFFEL_BASE = "https://api.duffel.com";
-const COMMISSION = 1.15; // 15%
+const COMMISSION = 1.17; // 17%
 
 // Ehtiyat kurslar (CBAR cavab verməsə istifadə olunur)
 const FALLBACK_AZN: Record<string, number> = {

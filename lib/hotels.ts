@@ -1,7 +1,7 @@
 const RAPIDAPI_KEY  = process.env.RAPIDAPI_KEY || "";
 const RAPIDAPI_HOST = "booking-com15.p.rapidapi.com";
 const BASE          = `https://${RAPIDAPI_HOST}/api/v1/hotels`;
-const MARKUP        = 1.15; // 15% xidmət haqqı
+const MARKUP        = 1.17; // 17% xidmət haqqı
 
 export interface HotelOffer {
   id:              string;

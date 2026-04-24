@@ -13,7 +13,13 @@ interface SearchTour {
   start_date: string | null; hotel: string | null;
   max_seats: number; booked_seats: number;
 }
-interface SearchResult { tours: SearchTour[]; ai_intro: string; fallback: boolean; }
+interface DynamicPackage {
+  destination: string; checkin: string; checkout: string;
+  nights: number; passengers: number;
+  hotel_name: string; hotel_stars: number | null; hotel_rating: number | null;
+  flight_stops: number; price_azn: number; per_person_azn: number; wa_text: string;
+}
+interface SearchResult { tours: SearchTour[]; ai_intro: string; fallback: boolean; dynamicPackage?: DynamicPackage | null; }
 
 function waLink(t: string) { return `https://wa.me/994517769632?text=${encodeURIComponent(t)}`; }
 
@@ -40,10 +46,75 @@ const ITINERARY_PREVIEW = [
 
 const LOADING_STEPS = ["Təhlil edilir...", "Məkanlar axtarılır...", "Paket hazırlanır...", "Tamamlanır..."];
 
+/* ─── Dynamic Package Card ───────────────────────────── */
+function DynamicPackageCard({ pkg }: { pkg: DynamicPackage }) {
+  const checkInFmt  = new Date(pkg.checkin).toLocaleDateString("az-AZ",  { day: "numeric", month: "long" });
+  const checkOutFmt = new Date(pkg.checkout).toLocaleDateString("az-AZ", { day: "numeric", month: "long" });
+  const stars = pkg.hotel_stars ? "★".repeat(pkg.hotel_stars) : "";
+
+  return (
+    <div className="rounded-2xl overflow-hidden mb-4 shadow-lg border border-sky-100">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-sky-600 to-indigo-600 px-5 py-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest">Natoure Paketi</span>
+        </div>
+        <p className="text-white font-extrabold text-lg leading-tight">
+          Bakı → {pkg.destination}
+        </p>
+        <p className="text-white/80 text-sm mt-0.5">
+          {checkInFmt} – {checkOutFmt} · {pkg.nights} gecə · {pkg.passengers} nəfər
+        </p>
+      </div>
+
+      {/* Details */}
+      <div className="bg-white px-5 py-4 flex flex-col gap-2.5">
+        <div className="flex items-start gap-2.5 text-sm text-slate-600">
+          <span className="mt-0.5 text-sky-500">🏨</span>
+          <div>
+            <span className="font-semibold text-slate-800">{pkg.hotel_name}</span>
+            {stars && <span className="ml-1.5 text-amber-400 text-xs">{stars}</span>}
+            {pkg.hotel_rating && <span className="ml-1.5 text-slate-400 text-xs">({pkg.hotel_rating}/10)</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm text-slate-600">
+          <span className="text-sky-500">✈️</span>
+          <span>Gediş-dönüş uçuş daxil{pkg.flight_stops === 0 ? " · Birbaşa" : ` · ${pkg.flight_stops} dayanacaq`}</span>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm text-slate-500">
+          <span className="text-sky-500">✓</span>
+          <span>Xidmət haqqı daxildir</span>
+        </div>
+
+        {/* Price */}
+        <div className="flex items-end justify-between pt-1 border-t border-slate-100 mt-1">
+          <div>
+            <p className="text-xs text-slate-400">Nəfər başına</p>
+            <p className="text-sm font-semibold text-slate-600">{pkg.per_person_azn.toLocaleString()} AZN</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-400">Cəmi ({pkg.passengers} nəfər)</p>
+            <p className="text-2xl font-extrabold text-sky-600">{pkg.price_azn.toLocaleString()} <span className="text-base">AZN</span></p>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <a href={`https://wa.me/994517769632?text=${encodeURIComponent(pkg.wa_text)}`}
+          target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white mt-1"
+          style={{ background: "#25D366", boxShadow: "0 4px 14px rgba(37,211,102,0.35)" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp-da Rezervasiya Et
+        </a>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Result Modal ───────────────────────────────────── */
 function ResultModal({ onClose, result }: { onClose: () => void; result: SearchResult | null }) {
   if (!result) return null;
-  const { tours, ai_intro } = result;
+  const { tours, ai_intro, dynamicPackage } = result;
   return (
     <div className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
       style={{ animation: "fadeIn .3s ease" }}>
@@ -61,6 +132,7 @@ function ResultModal({ onClose, result }: { onClose: () => void; result: SearchR
               <p className="text-slate-700 text-sm leading-relaxed m-0">{ai_intro}</p>
             </div>
           )}
+          {dynamicPackage && <DynamicPackageCard pkg={dynamicPackage} />}
           {tours.length > 0 ? (
             <div className="flex flex-col gap-3 mb-4">
               {tours.map(tour => {
@@ -138,7 +210,7 @@ export default function HomePage() {
       timers.forEach(clearTimeout);
       setIsLoading(false); setLoadingStep(-1);
       setSearchResult(data.ok
-        ? { tours: data.tours || [], ai_intro: data.ai_intro || "", fallback: data.fallback ?? false }
+        ? { tours: data.tours || [], ai_intro: data.ai_intro || "", fallback: data.fallback ?? false, dynamicPackage: data.dynamicPackage ?? null }
         : { tours: [], ai_intro: "Axtarış zamanı xəta baş verdi.", fallback: true });
     } catch {
       timers.forEach(clearTimeout);
