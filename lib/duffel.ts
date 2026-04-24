@@ -189,7 +189,7 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
     const rawPrice = parseFloat(offer.total_amount as string) || 0;
     const currency = (offer.total_currency as string) || "USD";
     const priceAzn = toAzn(rawPrice * COMMISSION, currency, aznRates);
-    const priceWithComm = Math.ceil(priceAzn / (aznRates["USD"] ?? 1.70));
+    const priceWithComm = Math.ceil(rawPrice * COMMISSION); // USD, markup daxil
 
     const depTime = (firstSeg.departing_at as string) || "";
     const arrTime = (lastSeg.arriving_at as string) || "";

@@ -132,7 +132,7 @@ export async function searchHotels(params: {
       price_original:  original,
       price_marked_up: marked,
       currency:        params.currency || "AZN",
-      stars:           Number(prop.propertyClass) || null,
+      stars:           Math.max(Number(prop.propertyClass), Number(prop.accuratePropertyClass)) || null,
       rating:          Number(prop.reviewScore) || null,
       review_count:    Number(prop.reviewCount) || 0,
       booking_url:     bookingUrl,

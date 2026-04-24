@@ -134,7 +134,8 @@ export async function GET(req: NextRequest) {
 
       const flight    = flightRes.value[0];
       const hotel     = hotelRes.value[0];
-      const priceAzn  = Math.ceil(flight.price_azn + hotel.price_marked_up);
+      const totalAzn  = Math.ceil(flight.price_azn + hotel.price_marked_up);
+      const priceAzn  = Math.ceil(totalAzn / passengers); // nəfər başına
       const monthLbl  = `${AZ_MONTHS[departDate.getMonth()]} ${departDate.getFullYear()}`;
       const tourName  = `${dest.labelAz} Turu — ${dest.nights} gecə / ${monthLbl}`;
       const desc      = buildDescription(dest, flight, hotel);
