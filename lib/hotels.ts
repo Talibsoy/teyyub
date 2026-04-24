@@ -139,3 +139,38 @@ export async function searchHotels(params: {
     } satisfies HotelOffer;
   }).filter(h => h.price_marked_up > 0);
 }
+
+// Diaqnostika — hansı addımda problem olduğunu göstərir
+export async function debugSearch(query: string) {
+  const keySet = !!RAPIDAPI_KEY;
+  if (!keySet) return { step: "KEY_MISSING", keySet, dest: null, hotelsRaw: null };
+
+  let dest: { dest_id: string; dest_type: string } | null = null;
+  let destRaw: unknown = null;
+  try {
+    const data = await rapidGet("searchDestination", { query, languagecode: "en-us" });
+    destRaw = data?.data?.slice?.(0, 2);
+    const first = data.data?.[0];
+    if (first) dest = { dest_id: String(first.dest_id), dest_type: String(first.dest_type || "CITY").toUpperCase() };
+  } catch (e) {
+    return { step: "DEST_ERROR", keySet, error: String(e), destRaw };
+  }
+
+  if (!dest) return { step: "DEST_NOT_FOUND", keySet, destRaw };
+
+  let hotelsRaw: unknown = null;
+  try {
+    const data = await rapidGet("searchHotels", {
+      dest_id: dest.dest_id, search_type: dest.dest_type,
+      arrival_date: "2026-06-21", departure_date: "2026-06-28",
+      adults: "2", room_qty: "1", currency_code: "AZN",
+      languagecode: "en-us", sort_by: "popularity",
+    });
+    const hotels = data?.data?.hotels || [];
+    hotelsRaw = { count: hotels.length, first: hotels[0]?.property?.name };
+  } catch (e) {
+    return { step: "SEARCH_ERROR", keySet, dest, error: String(e) };
+  }
+
+  return { step: "OK", keySet, dest, hotelsRaw };
+}
