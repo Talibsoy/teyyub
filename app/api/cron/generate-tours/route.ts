@@ -132,10 +132,11 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      const flight    = flightRes.value[0];
-      const hotel     = hotelRes.value[0];
-      const totalAzn  = Math.ceil(flight.price_azn + hotel.price_marked_up);
-      const priceAzn  = Math.ceil(totalAzn / passengers); // nəfər başına
+      const flight       = flightRes.value[0];
+      const hotel        = hotelRes.value[0];
+      const PAX          = 2; // cron hər zaman 2 nəfər üçün axtarır
+      const totalAzn     = Math.ceil(flight.price_azn + hotel.price_marked_up);
+      const priceAzn     = Math.ceil(totalAzn / PAX); // nəfər başına
       const monthLbl  = `${AZ_MONTHS[departDate.getMonth()]} ${departDate.getFullYear()}`;
       const tourName  = `${dest.labelAz} Turu — ${dest.nights} gecə / ${monthLbl}`;
       const desc      = buildDescription(dest, flight, hotel);
