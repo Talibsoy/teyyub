@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/embed-tours",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/generate-tours",
+      "schedule": "0 7 * * *"
     }
   ]
 }
