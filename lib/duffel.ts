@@ -298,6 +298,6 @@ export function formatOffersForAI(offers: FlightOffer[]): string {
       ? `əlavə ${o.extra_bag_kg}kq: +${o.extra_bag_azn}₼`
       : "əlavə bagaj yoxdur";
 
-    return `${i + 1}. ${o.airline} [${tripType}] — ${o.price_azn} ₼ (~$${o.price_usd}) | ${dep}–${arr} | ${dur} | ${stops} | Daxil: ${includedBag} | ${extraBag} | ID: ${o.offer_id}`;
+    return `[FLIGHT_ID:${o.offer_id}] ${i + 1}. ${o.airline} [${tripType}] — ${o.price_azn} ₼ | ${dep}–${arr} | ${dur} | ${stops} | ${includedBag} | ${extraBag}`;
   }).join("\n");
 }

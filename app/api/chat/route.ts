@@ -80,9 +80,20 @@ export async function POST(req: NextRequest) {
       try { hotelPackage = JSON.parse(hotelMatch[1]); } catch { /* ignore */ }
     }
 
+    // Uçuş paketi aşkar et
+    let flightPackage: Record<string, unknown> | null = null;
+    const flightMatch = raw.match(/FLIGHT_PACKAGE:(\{[^}]+\})/);
+    if (flightMatch) {
+      try { flightPackage = JSON.parse(flightMatch[1]); } catch { /* ignore */ }
+    }
+
     const reply = isHandoff
       ? raw.replace("OPERATOR_HANDOFF:", "").trim()
-      : raw.replace(/TOUR_PACKAGE:\{[^}]+\}/, "").replace(/HOTEL_PACKAGE:\{[^}]+\}/, "").trim();
+      : raw
+          .replace(/TOUR_PACKAGE:\{[^}]+\}/, "")
+          .replace(/HOTEL_PACKAGE:\{[^}]+\}/, "")
+          .replace(/FLIGHT_PACKAGE:\{[^}]+\}/, "")
+          .trim();
 
     const updated = [
       ...history,
@@ -107,7 +118,7 @@ export async function POST(req: NextRequest) {
     // Telegram bildirişi
     notifyTelegram(sessionId, message, reply, isHandoff).catch(() => {});
 
-    return NextResponse.json({ reply, handoff: isHandoff, tourPackage, hotelPackage });
+    return NextResponse.json({ reply, handoff: isHandoff, tourPackage, hotelPackage, flightPackage });
   } catch (err) {
     console.error("[CHAT API]", err);
     return NextResponse.json({ reply: "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin." });
