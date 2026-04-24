@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY || "placeholder");
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const FROM = "Natoure.az <info@natourefly.com>";
 
@@ -13,6 +13,10 @@ export async function sendEmail({
   subject: string;
   html: string;
 }): Promise<boolean> {
+  if (!resend) {
+    console.error("Email göndərilmədi: RESEND_API_KEY konfiqurasiya edilməyib");
+    return false;
+  }
   try {
     const { error } = await resend.emails.send({ from: FROM, to, subject, html });
     if (error) { console.error("Email xətası:", error); return false; }

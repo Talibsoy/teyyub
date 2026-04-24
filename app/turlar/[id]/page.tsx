@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ItineraryButton from "@/components/ItineraryButton";
+import BookingCTA from "@/components/BookingCTA";
 import { ArrowLeft, Building2, Check, X } from "lucide-react";
 
 interface Tour {
@@ -259,49 +260,8 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* CTA */}
-          <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 16, padding: "24px 28px", textAlign: "center" }}>
-            {seatsLeft > 0 ? (
-              <>
-                <p style={{ color: "#0f172a", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>
-                  Bu tura qoşulmaq istəyirsiniz?
-                </p>
-                <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>
-                  Yalnız <span style={{ color: "#ef4444", fontWeight: 700 }}>{seatsLeft} yer</span> qalıb — indi rezervasiya edin
-                </p>
-                <Link href={`/rezervasiya?tour=${tour.id}`}
-                  style={{
-                    display: "inline-block",
-                    background: "linear-gradient(135deg, #0284c7, #4f46e5)", color: "white", borderRadius: 12,
-                    padding: "13px 36px", fontWeight: 800, fontSize: 15,
-                    textDecoration: "none",
-                  }}>
-                  Rezervasiya Et
-                </Link>
-                <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 12 }}>
-                  Sualınız var?{" "}
-                  <a href={`https://wa.me/994517769632?text=${waMsg}`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ color: "#25D366", textDecoration: "none", fontWeight: 600 }}>
-                    WhatsApp-da yazın
-                  </a>
-                </p>
-              </>
-            ) : (
-              <>
-                <p style={{ color: "#0f172a", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>Bu tur dolub</p>
-                <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>Növbəti tur üçün bizimlə əlaqə saxlayın</p>
-                <a href={`https://wa.me/994517769632?text=${waMsg}`}
-                  target="_blank" rel="noopener noreferrer"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 8,
-                    background: "#25D366", color: "#fff", borderRadius: 12,
-                    padding: "13px 32px", fontWeight: 700, fontSize: 14,
-                    textDecoration: "none",
-                  }}>
-                  WhatsApp-da Əlaqə
-                </a>
-              </>
-            )}
+          <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 16, padding: "24px 28px" }}>
+            <BookingCTA tourId={tour.id} seatsLeft={seatsLeft} tourName={tour.name} />
           </div>
 
         </div>

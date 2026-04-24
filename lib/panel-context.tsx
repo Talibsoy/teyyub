@@ -16,13 +16,23 @@ export interface CustomerProfile {
   passport_gender: string | null;
   passport_issue_date: string | null;
   passport_expiry: string | null;
-  // Səyahət DNT
+  // Səyahət DNT (manual)
   travel_style: string;
   visited_countries: string[] | null;
   // Referral
   referral_code: string | null;
   referred_by: string | null;
   created_at: string;
+  // Quiz DNT (avtomatik — /api/quiz/sync ilə doldurulur)
+  quiz_archetype: string | null;
+  quiz_confidence: number | null;
+  pref_adventure_level: number | null;
+  pref_cultural_depth: number | null;
+  pref_comfort_priority: number | null;
+  pref_social_atmosphere: number | null;
+  pref_budget_sensitivity: number | null;
+  pref_companion_type: string | null;
+  quiz_completed_at: string | null;
 }
 
 export interface LoyaltyTransaction {

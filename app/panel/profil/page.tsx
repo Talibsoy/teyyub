@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { usePanelContext } from "@/lib/panel-context";
 import { getSupabase } from "@/lib/supabase";
+import { ARCHETYPE_LABELS, Archetype } from "@/lib/quiz-processor";
+import { parseDNAScores } from "@/components/DNAProfileCard";
 
 const TRAVEL_STYLES = [
   { value: "adventure",  label: "Macəra",              emoji: "🧗" },
@@ -328,9 +330,100 @@ export default function ProfilPage() {
         {/* ── DNA TAB ── */}
         {activeTab === "dna" && (
           <div>
-            <p style={{ fontSize: 14, color: d ? "#94a3b8" : "#64748b", margin: "0 0 20px" }}>
-              Səyahət üslubunuzu seçin — AI tövsiyələri buna uyğun verilir.
-            </p>
+
+            {/* ── Quiz DNT nəticəsi (sinxronlaşdırılmış) ── */}
+            {profile?.quiz_archetype ? (() => {
+              const label = ARCHETYPE_LABELS[profile.quiz_archetype as Archetype];
+              const dnaScores = profile.pref_adventure_level != null
+                ? parseDNAScores({
+                    pref_adventure_level:   profile.pref_adventure_level,
+                    pref_cultural_depth:    profile.pref_cultural_depth    ?? 0,
+                    pref_comfort_priority:  profile.pref_comfort_priority  ?? 0,
+                    pref_social_atmosphere: profile.pref_social_atmosphere ?? 0,
+                    pref_budget_sensitivity: profile.pref_budget_sensitivity ?? 0,
+                  })
+                : null;
+              const DNA_BARS = [
+                { key: "adventure" as const, label: "Macəra" },
+                { key: "cultural"  as const, label: "Mədəniyyət" },
+                { key: "comfort"   as const, label: "Rahatlıq" },
+                { key: "social"    as const, label: "Sosiallik" },
+                { key: "budget"    as const, label: "Büdcə" },
+              ];
+              return (
+                <div style={{
+                  borderRadius: 18, padding: "22px 24px", marginBottom: 24,
+                  background: d ? "#0f172a" : "#0f172a",
+                  border: `1px solid ${d ? "#1e293b" : "#1e293b"}`,
+                }}>
+                  <p style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", margin: "0 0 10px", fontWeight: 600 }}>
+                    TRAVEL DNA — PSİXOMETRİK PROFİL
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <span style={{ fontSize: 30 }}>{label?.emoji}</span>
+                    <div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: "white", lineHeight: 1.2 }}>{label?.name}</div>
+                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{label?.desc}</div>
+                    </div>
+                    {profile.quiz_confidence != null && (
+                      <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: "#60a5fa" }}>{Math.round(profile.quiz_confidence * 100)}%</div>
+                        <div style={{ fontSize: 10, color: "#475569" }}>uyğunluq</div>
+                      </div>
+                    )}
+                  </div>
+                  {dnaScores && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                      {DNA_BARS.map(b => (
+                        <div key={b.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ width: 80, fontSize: 12, color: "#94a3b8", flexShrink: 0 }}>{b.label}</span>
+                          <div style={{ flex: 1, height: 4, background: "#1e293b", borderRadius: 4, overflow: "hidden" }}>
+                            <div style={{
+                              height: "100%", width: `${dnaScores[b.key]}%`,
+                              background: "linear-gradient(90deg, #3b82f6, #6366f1)",
+                              borderRadius: 4,
+                            }} />
+                          </div>
+                          <span style={{ width: 36, fontSize: 12, color: "#94a3b8", textAlign: "right" }}>{dnaScores[b.key]}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {profile.quiz_completed_at && (
+                    <p style={{ fontSize: 11, color: "#475569", margin: 0 }}>
+                      Quiz: {new Date(profile.quiz_completed_at).toLocaleDateString("az-AZ", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  )}
+                </div>
+              );
+            })() : (
+              <div style={{
+                borderRadius: 16, padding: "20px 22px", marginBottom: 24,
+                border: `1px dashed ${d ? "#334155" : "#e2e8f0"}`,
+                background: d ? "#0f172a" : "#fafafa",
+                display: "flex", alignItems: "center", gap: 14,
+              }}>
+                <span style={{ fontSize: 28 }}>🧬</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: d ? "#e2e8f0" : "#0f172a", marginBottom: 4 }}>
+                    Səyahət DNT-niz hələ müəyyənləşdirilməyib
+                  </div>
+                  <a href="/turlar" style={{ fontSize: 13, color: "#0284c7", textDecoration: "none", fontWeight: 600 }}>
+                    Quizi tamamla → AI profil yaransın
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* ── Manual override ── */}
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: d ? "#e2e8f0" : "#0f172a", margin: "0 0 10px" }}>
+              Əl ilə Üslub Seçimi
+              {profile?.quiz_archetype && (
+                <span style={{ fontSize: 11, fontWeight: 500, color: d ? "#64748b" : "#94a3b8", marginLeft: 8 }}>
+                  (Quiz nəticəsini üstəgəl etmək üçün)
+                </span>
+              )}
+            </h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, marginBottom: 28 }}>
               {TRAVEL_STYLES.map((style) => (
                 <button

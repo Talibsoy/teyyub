@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import NewsletterSection from "@/components/NewsletterSection";
+import ReviewsSection from "@/components/ReviewsSection";
 import QuizWidget from "@/components/personalization/QuizWidget";
 import DNAProfileCard from "@/components/DNAProfileCard";
-import { Sparkles, X, Loader2, ArrowRight, MapPin, Brain, Zap, Plane, Calendar, Shield, TrendingUp } from "lucide-react";
+import { Sparkles, X, Loader2, ArrowRight, Brain, Zap, Plane, Calendar, Shield, TrendingUp } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface SearchTour {
@@ -19,12 +20,14 @@ function waLink(t: string) { return `https://wa.me/994517769632?text=${encodeURI
 const TAGS = ["Romantik cütlük", "Ailə ilə Dubai", "Büdcəyə uyğun Antalya", "Bali ekzotika", "Paris mədəniyyəti", "Tokio macərası"];
 
 const DESTINATIONS = [
-  { name: "Dubai",     country: "BƏƏ",        img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80", big: true },
-  { name: "Maldiv Adaları", country: "Hind Okeanı", img: "https://images.unsplash.com/photo-1499396010447-c75e58d61c2b?w=600&q=80" },
-  { name: "Barselona", country: "İspaniya",    img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" },
-  { name: "Antalya",   country: "Türkiyə",     img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80" },
-  { name: "Tokio",     country: "Yaponiya",    img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80" },
-  { name: "Kapri",     country: "İtaliya",     img: "https://images.unsplash.com/photo-1499678329028-101435549a4e?w=600&q=80" },
+  { name: "Dubai",         country: "BƏƏ",         img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80", big: true },
+  { name: "Maldiv Adaları",country: "Hind Okeanı", img: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80" },
+  { name: "Antalya",       country: "Türkiyə",     img: "https://images.unsplash.com/photo-1600183740878-a39a7cf7a3b0?w=600&q=80" },
+  { name: "Paris",         country: "Fransa",      img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80" },
+  { name: "Bali",          country: "İndoneziya",  img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80" },
+  { name: "Barselona",     country: "İspaniya",    img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" },
+  { name: "Tokio",         country: "Yaponiya",    img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80" },
+  { name: "Roma",          country: "İtaliya",     img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80" },
 ];
 
 const ITINERARY_PREVIEW = [
@@ -111,9 +114,6 @@ export default function HomePage() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [quizDone, setQuizDone]       = useState(false);
   const [archetypeName, setArchetypeName] = useState("");
-  const [qDest, setQDest]             = useState("hamisi");
-  const [qMonth, setQMonth]           = useState("");
-  const [qPersons, setQPersons]       = useState(2);
 
   useEffect(() => {
     const arch = localStorage.getItem("nf_archetype");
@@ -266,40 +266,6 @@ export default function HomePage() {
             <QuizWidget onComplete={() => { setQuizDone(true); window.location.reload(); }} />
           </div>
 
-          {/* Quick Search */}
-          <div className="fade-in-up bg-white/80 backdrop-blur-xl rounded-2xl p-4 ring-1 ring-slate-200/60 shadow-sm" style={{ animationDelay: ".5s" }}>
-            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest text-center mb-3">Sürətli Axtarış</p>
-            <div className="flex flex-wrap gap-2 items-center justify-center">
-              <select value={qDest} onChange={e => setQDest(e.target.value)}
-                className="flex-1 min-w-[130px] px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none cursor-pointer">
-                <option value="hamisi">İstiqamət seç</option>
-                <option value="turkiye">🇹🇷 Türkiyə</option>
-                <option value="ereb">🇦🇪 Dubai / BƏƏ</option>
-                <option value="misir">🇪🇬 Misir</option>
-                <option value="avropa">🇪🇺 Avropa</option>
-              </select>
-              <select value={qMonth} onChange={e => setQMonth(e.target.value)}
-                className="flex-1 min-w-[130px] px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none cursor-pointer">
-                <option value="">Ay seç</option>
-                {Array.from({ length: 8 }, (_, i) => {
-                  const d = new Date(); d.setMonth(d.getMonth() + i);
-                  const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                  return <option key={val} value={val}>{d.toLocaleString("az-AZ", { month: "long", year: "numeric" })}</option>;
-                })}
-              </select>
-              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
-                <MapPin size={13} className="text-slate-400" />
-                <button onClick={() => setQPersons(p => Math.max(1, p - 1))} className="w-6 h-6 rounded-lg border border-slate-200 bg-white text-slate-500 text-lg leading-none flex items-center justify-center hover:bg-slate-50 transition">−</button>
-                <span className="text-sm font-semibold text-slate-700 w-[52px] text-center">{qPersons} nəfər</span>
-                <button onClick={() => setQPersons(p => Math.min(20, p + 1))} className="w-6 h-6 rounded-lg border border-slate-200 bg-white text-slate-500 text-lg leading-none flex items-center justify-center hover:bg-slate-50 transition">+</button>
-              </div>
-              <a href={`/turlar${qDest !== "hamisi" || qMonth ? `?${new URLSearchParams({ ...(qDest !== "hamisi" && { dest: qDest }), ...(qMonth && { month: qMonth }) }).toString()}` : ""}`}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex-shrink-0 flex items-center gap-1.5"
-                style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", boxShadow: "0 4px 15px rgba(2,132,199,.3)" }}>
-                Tur Axtar
-              </a>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -403,16 +369,16 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Dünya Sizi Gözləyir</p>
           <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-10">Populyar Məkanlar</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 auto-rows-[150px] sm:auto-rows-[190px]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 auto-rows-[160px] sm:auto-rows-[200px]">
             {DESTINATIONS.map((d, i) => (
-              <a key={d.name} href={`/turlar?dest=${d.name.toLowerCase()}`}
+              <a key={d.name} href={`/turlar?dest=${encodeURIComponent(d.name)}`}
                 className={`relative rounded-2xl overflow-hidden group block ${i === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={d.img} alt={d.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
                 <div className="absolute bottom-3 left-3">
-                  <p className="text-white font-bold text-base leading-tight">{d.name}</p>
-                  <p className="text-white/70 text-xs">{d.country}</p>
+                  <p className="text-white font-bold text-base leading-tight drop-shadow">{d.name}</p>
+                  <p className="text-white/75 text-xs">{d.country}</p>
                 </div>
               </a>
             ))}
@@ -502,6 +468,11 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── REVIEWS ─────────────────────────────────────── */}
+      <section style={{ background: "#0b0b0b" }}>
+        <ReviewsSection />
       </section>
 
       {/* ── CTA ─────────────────────────────────────────── */}

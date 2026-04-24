@@ -1,17 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState, Suspense } from "react";
+import { getSupabase } from "@/lib/supabase";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function QeydiyyatPage() {
+function SignupForm() {
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || null;
+
   const [name,     setName]     = useState("");
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
   const [success,  setSuccess]  = useState(false);
+
+  const loginHref = redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login";
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -21,12 +27,16 @@ export default function QeydiyyatPage() {
     }
     setLoading(true);
     setError("");
+    const supabase = getSupabase();
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: name, role: "member" },
+        emailRedirectTo: redirect
+          ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`
+          : `${window.location.origin}/panel`,
       },
     });
 
@@ -106,13 +116,13 @@ export default function QeydiyyatPage() {
                 Emailinizə təsdiq linki göndərildi.<br />
                 Zəhmət olmasa emailinizi yoxlayın.
               </p>
-              <Link href="/" style={{
+              <Link href={loginHref} style={{
                 display: "block", padding: "13px", borderRadius: 14,
                 background: "linear-gradient(135deg, #0284c7, #4f46e5)",
                 color: "white", fontWeight: 700, textDecoration: "none",
                 textAlign: "center", fontSize: 15,
               }}>
-                Ana Səhifəyə Qayıt
+                Daxil Ol
               </Link>
             </div>
           ) : (
@@ -197,7 +207,7 @@ export default function QeydiyyatPage() {
 
               <p style={{ textAlign: "center", fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>
                 Artıq üzvsünüz?{" "}
-                <Link href="/login" style={{ color: "#0284c7", fontWeight: 600, textDecoration: "none" }}>
+                <Link href={loginHref} style={{ color: "#0284c7", fontWeight: 600, textDecoration: "none" }}>
                   Daxil olun
                 </Link>
               </p>
@@ -206,5 +216,13 @@ export default function QeydiyyatPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function QeydiyyatPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

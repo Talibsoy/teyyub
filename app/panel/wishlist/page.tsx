@@ -195,7 +195,7 @@ export default function WishlistPage() {
                 </div>
 
                 <Link
-                  href={`https://wa.me/994XXXXXXXX?text=Salam%2C%20${encodeURIComponent(item.tour_name)}%20tur%20haqq%C4%B1nda%20m%C9%99lumat%20almaq%20istirdim`}
+                  href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "994517769632"}?text=Salam%2C%20${encodeURIComponent(item.tour_name)}%20tur%20haqq%C4%B1nda%20m%C9%99lumat%20almaq%20istirdim`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

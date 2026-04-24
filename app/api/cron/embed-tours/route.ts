@@ -5,8 +5,11 @@ import { embedBatch } from "@/lib/embeddings";
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (secret !== process.env.TOURS_EMBED_SECRET) {
+  const authHeader = req.headers.get("authorization");
+  const querySecret = req.nextUrl.searchParams.get("secret");
+  const expected = process.env.TOURS_EMBED_SECRET;
+  const authorized = authHeader === `Bearer ${expected}` || querySecret === expected;
+  if (!expected || !authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase, getSupabase } from "@/lib/supabase";
 import { Calendar, Users, Lock, AlertTriangle } from "lucide-react";
 
 interface Tour {
@@ -53,6 +53,7 @@ function RezervasiyaForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   // Step 1
   const [adults, setAdults] = useState(1);
@@ -66,13 +67,22 @@ function RezervasiyaForm() {
   const [contact, setContact] = useState({ first_name: "", last_name: "", phone: "", email: "", notes: "" });
 
   useEffect(() => {
-    if (!tourId) { setLoading(false); return; }
-    supabase
-      .from("tours")
-      .select("id,name,destination,price_azn,start_date,end_date,max_seats,booked_seats,image_url")
-      .eq("id", tourId).eq("is_active", true).single()
-      .then(({ data }) => { setTour(data); setLoading(false); });
-  }, [tourId]);
+    const dest = `/rezervasiya?tour=${tourId || ""}`;
+    // Auth yoxlaması — qeydiyyatsız istifadəçiləri login-ə yönləndir
+    getSupabase().auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.replace(`/login?redirect=${encodeURIComponent(dest)}`);
+        return;
+      }
+      setAccessToken(session.access_token);
+      if (!tourId) { setLoading(false); return; }
+      supabase
+        .from("tours")
+        .select("id,name,destination,price_azn,start_date,end_date,max_seats,booked_seats,image_url")
+        .eq("id", tourId).eq("is_active", true).single()
+        .then(({ data }) => { setTour(data); setLoading(false); });
+    });
+  }, [tourId, router]);
 
   function setChildCount(n: number) {
     setChildren(n);
@@ -106,7 +116,10 @@ function RezervasiyaForm() {
     try {
       const bookRes = await fetch("/api/bookings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           tour_id: tour.id,
           first_name: contact.first_name,

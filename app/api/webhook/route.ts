@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "crypto";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 // google-sheets dinamik import — googleapis TLS qlobal dəyişdirir
 import { sendTelegramAlert, sendConversationSummary } from "@/lib/telegram";
@@ -16,6 +17,17 @@ const redis =
 
 const PAGE_TOKEN = process.env.FB_PAGE_TOKEN!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
+const APP_SECRET = process.env.FB_APP_SECRET;
+
+function verifyMetaSignature(rawBody: string, signature: string | null): boolean {
+  if (!APP_SECRET || !signature) return !APP_SECRET; // secret yoxdursa dev rejimi — keç
+  const expected = `sha256=${createHmac("sha256", APP_SECRET).update(rawBody).digest("hex")}`;
+  try {
+    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -30,11 +42,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let rawBody: string;
   let body;
   try {
-    body = await req.json();
+    rawBody = await req.text();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const signature = req.headers.get("x-hub-signature-256");
+  if (!verifyMetaSignature(rawBody, signature)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
   }
 
   try {
@@ -95,6 +114,8 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const MAX_MEDIA_BYTES = 10 * 1024 * 1024; // 10 MB
+
 async function resolveFBAttachment(
   attachment: { type: string; payload?: { url?: string } } | undefined
 ): Promise<{ userMessage?: string; media?: MediaInput }> {
@@ -106,6 +127,8 @@ async function resolveFBAttachment(
     try {
       const res = await fetch(url);
       if (res.ok) {
+        const contentLength = Number(res.headers.get("content-length") ?? 0);
+        if (contentLength > MAX_MEDIA_BYTES) return { userMessage: "[Fayl ölçüsü həddindən böyükdür]" };
         const buffer = await res.arrayBuffer();
         const base64 = Buffer.from(buffer).toString("base64");
         const mimeType = res.headers.get("content-type") || "image/jpeg";
@@ -120,6 +143,8 @@ async function resolveFBAttachment(
     try {
       const res = await fetch(url);
       if (res.ok) {
+        const contentLength = Number(res.headers.get("content-length") ?? 0);
+        if (contentLength > MAX_MEDIA_BYTES) return { userMessage: "[Ses faylı həddindən böyükdür]" };
         const buffer = await res.arrayBuffer();
         const base64 = Buffer.from(buffer).toString("base64");
         const mimeType = res.headers.get("content-type") || "audio/mpeg";
@@ -134,6 +159,8 @@ async function resolveFBAttachment(
     try {
       const res = await fetch(url);
       if (res.ok) {
+        const contentLength = Number(res.headers.get("content-length") ?? 0);
+        if (contentLength > MAX_MEDIA_BYTES) return { userMessage: "[Video faylı həddindən böyükdür]" };
         const buffer = await res.arrayBuffer();
         const base64 = Buffer.from(buffer).toString("base64");
         const mimeType = res.headers.get("content-type") || "video/mp4";

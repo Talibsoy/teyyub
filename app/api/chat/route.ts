@@ -65,9 +65,17 @@ export async function POST(req: NextRequest) {
 
     // Operator keçidi aşkar et
     const isHandoff = raw.startsWith("OPERATOR_HANDOFF:");
+
+    // Tur paketi aşkar et — cavabın sonundakı TOUR_PACKAGE:{...} bloku
+    let tourPackage: Record<string, unknown> | null = null;
+    const tourMatch = raw.match(/TOUR_PACKAGE:(\{[^}]+\})/);
+    if (tourMatch) {
+      try { tourPackage = JSON.parse(tourMatch[1]); } catch { /* ignore malformed */ }
+    }
+
     const reply = isHandoff
       ? raw.replace("OPERATOR_HANDOFF:", "").trim()
-      : raw;
+      : raw.replace(/TOUR_PACKAGE:\{[^}]+\}/, "").trim();
 
     const updated = [
       ...history,
@@ -92,7 +100,7 @@ export async function POST(req: NextRequest) {
     // Telegram bildirişi
     notifyTelegram(sessionId, message, reply, isHandoff).catch(() => {});
 
-    return NextResponse.json({ reply, handoff: isHandoff });
+    return NextResponse.json({ reply, handoff: isHandoff, tourPackage });
   } catch (err) {
     console.error("[CHAT API]", err);
     return NextResponse.json({ reply: "Bağlantı xətası. Zəhmət olmasa bir az sonra yenidən cəhd edin." });

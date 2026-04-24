@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Zap, Clock, Star, Wallet, Map, Palmtree, Wine, Users, ChevronRight, RotateCcw, ArrowRight, CheckCircle2, Calendar, UserCircle, Utensils, Heart, Compass } from "lucide-react";
 import { QUIZ_QUESTIONS, ARCHETYPE_LABELS, Archetype, processQuizResults } from "@/lib/quiz-processor";
 import { parseDNAScores } from "@/components/DNAProfileCard";
+import { getSupabase } from "@/lib/supabase";
 
 function getSessionToken(): string {
   if (typeof window === "undefined") return "";
@@ -117,11 +118,12 @@ export default function QuizWidget({ onComplete }: { onComplete?: () => void } =
 
   async function submitQuiz(answers: SelectedAnswer[]) {
     setStep("loading");
+    const sessionToken = getSessionToken();
     try {
       const res = await fetch("/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_token: getSessionToken(), answers }),
+        body: JSON.stringify({ session_token: sessionToken, answers }),
       });
       const data = await res.json();
       if (data.archetype) {
@@ -131,6 +133,19 @@ export default function QuizWidget({ onComplete }: { onComplete?: () => void } =
       // DNA scores-u localStorage-ə yaz (DNAProfileCard üçün)
       const scores = processQuizResults(answers.map(a => ({ question_id: a.question_id, answer_id: a.answer_id, score_impact: a.score_impact })));
       localStorage.setItem("nf_dna_scores", JSON.stringify(parseDNAScores(scores as unknown as Record<string, number>)));
+
+      // Giriş etmiş istifadəçi üçün panelə sinxronlaşdır
+      const { data: { session } } = await getSupabase().auth.getSession();
+      if (session?.access_token) {
+        fetch("/api/quiz/sync", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ session_token: sessionToken }),
+        }).catch(() => {}); // Panel sinxronizasiyası quiz-i bloklamasın
+      }
     } catch { /* fallback: use client-side result */ }
     setTimeout(() => { setStep("result"); onComplete?.(); }, 1000);
   }

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Star, CreditCard, Heart, User, Plane, Clock,
@@ -10,30 +10,17 @@ import {
 import { usePanelContext, TIERS } from "@/lib/panel-context";
 import { getSupabase } from "@/lib/supabase";
 
-const MOCK_TRIPS = [
-  {
-    id: "1",
-    destination: "Antalya, Türkiyə",
-    hotel: "Rixos Premium Belek",
-    checkin: "2026-05-15",
-    checkout: "2026-05-22",
-    status: "confirmed",
-    pax: 2,
-    price_usd: 1840,
-    image: "https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?w=600&q=80",
-  },
-  {
-    id: "2",
-    destination: "Dubai, BƏƏ",
-    hotel: "Atlantis The Palm",
-    checkin: "2026-07-10",
-    checkout: "2026-07-17",
-    status: "pending",
-    pax: 2,
-    price_usd: 3200,
-    image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80",
-  },
-];
+interface Trip {
+  id: string;
+  destination: string;
+  hotel: string | null;
+  checkin: string | null;
+  checkout: string | null;
+  status: string;
+  pax: number;
+  price_usd: number | null;
+  image: string | null;
+}
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   confirmed: { label: "Təsdiqləndi",  color: "#16a34a", bg: "#f0fdf4", dot: "#22c55e" },
@@ -122,11 +109,43 @@ function ChangeRequestModal({ tripId, onClose }: { tripId: string; onClose: () =
 export default function PanelHubPage() {
   const { profile, totalPoints, tier, nextTier, transactions, darkMode } = usePanelContext();
   const [changeModal, setChangeModal] = useState<string | null>(null);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const d = darkMode;
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const supabase = getSupabase();
+    supabase
+      .from("bookings")
+      .select("id, status, total_price, passengers, tours(name, destination, hotel, start_date, end_date, image_url)")
+      .eq("customer_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        if (!data) return;
+        setTrips(
+          data.map((b) => {
+            const tour = (b.tours as Record<string, string | null> | null) ?? {};
+            const pax = Array.isArray(b.passengers) ? (b.passengers as unknown[]).length : 1;
+            return {
+              id: b.id,
+              destination: tour.destination ?? "",
+              hotel: tour.hotel ?? null,
+              checkin: tour.start_date ?? null,
+              checkout: tour.end_date ?? null,
+              status: b.status,
+              pax,
+              price_usd: null,
+              image: tour.image_url ?? null,
+            };
+          })
+        );
+      });
+  }, [profile?.id]);
 
   const recentTx    = transactions.slice(0, 4);
   const earnedTotal = transactions.filter((t) => t.type !== "redeem").reduce((s, t) => s + t.amount_points, 0);
-  const activeTrips = MOCK_TRIPS.filter((t) => t.status !== "completed");
+  const activeTrips = trips.filter((t) => t.status !== "completed" && t.status !== "cancelled");
 
   const progress = nextTier
     ? Math.min(Math.round(((totalPoints - tier.minPoints) / (nextTier.minPoints - tier.minPoints)) * 100), 100)
@@ -256,7 +275,7 @@ export default function PanelHubPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {MOCK_TRIPS.map((trip) => {
+            {trips.map((trip) => {
               const days = daysUntil(trip.checkin);
               const st   = STATUS_MAP[trip.status] || STATUS_MAP.pending;
               return (

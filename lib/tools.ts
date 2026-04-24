@@ -9,7 +9,7 @@ export async function checkTourAvailability(
     const admin = getSupabaseAdmin();
     let query = admin
       .from("tours")
-      .select("title, price, start_date, end_date, destination, available_spots, nights")
+      .select("id, name, price_azn, start_date, end_date, destination, max_seats, booked_seats, hotel")
       .eq("is_active", true)
       .order("start_date", { ascending: true })
       .limit(6);
@@ -46,12 +46,12 @@ export async function checkTourAvailability(
     if (filtered.length === 0) return `${month || destination} üçün uyğun tur tapılmadı.`;
 
     return filtered.map(t => {
+      const seatsLeft = (t.max_seats ?? 0) - (t.booked_seats ?? 0);
       const dates = t.start_date
         ? `${t.start_date}${t.end_date ? " – " + t.end_date : ""}`
         : "tarix açıq";
-      const spots = t.available_spots != null ? `${t.available_spots} yer` : "mövcud";
-      const nights = t.nights ? `${t.nights} gecə` : "";
-      return `• ${t.title} | ${t.price} AZN${nights ? " | " + nights : ""} | ${dates} | ${spots}`;
+      const hotel = t.hotel ? ` | ${t.hotel}` : "";
+      return `[TUR_ID:${t.id}] ${t.name} | ${t.price_azn} AZN${hotel} | ${dates} | ${seatsLeft} yer`;
     }).join("\n");
   } catch (e) {
     return `Tur məlumatı alınarkən xəta: ${e instanceof Error ? e.message : String(e)}`;

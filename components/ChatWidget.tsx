@@ -51,12 +51,15 @@ export default function ChatWidget() {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/chat/poll?sessionId=${sid}`);
+        if (!res.ok) return;
         const data = await res.json();
         if (data.message) {
           setMessages(prev => [...prev, { from: "ai", text: data.message, time: Date.now() }]);
           if (!open) setUnread(u => u + 1);
         }
-      } catch {}
+      } catch {
+        // Polling xətası — növbəti intervalda yenidən cəhd ediləcək
+      }
     }, 4000);
     return () => clearInterval(interval);
   }, [open]);

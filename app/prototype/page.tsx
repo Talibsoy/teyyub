@@ -481,7 +481,7 @@ function Dashboard({ archKey, hotels }: { archKey: AKey; hotels: Hotel[] }) {
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800 text-sm">{h.price} AZN <span className="text-xs text-slate-400 font-normal">/ gecə</span></span>
                       <a
-                        href={`https://wa.me/994XXXXXXXX?text=Salam, ${encodeURIComponent(h.name)} haqqında məlumat almaq istəyirəm`}
+                        href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "994517769632"}?text=Salam, ${encodeURIComponent(h.name)} haqqında məlumat almaq istəyirəm`}
                         target="_blank" rel="noopener noreferrer"
                         className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs font-semibold hover:opacity-90 transition"
                       >

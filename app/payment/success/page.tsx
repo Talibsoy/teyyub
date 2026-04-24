@@ -123,7 +123,7 @@ function SuccessContent() {
                 borderRadius: 14, border: "1.5px solid #e2e8f0",
                 color: "#475569", fontSize: 14, fontWeight: 600, textDecoration: "none",
               }}>
-                Paneliimə Keç
+                Panelimə Keç
               </Link>
               <Link href="/" style={{
                 display: "block", textAlign: "center",

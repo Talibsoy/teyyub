@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse, after } from "next/server";
+import { createHmac, timingSafeEqual } from "crypto";
 import { getAIResponse, MediaInput } from "@/lib/ai-agent";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { analyzeMedia } from "@/lib/media-analyzer";
@@ -20,6 +21,17 @@ const redis =
 const WA_TOKEN = process.env.WA_ACCESS_TOKEN!;
 const WA_PHONE_ID = process.env.WA_PHONE_NUMBER_ID!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
+const APP_SECRET = process.env.FB_APP_SECRET;
+
+function verifyMetaSignature(rawBody: string, signature: string | null): boolean {
+  if (!APP_SECRET || !signature) return !APP_SECRET;
+  const expected = `sha256=${createHmac("sha256", APP_SECRET).update(rawBody).digest("hex")}`;
+  try {
+    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -34,14 +46,19 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let rawBody: string;
   let body;
   try {
-    body = await req.json();
+    rawBody = await req.text();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  console.log("[WA] webhook gəldi:", JSON.stringify(body).slice(0, 200));
+  const signature = req.headers.get("x-hub-signature-256");
+  if (!verifyMetaSignature(rawBody, signature)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+  }
 
   // Meta webhook-u həmişə 200 almalıdır — 500 qaytarsan retry loop başlayır
   try {
@@ -132,6 +149,8 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const MAX_MEDIA_BYTES = 10 * 1024 * 1024; // 10 MB
+
 async function fetchWAMedia(
   mediaId: string,
   mimeType: string,
@@ -151,6 +170,9 @@ async function fetchWAMedia(
       headers: { Authorization: `Bearer ${WA_TOKEN}` },
     });
     if (!mediaRes.ok) return undefined;
+
+    const contentLength = Number(mediaRes.headers.get("content-length") ?? 0);
+    if (contentLength > MAX_MEDIA_BYTES) return undefined;
 
     const buffer = await mediaRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");

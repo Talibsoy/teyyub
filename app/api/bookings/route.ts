@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { requireAuth, isAuthError } from "@/lib/require-auth";
 
 function generateBookingNumber() {
   const date = new Date();
@@ -10,6 +11,10 @@ function generateBookingNumber() {
 }
 
 export async function POST(req: NextRequest) {
+  // Auth ixtiyaridir — qeydiyyatlı istifadəçilər üçün booking-i hesaba bağla
+  const authResult = await requireAuth(req);
+  const authUserId = isAuthError(authResult) ? null : authResult.userId;
+
   try {
     const {
       tour_id,
@@ -88,6 +93,7 @@ export async function POST(req: NextRequest) {
       .insert({
         tour_id,
         customer_id: customerId,
+        auth_user_id: authUserId,
         total_price,
         currency: "AZN",
         status: "new",
