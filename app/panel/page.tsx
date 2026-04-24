@@ -125,7 +125,8 @@ export default function PanelHubPage() {
         if (!data) return;
         setTrips(
           data.map((b) => {
-            const tour = (b.tours as Record<string, string | null> | null) ?? {};
+            const tourRaw = Array.isArray(b.tours) ? b.tours[0] : b.tours;
+            const tour = (tourRaw as Record<string, string | null> | null) ?? {};
             const pax = Array.isArray(b.passengers) ? (b.passengers as unknown[]).length : 1;
             return {
               id: b.id,
