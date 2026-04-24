@@ -69,38 +69,40 @@ export async function searchHotels(params: {
   ));
 
   const searchParams: Record<string, string> = {
-    dest_id:      dest.dest_id,
-    search_type:  dest.dest_type,
-    arrival_date:   params.checkin,
+    dest_id:       dest.dest_id,
+    search_type:   dest.dest_type,
+    arrival_date:  params.checkin,
     departure_date: params.checkout,
-    adults:       String(params.adults || 2),
-    room_qty:     String(params.rooms || 1),
+    adults:        String(params.adults || 2),
+    room_qty:      String(params.rooms || 1),
     currency_code: params.currency || "AZN",
-    languagecode: "en-us",
-    sort_by:      "popularity",
-    units:        "metric",
-    page_number:  "0",
+    languagecode:  "en-us",
+    sort_by:       "popularity",
   };
 
   let data: { data?: { hotels?: unknown[] } };
   try {
     data = await rapidGet("searchHotels", searchParams);
-  } catch {
+  } catch (e) {
+    console.error("[Hotels] searchHotels API error:", e);
     return [];
   }
 
   let hotels = (data.data?.hotels || []) as Record<string, unknown>[];
 
-  // Ulduz filtri — client-side (API filter etibarsız olduqda)
+  // Ulduz filtri — propertyClass VƏ accuratePropertyClass hər ikisini yoxla
   if (params.stars) {
     const minStars = params.stars;
     const filtered = hotels.filter((h) => {
       const prop = (h.property || {}) as Record<string, unknown>;
-      const cls = Number(prop.propertyClass) || 0;
+      const cls = Math.max(
+        Number(prop.propertyClass) || 0,
+        Number(prop.accuratePropertyClass) || 0
+      );
       return cls >= minStars;
     });
-    // Filtrlənmiş nəticə varsa istifadə et, yoxsa orijinal siyahı qalsın
     if (filtered.length > 0) hotels = filtered;
+    // filtered boşdursa — bütün nəticələri saxla (heç olmasa bir şey göstər)
   }
 
   return hotels.slice(0, 6).map((h) => {
@@ -167,7 +169,7 @@ export async function debugSearch(query: string) {
       languagecode: "en-us", sort_by: "popularity",
     });
     const hotels = data?.data?.hotels || [];
-    hotelsRaw = { count: hotels.length, first_raw: hotels[0] };
+    hotelsRaw = { count: hotels.length, first: hotels[0]?.property?.name };
   } catch (e) {
     return { step: "SEARCH_ERROR", keySet, dest, error: String(e) };
   }
