@@ -37,11 +37,6 @@ const ITINERARY_PREVIEW = [
   { day: "+4", title: "4 gün tam planlaşdırılıb", sub: "Gizli nöqtələr, yerli icma, büdcə izlənməsi", tags: ["AI seçimi"] },
 ];
 
-const TESTIMONIALS = [
-  { name: "Aynur M.", dest: "Dubai turu", text: "Natoure ilə Dubai turumuz mükəmməl keçdi! AI axtarışı ilə büdcəmizə tam uyğun paket tapdıq, hər detal öncədən planlanmışdı.", initials: "AM", color: "#0284c7" },
-  { name: "Rauf H.", dest: "Antalya turu", text: "Qiymət-keyfiyyət nisbəti əla. Hər sualıma dərhal cavab aldım. Rezervasiya prosesi isə çox sadə idi, tövsiyə edirəm.", initials: "RH", color: "#4f46e5" },
-  { name: "Leyla K.", dest: "Paris turu", text: "Ailə ilə Paris... Uşaqlar çox xoşlandı. Gün-gün detallı plan sayəsində heç bir gözəl yeri qaçırmadıq!", initials: "LK", color: "#7c3aed" },
-];
 
 const LOADING_STEPS = ["Təhlil edilir...", "Məkanlar axtarılır...", "Paket hazırlanır...", "Tamamlanır..."];
 
@@ -450,37 +445,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ────────────────────────────────── */}
-      <section className="px-4 py-14 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">Müştəri Rəyləri</p>
-          <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-10">Onlar artıq getdi, sıra sizdədir</h2>
-          <div className="grid sm:grid-cols-3 gap-5">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4 hover:-translate-y-1 hover:shadow-md transition-all duration-200">
-                <div className="flex gap-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="none">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-slate-600 text-sm leading-relaxed flex-1">&ldquo;{t.text}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: t.color }}>
-                    {t.initials}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800 leading-none mb-0.5">{t.name}</p>
-                    <p className="text-xs text-slate-400">{t.dest}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── REVIEWS ─────────────────────────────────────── */}
       <section style={{ background: "#0b0b0b" }}>
