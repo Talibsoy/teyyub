@@ -56,7 +56,8 @@ const headers = () => ({
 });
 
 function toAzn(amount: number, currency: string, rates: Record<string, number>): number {
-  const rate = rates[currency] ?? rates["USD"] ?? FALLBACK_AZN["USD"];
+  // Əvvəl canlı kurs, sonra ehtiyat kurs (valyutaya uyğun), son çarə USD ehtiyatı
+  const rate = rates[currency] ?? FALLBACK_AZN[currency] ?? FALLBACK_AZN["USD"];
   return Math.ceil(amount * rate);
 }
 
@@ -165,10 +166,12 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
     console.log(`  #${i+1} id=${o.id} amount=${o.total_amount} ${o.total_currency}`);
   });
 
-  // Ucuz 3-ü seç
-  const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
-    parseFloat(a.total_amount as string) - parseFloat(b.total_amount as string)
-  );
+  // AZN-ə çevirib sırala — valyutadan asılı düzgün müqayisə
+  const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+    const aAzn = toAzn(parseFloat(a.total_amount as string), (a.total_currency as string) || "USD", aznRates);
+    const bAzn = toAzn(parseFloat(b.total_amount as string), (b.total_currency as string) || "USD", aznRates);
+    return aAzn - bAzn;
+  });
   const top3 = sorted.slice(0, 3);
 
   // Hər offer üçün available_services-i parallel çək
@@ -277,12 +280,10 @@ export async function createOrder(params: {
 export function formatOffersForAI(offers: FlightOffer[]): string {
   if (!offers.length) return "Uçuş tapılmadı.";
   return offers.map((o, i) => {
-    const dep = o.departure_time
-      ? new Date(o.departure_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" })
-      : "";
-    const arr = o.arrival_time
-      ? new Date(o.arrival_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" })
-      : "";
+    // Duffel ISO timestamp-i yerli vaxtı ehtiva edir (məs. "2026-05-15T16:30:00+04:00")
+    // slice(11,16) birbaşa yerli saatı götürür — timezone problemi olmur
+    const dep = o.departure_time ? o.departure_time.slice(11, 16) : "";
+    const arr = o.arrival_time   ? o.arrival_time.slice(11, 16)   : "";
     const dur = o.duration_minutes
       ? `${Math.floor(o.duration_minutes / 60)}s ${o.duration_minutes % 60}d`
       : "";
