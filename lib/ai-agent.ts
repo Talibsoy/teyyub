@@ -646,13 +646,14 @@ export async function getAIResponse(
     ? formatProfileForAI(crmProfile)
     : "Müştəri məlumatı yoxdur (qeydiyyatsız və ya ilk yazışma).\nQeydiyyat: YOX — söhbət əsnasında natural şəkildə dəvət et.\nQeydiyyat linki: https://natourefly.com/qeydiyyat";
 
-  // Statik hissə — dəyişmir, Anthropic tərəfindən cache-lənir (~90% token qənaəti)
+  // Statik hissə — placeholder-lar silinir, cache-lənir
+  // NOT: başlıqlar da silinir ki dynamic blokda ikiqat görünməsin
   const staticSystem = SYSTEM_PROMPT
-    .replace("{TOURS_CONTEXT}", "")
-    .replace("{CRM_CONTEXT}", "");
+    .replace(/=== AKTUAL TURLAR ===\s*\{TOURS_CONTEXT\}/g, "")
+    .replace(/=== MÜŞTƏRİ PROFİLİ ===\s*\{CRM_CONTEXT\}/g, "");
 
-  const destinationMatch = msgText.match(/antalya|dubai|bali|paris|rome|roma|istanbul|maldiv|türkiy|ərəb|avropa/i);
-  const examples = await getExamples(destinationMatch?.[0] ?? null);
+  // Examples bütün destinasiyalar üçün yüklənir ki cache-i pozmayaq
+  const examples = await getExamples(null);
   const staticFinal = staticSystem + formatExamplesForPrompt(examples);
 
   // Dinamik hissə — hər çağırışda dəyişir, cache-lənmir

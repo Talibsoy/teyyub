@@ -280,10 +280,14 @@ export async function createOrder(params: {
 export function formatOffersForAI(offers: FlightOffer[]): string {
   if (!offers.length) return "Uçuş tapılmadı.";
   return offers.map((o, i) => {
-    // Duffel ISO timestamp-i yerli vaxtı ehtiva edir (məs. "2026-05-15T16:30:00+04:00")
-    // slice(11,16) birbaşa yerli saatı götürür — timezone problemi olmur
-    const dep = o.departure_time ? o.departure_time.slice(11, 16) : "";
-    const arr = o.arrival_time   ? o.arrival_time.slice(11, 16)   : "";
+    // Duffel vaxtları UTC-dir ("Z"). Göstərmək üçün formatlanmış string saxlanılır.
+    // Müştəriyə "Bakı vaxtı ilə" qeyd olunur ki anlaşılmazlıq olmasın.
+    const fmtTime = (iso: string) => {
+      try { return new Date(iso).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" }); }
+      catch { return iso.slice(11, 16); }
+    };
+    const dep = o.departure_time ? fmtTime(o.departure_time) : "";
+    const arr = o.arrival_time   ? fmtTime(o.arrival_time)   : "";
     const dur = o.duration_minutes
       ? `${Math.floor(o.duration_minutes / 60)}s ${o.duration_minutes % 60}d`
       : "";
