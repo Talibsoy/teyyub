@@ -1,6 +1,15 @@
+import { Redis } from "@upstash/redis";
+
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || "";
-const DUFFEL_BASE = "https://api.duffel.com";
-const COMMISSION = 1.17; // 17%
+const DUFFEL_BASE    = "https://api.duffel.com";
+const COMMISSION     = 1.17; // 17%
+const RATE_CACHE_TTL = 3600; // 1 saat (saniyə)
+const RATE_CACHE_KEY = "cbar:azn_rates";
+
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+    : null;
 
 // Ehtiyat kurslar (CBAR cavab verməsə istifadə olunur)
 const FALLBACK_AZN: Record<string, number> = {
@@ -8,37 +17,32 @@ const FALLBACK_AZN: Record<string, number> = {
   TRY: 0.052, RUB: 0.019, GEL: 0.62,
 };
 
-// In-memory cache — 1 saat etibarlıdır
-let rateCache: { rates: Record<string, number>; fetchedAt: number } | null = null;
-
 async function getAznRates(): Promise<Record<string, number>> {
-  const ONE_HOUR = 60 * 60 * 1000;
-  if (rateCache && Date.now() - rateCache.fetchedAt < ONE_HOUR) {
-    return rateCache.rates;
+  // Redis cache-dən oxu (serverless-ə uyğun — hər instance paylaşır)
+  if (redis) {
+    const cached = await redis.get<Record<string, number>>(RATE_CACHE_KEY);
+    if (cached && Object.keys(cached).length > 0) return cached;
   }
 
   try {
     const today = new Date();
-    const dd = String(today.getDate()).padStart(2, "0");
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const yyyy = today.getFullYear();
-    const url = `https://www.cbar.az/currencies/${dd}.${mm}.${yyyy}.xml`;
+    const dd    = String(today.getDate()).padStart(2, "0");
+    const mm    = String(today.getMonth() + 1).padStart(2, "0");
+    const yyyy  = today.getFullYear();
+    const url   = `https://www.cbar.az/currencies/${dd}.${mm}.${yyyy}.xml`;
 
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) throw new Error("CBAR cavab vermədi");
 
-    const xml = await res.text();
+    const xml   = await res.text();
     const rates: Record<string, number> = {};
-
-    // <Valute Code="GBP">...<Value>2.2500</Value>
     const matches = xml.matchAll(/<Valute Code="([A-Z]+)"[^>]*>[\s\S]*?<Value>([\d.]+)<\/Value>/g);
     for (const m of matches) {
       rates[m[1]] = parseFloat(m[2]);
     }
 
     if (Object.keys(rates).length > 0) {
-      rateCache = { rates, fetchedAt: Date.now() };
-      console.log(`[CBAR] Məzənnələr yeniləndi: GBP=${rates.GBP} USD=${rates.USD} EUR=${rates.EUR}`);
+      if (redis) await redis.set(RATE_CACHE_KEY, rates, { ex: RATE_CACHE_TTL });
       return rates;
     }
   } catch (e) {
@@ -66,6 +70,11 @@ export interface FlightOffer {
   airline: string;
   price_usd: number;
   price_azn: number;
+  // Sifariş üçün lazım olan original qiymət + valyuta
+  price_raw: number;
+  price_currency: string;
+  // Duffel offer-indəki nəfər ID-ləri — createOrder-da istifadə olunur
+  passenger_ids: string[];
   departure_time: string;
   arrival_time: string;
   duration_minutes: number;
@@ -160,11 +169,9 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   // CBAR-dan real valyuta kurslarını al
   const aznRates = await getAznRates();
 
-  // Bütün offerləri logla — portal vs API fərqini görmək üçün
-  console.log(`[OFFERS] Cəmi ${offers.length} offer. İlk 5:`);
-  offers.slice(0, 5).forEach((o: Record<string, unknown>, i: number) => {
-    console.log(`  #${i+1} id=${o.id} amount=${o.total_amount} ${o.total_currency}`);
-  });
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[OFFERS] Cəmi ${offers.length} offer tapıldı.`);
+  }
 
   // AZN-ə çevirib sırala — valyutadan asılı düzgün müqayisə
   const sorted = [...offers].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
@@ -192,7 +199,14 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
     const rawPrice = parseFloat(offer.total_amount as string) || 0;
     const currency = (offer.total_currency as string) || "USD";
     const priceAzn = toAzn(rawPrice * COMMISSION, currency, aznRates);
-    const priceWithComm = Math.ceil(rawPrice * COMMISSION); // USD, markup daxil
+    // price_usd: USD-dəki markup daxil qiymət (yalnız USD offer üçün dəqiqdir)
+    const priceUsd = currency === "USD"
+      ? Math.ceil(rawPrice * COMMISSION)
+      : Math.ceil(toAzn(rawPrice * COMMISSION, currency, aznRates) / (aznRates["USD"] ?? FALLBACK_AZN["USD"]));
+
+    // Duffel offer-indəki nəfər ID-ləri — sifariş zamanı lazımdır
+    const duffelPassengers = (offer.passengers as Array<{ id: string }>) || [];
+    const passengerIds = duffelPassengers.map(p => p.id).filter(Boolean);
 
     const depTime = (firstSeg.departing_at as string) || "";
     const arrTime = (lastSeg.arriving_at as string) || "";
@@ -213,67 +227,89 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
 
     const { kg: extraKg, azn: extraAzn } = baggageMap[idx];
 
-    console.log(`[PRICE] ${carrier.name} | raw=${rawPrice} ${currency} | ×${aznRates[currency] ?? 1.70}(AZN rate) ×${COMMISSION}(comm) = ${priceAzn} AZN`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[PRICE] ${carrier.name} | ${priceAzn} AZN`);
+    }
 
     return {
-      offer_id: offer.id as string,
-      airline: (carrier.name as string) || "Naməlum",
-      price_usd: priceWithComm,
-      price_azn: priceAzn,
-      departure_time: depTime,
-      arrival_time: arrTime,
+      offer_id:        offer.id as string,
+      airline:         (carrier.name as string) || "Naməlum",
+      price_usd:       priceUsd,
+      price_azn:       priceAzn,
+      price_raw:       rawPrice,
+      price_currency:  currency,
+      passenger_ids:   passengerIds,
+      departure_time:  depTime,
+      arrival_time:    arrTime,
       duration_minutes: durationMin,
-      stops: segments.length - 1,
-      cabin_baggage: cabinBag,
+      stops:           segments.length - 1,
+      cabin_baggage:   cabinBag,
       checked_baggage: checkedBag,
-      extra_bag_kg: extraKg,
-      extra_bag_azn: extraAzn,
-      is_round_trip: !!params.return_date,
+      extra_bag_kg:    extraKg,
+      extra_bag_azn:   extraAzn,
+      is_round_trip:   !!params.return_date,
     };
   });
 }
 
+export interface OrderPassenger {
+  passenger_id: string;   // Duffel offer-indən gələn pas_xxx ID
+  given_name:   string;
+  family_name:  string;
+  born_on:      string;   // YYYY-MM-DD
+  email:        string;
+  phone?:       string;
+  title?:       "mr" | "ms" | "mrs" | "miss" | "dr";
+}
+
 export async function createOrder(params: {
-  offer_id: string;
-  given_name: string;
-  family_name: string;
-  born_on: string;
-  email: string;
-  phone?: string;
+  offer_id:       string;
+  passengers:     OrderPassenger[];   // Çox nəfər dəstəyi
+  price_raw:      number;             // Offer-dən gələn original qiymət
+  price_currency: string;             // Offer-dən gələn valyuta
 }): Promise<{ order_id: string; booking_ref: string }> {
+  if (!DUFFEL_API_KEY) throw new Error("DUFFEL_API_KEY konfiqurasiya edilməyib");
+  if (!params.passengers.length) throw new Error("Ən azı 1 nəfər məlumatı lazımdır");
+
   const res = await fetch(`${DUFFEL_BASE}/air/orders`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
       data: {
         selected_offers: [params.offer_id],
-        passengers: [{
-          type: "adult",
-          given_name: params.given_name,
-          family_name: params.family_name,
-          born_on: params.born_on,
-          email: params.email,
-          phone_number: params.phone || undefined,
-        }],
+        passengers: params.passengers.map(p => ({
+          id:           p.passenger_id,
+          type:         "adult",
+          title:        p.title || "mr",
+          given_name:   p.given_name,
+          family_name:  p.family_name,
+          born_on:      p.born_on,
+          email:        p.email,
+          phone_number: p.phone || undefined,
+        })),
         payments: [{
-          type: "balance",
-          currency: "USD",
-          amount: "0",
+          type:     "balance",
+          currency: params.price_currency,
+          amount:   String(params.price_raw.toFixed(2)),
         }],
       },
     }),
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(20000),
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Duffel booking xətası ${res.status}: ${err}`);
+    const errText = await res.text();
+    let detail = errText;
+    try { detail = JSON.parse(errText)?.errors?.[0]?.message ?? errText; } catch { /* ham mətn saxla */ }
+    throw new Error(`Duffel sifariş xətası ${res.status}: ${detail}`);
   }
 
   const data = await res.json();
+  if (!data?.data?.id) throw new Error("Duffel cavabında sifariş ID-si yoxdur");
+
   return {
-    order_id: data?.data?.id || "",
-    booking_ref: data?.data?.booking_reference || "",
+    order_id:    data.data.id,
+    booking_ref: data.data.booking_reference || "",
   };
 }
 
