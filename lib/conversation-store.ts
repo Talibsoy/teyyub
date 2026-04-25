@@ -37,7 +37,7 @@ export async function getHistory(key: string): Promise<Message[]> {
 }
 
 export async function saveHistory(key: string, history: Message[]): Promise<void> {
-  if (history.length > 20) history.splice(0, 2);
+  if (history.length > 8) history.splice(0, history.length - 8);
   if (redis) {
     await redis.set(key, history, { ex: TTL });
   } else {

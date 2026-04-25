@@ -646,27 +646,38 @@ export async function getAIResponse(
     ? formatProfileForAI(crmProfile)
     : "Müştəri məlumatı yoxdur (qeydiyyatsız və ya ilk yazışma).\nQeydiyyat: YOX — söhbət əsnasında natural şəkildə dəvət et.\nQeydiyyat linki: https://natourefly.com/qeydiyyat";
 
-  const systemWithContext = SYSTEM_PROMPT
-    .replace("{TOURS_CONTEXT}", toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur.")
-    .replace("{CRM_CONTEXT}", crmContext);
+  // Statik hissə — dəyişmir, Anthropic tərəfindən cache-lənir (~90% token qənaəti)
+  const staticSystem = SYSTEM_PROMPT
+    .replace("{TOURS_CONTEXT}", "")
+    .replace("{CRM_CONTEXT}", "");
 
   const destinationMatch = msgText.match(/antalya|dubai|bali|paris|rome|roma|istanbul|maldiv|türkiy|ərəb|avropa/i);
   const examples = await getExamples(destinationMatch?.[0] ?? null);
-  const systemFinal = systemWithContext + formatExamplesForPrompt(examples);
+  const staticFinal = staticSystem + formatExamplesForPrompt(examples);
+
+  // Dinamik hissə — hər çağırışda dəyişir, cache-lənmir
+  const dynamicContext =
+    `=== AKTUAL TURLAR ===\n${toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur."}\n\n` +
+    `=== MÜŞTƏRİ PROFİLİ ===\n${crmContext}`;
 
   // Agentic loop — tool_use bitənə qədər davam et
   let currentMessages = messages;
   const MAX_ROUNDS = options?.maxRounds ?? 5;
-  const MAX_TOKENS = options?.maxTokens ?? 8000;
+  const MAX_TOKENS = options?.maxTokens ?? 3000;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: MAX_TOKENS,
-      system: systemFinal,
+      system: [
+        { type: "text", text: staticFinal,    cache_control: { type: "ephemeral" } as { type: "ephemeral" } },
+        { type: "text", text: dynamicContext },
+      ] as Anthropic.TextBlockParam[],
       messages: currentMessages,
       tools: ALL_TOOLS,
       tool_choice: { type: "auto" },
+      // @ts-expect-error — betas param Anthropic SDK-nın köhnə versiyasında yoxdur
+      betas: ["prompt-caching-2024-07-31"],
     });
 
     // Tool çağırışı yoxdursa — final cavab

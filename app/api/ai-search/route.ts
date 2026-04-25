@@ -219,22 +219,12 @@ export async function POST(req: NextRequest) {
       scored = (fallback || []).map(t => ({ ...(t as Tour), _score: 0 }));
     }
 
-    // 5. AI intro
-    let ai_intro = "";
-    try {
-      const introMsg = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 100,
-        system: "Turizm agentinin AI assistantısın. 1 cümlə Azərbaycan dilindəki cavab ver. Emoji istifadə etmə.",
-        messages: [{ role: "user", content: dynamicPackage
-          ? `Müştəri "${prompt}" dedi. Real vaxtda paket hazırlandı: ${dynamicPackage.destination}, ${dynamicPackage.nights} gecə, ${dynamicPackage.price_azn} AZN. Qısa təqdim et.`
-          : `Müştəri "${prompt}" dedi. ${scored.length} tur tapıldı. Qısa izah et.`
-        }],
-      });
-      ai_intro = (introMsg.content[0] as { type: string; text: string }).text.trim();
-    } catch {
-      ai_intro = dynamicPackage ? `${dynamicPackage.destination} üçün paket hazırlandı.` : `${scored.length} tur tapıldı.`;
-    }
+    // 5. AI intro — template əsasında (əlavə API çağırışı yoxdur)
+    const ai_intro = dynamicPackage
+      ? `${dynamicPackage.destination} üçün ${dynamicPackage.nights} gecəlik paket hazırlandı — ${dynamicPackage.price_azn.toLocaleString()} AZN.`
+      : scored.length > 0
+        ? `${intent.destination ? intent.destination + " üçün " : ""}${scored.length} tur tapıldı.`
+        : "Axtarışınıza uyğun tur tapılmadı. Ən populyar turlarımıza baxın.";
 
     return NextResponse.json({
       ok: true,
