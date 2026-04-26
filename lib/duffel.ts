@@ -112,11 +112,11 @@ async function fetchBaggageService(
     const baggageServices = services.filter(s => s.type === "baggage");
     if (!baggageServices.length) return { kg: 0, azn: 0 };
 
-    const cheapest = baggageServices.sort(
-      (a, b) =>
-        parseFloat(a.total_amount as string) -
-        parseFloat(b.total_amount as string)
-    )[0];
+    const cheapest = baggageServices.sort((a, b) => {
+      const aAzn = toAzn(parseFloat(a.total_amount as string) || 0, (a.total_currency as string) || "USD", rates);
+      const bAzn = toAzn(parseFloat(b.total_amount as string) || 0, (b.total_currency as string) || "USD", rates);
+      return aAzn - bAzn;
+    })[0];
 
     const kg = (cheapest.maximum_weight_kg as number) || 0;
     const amount = parseFloat(cheapest.total_amount as string) || 0;
