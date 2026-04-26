@@ -1,19 +1,17 @@
-import { NextRequest, NextResponse }                    from "next/server";
-import { createOrder, OrderPassenger }                   from "@/lib/duffel";
-import { getSupabaseAdmin }                              from "@/lib/supabase";
-import { requireAuth, isAuthError }                      from "@/lib/require-auth";
+import { NextRequest, NextResponse }       from "next/server";
+import { createOrder, OrderPassenger }    from "@/lib/duffel";
+import { getSupabaseAdmin }               from "@/lib/supabase";
+import { requireAuth, isAuthError }       from "@/lib/require-auth";
 
-const IATA_RE = /^[A-Z]{3}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuth(req);
   if (isAuthError(auth)) return auth;
 
   let body: {
-    offer_id:       string;
-    price_raw:      number;
-    price_currency: string;
-    passengers:     OrderPassenger[];
+    offer_id:        string;
+    passengers:      OrderPassenger[];
     tour_booking_id?: string;
   };
 
@@ -23,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Yanlış JSON formatı" }, { status: 400 });
   }
 
-  const { offer_id, price_raw, price_currency, passengers, tour_booking_id } = body;
+  const { offer_id, passengers, tour_booking_id } = body;
 
   // Giriş yoxlaması
   if (!offer_id?.trim()) {
@@ -31,9 +29,6 @@ export async function POST(req: NextRequest) {
   }
   if (!Array.isArray(passengers) || passengers.length === 0) {
     return NextResponse.json({ error: "Ən azı 1 nəfər məlumatı tələb olunur" }, { status: 400 });
-  }
-  if (!price_raw || price_raw <= 0) {
-    return NextResponse.json({ error: "Düzgün qiymət məlumatı tələb olunur" }, { status: 400 });
   }
 
   for (const [i, p] of passengers.entries()) {
@@ -49,14 +44,20 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    if (!EMAIL_RE.test(p.email)) {
+      return NextResponse.json(
+        { error: `${i + 1}-ci nəfərin email ünvanı düzgün deyil` },
+        { status: 400 }
+      );
+    }
   }
 
   const db = getSupabaseAdmin();
   let duffelOrderId: string | null = null;
 
   try {
-    // 1. Duffel-də sifarişi yarat
-    const order = await createOrder({ offer_id, passengers, price_raw, price_currency });
+    // 1. Duffel-də sifarişi yarat (qiymət server tərəfdən alınır)
+    const order = await createOrder({ offer_id, passengers });
     duffelOrderId = order.order_id;
 
     // 2. Supabase-ə yaz
@@ -68,8 +69,6 @@ export async function POST(req: NextRequest) {
       passenger_count:   passengers.length,
       passenger_names:   passengers.map(p => `${p.given_name} ${p.family_name}`),
       contact_email:     passengers[0].email,
-      price_raw,
-      price_currency,
       tour_booking_id:   tour_booking_id || null,
       status:            "confirmed",
     });

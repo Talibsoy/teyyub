@@ -252,6 +252,20 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
   });
 }
 
+// Offer-in real qiymətini Duffel-dən server tərəfdə al — client-ə güvənmə
+async function fetchOfferPrice(offerId: string): Promise<{ amount: number; currency: string }> {
+  const res = await fetch(
+    `${DUFFEL_BASE}/air/offers/${encodeURIComponent(offerId)}`,
+    { headers: headers(), signal: AbortSignal.timeout(10000) }
+  );
+  if (!res.ok) throw new Error(`Offer tapılmadı və ya vaxtı keçib (${res.status})`);
+  const data = await res.json();
+  const amount   = parseFloat(data?.data?.total_amount ?? "0");
+  const currency = (data?.data?.total_currency as string) || "USD";
+  if (!amount || amount <= 0) throw new Error("Offer qiyməti alınmadı");
+  return { amount, currency };
+}
+
 export interface OrderPassenger {
   passenger_id: string;   // Duffel offer-indən gələn pas_xxx ID
   given_name:   string;
@@ -263,13 +277,14 @@ export interface OrderPassenger {
 }
 
 export async function createOrder(params: {
-  offer_id:       string;
-  passengers:     OrderPassenger[];   // Çox nəfər dəstəyi
-  price_raw:      number;             // Offer-dən gələn original qiymət
-  price_currency: string;             // Offer-dən gələn valyuta
+  offer_id:   string;
+  passengers: OrderPassenger[];
 }): Promise<{ order_id: string; booking_ref: string }> {
   if (!DUFFEL_API_KEY) throw new Error("DUFFEL_API_KEY konfiqurasiya edilməyib");
   if (!params.passengers.length) throw new Error("Ən azı 1 nəfər məlumatı lazımdır");
+
+  // Server tərəfdən real qiymət al — client-dən gələn dəyərə güvənmirik
+  const { amount: price_raw, currency: price_currency } = await fetchOfferPrice(params.offer_id);
 
   const res = await fetch(`${DUFFEL_BASE}/air/orders`, {
     method: "POST",
@@ -289,8 +304,8 @@ export async function createOrder(params: {
         })),
         payments: [{
           type:     "balance",
-          currency: params.price_currency,
-          amount:   String(params.price_raw.toFixed(2)),
+          currency: price_currency,
+          amount:   String(price_raw.toFixed(2)),
         }],
       },
     }),
