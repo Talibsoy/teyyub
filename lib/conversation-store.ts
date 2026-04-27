@@ -25,7 +25,7 @@ const redis =
 
 const memoryStore = new Map<string, Message[]>();
 
-const TTL = 60 * 60 * 24 * 365; // 1 il
+const TTL = 60 * 60 * 24 * 30;  // 30 gün
 const META_TTL = 60 * 60 * 48;  // 48 saat
 
 export async function getHistory(key: string): Promise<Message[]> {

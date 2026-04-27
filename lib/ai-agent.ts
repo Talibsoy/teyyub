@@ -262,6 +262,20 @@ Cavabın sonunda müştəri məlumatlarını bu JSON formatında ver (məlumat y
 }
 </customer_data>`;
 
+// ─── STATIC CACHE ─────────────────────────────────────────────────────────────
+// staticFinal modulun ömrü boyu bir dəfə hesablanır — hər request-də yox
+let _cachedStaticFinal: string | null = null;
+
+async function getStaticFinal(): Promise<string> {
+  if (_cachedStaticFinal) return _cachedStaticFinal;
+  const staticSystem = SYSTEM_PROMPT
+    .replace(/=== AKTUAL TURLAR ===\s*\{TOURS_CONTEXT\}/g, "")
+    .replace(/=== MÜŞTƏRİ PROFİLİ ===\s*\{CRM_CONTEXT\}/g, "");
+  const examples = await getExamples(null);
+  _cachedStaticFinal = staticSystem + formatExamplesForPrompt(examples);
+  return _cachedStaticFinal;
+}
+
 // ─── TOOLS ────────────────────────────────────────────────────────────────────
 const ALL_TOOLS: Anthropic.Tool[] = [
   {
@@ -555,6 +569,14 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
   }
 }
 
+// Son aləti cache_control ilə işarələ — tools render order-da birinci olduğu üçün
+// bu cache həm tools-u, həm sonrakı system-i əhatə edir (~1500-2000 token qənaət)
+const CACHED_TOOLS = ALL_TOOLS.map((tool, idx) =>
+  idx === ALL_TOOLS.length - 1
+    ? { ...tool, cache_control: { type: "ephemeral" } as { type: "ephemeral" } }
+    : tool
+);
+
 export interface CustomerData {
   name: string | null;
   phone: string | null;
@@ -646,15 +668,8 @@ export async function getAIResponse(
     ? formatProfileForAI(crmProfile)
     : "Müştəri məlumatı yoxdur (qeydiyyatsız və ya ilk yazışma).\nQeydiyyat: YOX — söhbət əsnasında natural şəkildə dəvət et.\nQeydiyyat linki: https://natourefly.com/qeydiyyat";
 
-  // Statik hissə — placeholder-lar silinir, cache-lənir
-  // NOT: başlıqlar da silinir ki dynamic blokda ikiqat görünməsin
-  const staticSystem = SYSTEM_PROMPT
-    .replace(/=== AKTUAL TURLAR ===\s*\{TOURS_CONTEXT\}/g, "")
-    .replace(/=== MÜŞTƏRİ PROFİLİ ===\s*\{CRM_CONTEXT\}/g, "");
-
-  // Examples bütün destinasiyalar üçün yüklənir ki cache-i pozmayaq
-  const examples = await getExamples(null);
-  const staticFinal = staticSystem + formatExamplesForPrompt(examples);
+  // Statik hissə — modul cache-indən al (hər request-də hesablanmır)
+  const staticFinal = await getStaticFinal();
 
   // Dinamik hissə — hər çağırışda dəyişir, cache-lənmir
   const dynamicContext =
@@ -675,10 +690,8 @@ export async function getAIResponse(
         { type: "text", text: dynamicContext },
       ] as Anthropic.TextBlockParam[],
       messages: currentMessages,
-      tools: ALL_TOOLS,
+      tools: CACHED_TOOLS,
       tool_choice: { type: "auto" },
-      // @ts-expect-error — betas param Anthropic SDK-nın köhnə versiyasında yoxdur
-      betas: ["prompt-caching-2024-07-31"],
     });
 
     // Tool çağırışı yoxdursa — final cavab
