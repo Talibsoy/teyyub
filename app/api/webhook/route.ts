@@ -65,10 +65,14 @@ export async function POST(req: NextRequest) {
 
           // Deduplication — webhook retry loop qarşısı (mid = mesaj ID)
           const mid: string | undefined = event.message?.mid;
-          if (mid && redis) {
-            const seen = await redis.get(`fb_seen:${mid}`);
-            if (seen) continue;
-            await redis.set(`fb_seen:${mid}`, 1, { ex: 300 });
+          if (mid) {
+            if (redis) {
+              const seen = await redis.get(`fb_seen:${mid}`);
+              if (seen) continue;
+              await redis.set(`fb_seen:${mid}`, 1, { ex: 300 });
+            } else {
+              console.warn("[Webhook] Redis yoxdur — FB/IG deduplication işləmir, duplicate mesaj riski var");
+            }
           }
 
           // Facebook Səhifəsinin öz ID-si ilə gələn mesajları atla

@@ -50,6 +50,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Epoint] Create order xətası:", msg);
-    return NextResponse.json({ error: "Ödəniş yaradıla bilmədi", detail: msg }, { status: 500 });
+    return NextResponse.json({ error: "Ödəniş yaradıla bilmədi" }, { status: 500 });
   }
 }

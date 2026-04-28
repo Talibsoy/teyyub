@@ -45,6 +45,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Epoint Widget] Xəta:", msg);
-    return NextResponse.json({ error: "Widget URL alına bilmədi", detail: msg }, { status: 500 });
+    return NextResponse.json({ error: "Widget URL alına bilmədi" }, { status: 500 });
   }
 }

@@ -8,6 +8,9 @@ export async function POST(req: NextRequest) {
     if (!userId || !email) {
       return NextResponse.json({ error: "userId və email tələb olunur" }, { status: 400 });
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Email formatı düzgün deyil" }, { status: 400 });
+    }
 
     // Artıq mövcuddursa yenidən yaratma
     const { data: existing } = await supabaseAdmin

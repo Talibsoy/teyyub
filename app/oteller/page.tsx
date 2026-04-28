@@ -169,8 +169,8 @@ export default function OtellerPage() {
           {/* Form kartı */}
           <div style={{ background: "white", borderRadius: 20, padding: "24px 24px 20px", boxShadow: "0 12px 40px rgba(0,0,0,0.18)" }}>
 
-            {/* Sıra 1 */}
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+            {/* Sıra 1 — mobil: bir sütun, desktop: 4 sütun */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 14 }}>
               <div>
                 <label style={lbl}>📍 Məkan</label>
                 <input list="dest-list" value={destination}
