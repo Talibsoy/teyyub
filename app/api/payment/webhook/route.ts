@@ -115,8 +115,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
+    // 500 qaytarsaq Epoint webhook-u yenidən göndərər → idempotency key ilə belə loop riski var
     console.error("[Epoint Webhook] Xəta:", err);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "internal_error" });
   }
 }
 

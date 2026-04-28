@@ -679,7 +679,7 @@ export async function getAIResponse(
   // Agentic loop — tool_use bitənə qədər davam et
   let currentMessages = messages;
   const MAX_ROUNDS = options?.maxRounds ?? 5;
-  const MAX_TOKENS = options?.maxTokens ?? 3000;
+  const MAX_TOKENS = options?.maxTokens ?? 4000;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const response = await client.messages.create({

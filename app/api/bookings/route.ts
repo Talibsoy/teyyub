@@ -64,10 +64,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Uşaq qiyməti: 50% endirim (2-11 yaş), körpə (0-1) pulsuz
-    const childPrice = Math.round(tour.price_azn * 0.5);
-    const adultTotal = tour.price_azn * adults;
-    const childTotal = childPrice * (children || 0);
+    // Uşaq qiyməti: körpə (0-1 yaş) pulsuz, 2+ yaş 50% endirim
+    const childPrice  = Math.round(tour.price_azn * 0.5);
+    const adultTotal  = tour.price_azn * adults;
+    const ages        = child_ages as number[] | null | undefined;
+    const childTotal  = Array.from({ length: children || 0 }, (_, i) => {
+      const age = ages?.[i];
+      return (age !== undefined && age <= 1) ? 0 : childPrice;
+    }).reduce((a: number, b: number) => a + b, 0);
     const total_price = adultTotal + childTotal;
 
     // Müştəri yarat (və ya tap)

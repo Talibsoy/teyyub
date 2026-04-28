@@ -110,6 +110,7 @@ export default function PanelHubPage() {
   const { profile, totalPoints, tier, nextTier, transactions, darkMode } = usePanelContext();
   const [changeModal, setChangeModal] = useState<string | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [tripsLoading, setTripsLoading] = useState(true);
   const d = darkMode;
 
   useEffect(() => {
@@ -122,7 +123,7 @@ export default function PanelHubPage() {
       .order("created_at", { ascending: false })
       .limit(10)
       .then(({ data }) => {
-        if (!data) return;
+        if (!data) { setTripsLoading(false); return; }
         setTrips(
           data.map((b) => {
             const tourRaw = Array.isArray(b.tours) ? b.tours[0] : b.tours;
@@ -141,6 +142,7 @@ export default function PanelHubPage() {
             };
           })
         );
+        setTripsLoading(false);
       });
   }, [profile?.id]);
 
@@ -266,7 +268,11 @@ export default function PanelHubPage() {
           </Link>
         </div>
 
-        {activeTrips.length === 0 ? (
+        {tripsLoading ? (
+          <div style={{ borderRadius: 16, border: `1px solid ${d ? "#1e293b" : "#e2e8f0"}`, padding: "40px 20px", textAlign: "center", background: d ? "#0f172a" : "#fafafa" }}>
+            <div style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid #e2e8f0", borderTopColor: "#0284c7", animation: "spin 0.7s linear infinite", margin: "0 auto" }} />
+          </div>
+        ) : activeTrips.length === 0 ? (
           <div style={{ borderRadius: 16, border: `1px dashed ${d ? "#1e293b" : "#e2e8f0"}`, padding: "40px 20px", textAlign: "center", background: d ? "#0f172a" : "#fafafa" }}>
             <div style={{ width: 48, height: 48, borderRadius: 16, background: d ? "#1e293b" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
               <Plane size={22} color={d ? "#64748b" : "#94a3b8"} />
