@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
@@ -10,16 +10,16 @@ type Method = "card" | "google" | "apple";
 
 function CheckoutForm() {
   const params      = useSearchParams();
-  const router      = useRouter();
 
   const bookingId   = params.get("bookingId")   || "";
   const amount      = parseFloat(params.get("amount") || "0");
   const description = params.get("description") || "Tur ödənişi";
   const tourName    = params.get("tourName")    || description;
 
-  const [method,  setMethod]  = useState<Method>("card");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
+  const [method,   setMethod]   = useState<Method>("card");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
+  const [redirect, setRedirect] = useState<string | null>(null);
 
   async function handlePay() {
     if (!bookingId || amount <= 0) {
@@ -30,34 +30,31 @@ function CheckoutForm() {
     setError("");
 
     try {
-      // Auth token-i götür — loyalty + CRM sinxronizasiyası üçün
       const { data: { session } } = await getSupabase().auth.getSession();
       const authHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
       };
 
-      if (method === "card") {
-        const res  = await fetch("/api/payment/create", {
-          method: "POST",
-          headers: authHeaders,
-          body: JSON.stringify({ bookingId, amount, description }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json.paymentUrl) throw new Error(json.error || "Ödəniş yaradıla bilmədi");
-        window.location.href = json.paymentUrl;
-      } else {
-        const res  = await fetch("/api/payment/widget", {
-          method: "POST",
-          headers: authHeaders,
-          body: JSON.stringify({ bookingId, amount, description }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json.widgetUrl) throw new Error(json.error || "Widget URL alına bilmədi");
-        window.location.href = json.widgetUrl;
-      }
+      const endpoint = method === "card" ? "/api/payment/create" : "/api/payment/widget";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ bookingId, description }),
+        signal: AbortSignal.timeout(15000),
+      });
+      const json = await res.json();
+      const url: string | undefined = json.paymentUrl || json.widgetUrl;
+      if (!res.ok || !url) throw new Error(json.error || "Ödəniş yaradıla bilmədi");
+
+      setRedirect(url);
+      window.location.href = url;
+
+      // 8 saniyə sonra hələ redirect olmadısa — manual link göstər
+      setTimeout(() => setLoading(false), 8000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Xəta baş verdi");
+      const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+      setError(msg.includes("timed out") || msg.includes("abort") ? "Bağlantı vaxtı keçdi. Zəhmət olmasa yenidən cəhd edin." : msg);
       setLoading(false);
     }
   }
@@ -201,6 +198,19 @@ function CheckoutForm() {
               color: "#dc2626", fontSize: 13,
             }}>
               {error}
+            </div>
+          )}
+
+          {redirect && !loading && (
+            <div style={{
+              marginTop: 16, padding: "12px 16px", borderRadius: 12,
+              background: "#f0fdf4", border: "1px solid #bbf7d0",
+              color: "#166534", fontSize: 13, textAlign: "center",
+            }}>
+              Yönləndirmə baş vermədisə{" "}
+              <a href={redirect} style={{ color: "#15803d", fontWeight: 700, textDecoration: "underline" }}>
+                bura klikləyin
+              </a>
             </div>
           )}
 
