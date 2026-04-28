@@ -1,15 +1,52 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { waLink } from "@/lib/whatsapp";
+import { getSupabase } from "@/lib/supabase";
 
 function SuccessContent() {
   const params    = useSearchParams();
   const orderId   = params.get("orderId")   || "";
   const bookingId = params.get("bookingId") || "";
+
+  const [verified, setVerified] = useState<"loading" | "ok" | "invalid">("loading");
+
+  useEffect(() => {
+    // orderId format: NAT-{bookingId}-{timestamp}
+    const validFormat = orderId.startsWith("NAT-") && bookingId.length > 8;
+    if (!validFormat) { setVerified("invalid"); return; }
+
+    // DB-dən ödənişi yoxla — webhook işlənibsə "paid", henüz işlənməyibsə "pending"
+    (async () => {
+      try {
+        const { data } = await getSupabase()
+          .from("payments")
+          .select("status")
+          .eq("epoint_order_id", orderId)
+          .maybeSingle();
+        // "paid" və ya "pending" (webhook hələ gəlməyib) — hər ikisi keçərlidir
+        setVerified(data ? "ok" : "invalid");
+      } catch {
+        setVerified("ok"); // şəbəkə xətasında səhifəni göstər
+      }
+    })();
+  }, [orderId, bookingId]);
+
+  if (verified === "loading") return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ color: "#64748b" }}>Yüklənir...</p>
+    </div>
+  );
+
+  if (verified === "invalid") return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <p style={{ color: "#ef4444", fontWeight: 700 }}>Rezervasiya tapılmadı</p>
+      <Link href="/" style={{ color: "#0284c7" }}>Ana Səhifəyə Qayıt</Link>
+    </div>
+  );
 
   return (
     <div style={{

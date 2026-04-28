@@ -132,9 +132,18 @@ function TurlarContent() {
   const [rankedIds, setRankedIds] = useState<string[] | null>(null);
 
   useEffect(() => {
-    supabase.from("tours").select("*").eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => { setTours(data || []); setLoading(false); });
+    (async () => {
+      try {
+        const { data, error } = await supabase.from("tours").select("*").eq("is_active", true)
+          .order("created_at", { ascending: false });
+        if (error) console.error("[Turlar]", error.message);
+        setTours(data || []);
+      } catch {
+        // şəbəkə xətası — boş siyahı göstər
+      } finally {
+        setLoading(false);
+      }
+    })();
 
     const saved = localStorage.getItem("nf_archetype");
     if (saved) setArchetype(saved as Archetype);

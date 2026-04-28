@@ -91,6 +91,8 @@ function RezervasiyaForm() {
   }
 
   function goToStep2() {
+    if (adults < 1) { setError("Ən azı 1 böyük sərnişin seçilməlidir"); return; }
+    setError("");
     const list: Passenger[] = [
       ...Array.from({ length: adults }, () => emptyPassenger("adult")),
       ...Array.from({ length: children }, (_, i) => emptyPassenger("child", childAges[i] ?? 5)),

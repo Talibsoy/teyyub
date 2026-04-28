@@ -19,7 +19,8 @@ export async function saveLead(
       .select("id, name, phone, email, destination")
       .eq("sender_id", senderId)
       .eq("platform", platform.toLowerCase())
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (existing) {
       // Mövcud lead yenilənir — workflow işlətmə
