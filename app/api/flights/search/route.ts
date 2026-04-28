@@ -113,6 +113,12 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Flights/Search]", msg);
+    if (msg.includes("Duffel API xətası 429")) {
+      return NextResponse.json(
+        { error: "Uçuş axtarışı müvəqqəti məhduddur. Bir az sonra yenidən cəhd edin." },
+        { status: 429 }
+      );
+    }
     return NextResponse.json({ error: "Uçuş axtarışı zamanı xəta baş verdi" }, { status: 500 });
   }
 }

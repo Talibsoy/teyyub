@@ -77,6 +77,7 @@ export interface FlightOffer {
   passenger_ids: string[];
   departure_time: string;
   arrival_time: string;
+  return_departure_time: string;
   duration_minutes: number;
   stops: number;
   cabin_baggage: number;
@@ -124,7 +125,8 @@ async function fetchBaggageService(
     const azn = toAzn(amount * COMMISSION, currency, rates);
 
     return { kg, azn };
-  } catch {
+  } catch (e) {
+    console.warn("[Baggage] available_services alınmadı:", e);
     return { kg: 0, azn: 0 };
   }
 }
@@ -210,10 +212,13 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
 
     const depTime = (firstSeg.departing_at as string) || "";
     const arrTime = (lastSeg.arriving_at as string) || "";
+    const returnSlice = slices[1] as Record<string, unknown> | undefined;
+    const returnSegs = (returnSlice?.segments as Record<string, unknown>[]) || [];
+    const returnDepTime = returnSegs[0] ? ((returnSegs[0].departing_at as string) || "") : "";
     const durRaw = (firstSlice.duration as string) || "";
-    const durHMatch = durRaw.match(/(\d+)H/);
+    const durHMatch = durRaw.match(/(\d+(?:\.\d+)?)H/);
     const durMMatch = durRaw.match(/(\d+)M/);
-    const durationMin = (parseInt(durHMatch?.[1] || "0") * 60) + parseInt(durMMatch?.[1] || "0");
+    const durationMin = Math.round((parseFloat(durHMatch?.[1] || "0") * 60) + parseInt(durMMatch?.[1] || "0"));
 
     // Daxil olan bagaj
     const passengers = (offer.passengers as Record<string, unknown>[]) || [];
@@ -239,9 +244,10 @@ export async function searchFlights(params: SearchParams): Promise<FlightOffer[]
       price_raw:       rawPrice,
       price_currency:  currency,
       passenger_ids:   passengerIds,
-      departure_time:  depTime,
-      arrival_time:    arrTime,
-      duration_minutes: durationMin,
+      departure_time:        depTime,
+      arrival_time:          arrTime,
+      return_departure_time: returnDepTime,
+      duration_minutes:      durationMin,
       stops:           segments.length - 1,
       cabin_baggage:   cabinBag,
       checked_baggage: checkedBag,
@@ -258,7 +264,8 @@ async function fetchOfferPrice(offerId: string): Promise<{ amount: number; curre
     `${DUFFEL_BASE}/air/offers/${encodeURIComponent(offerId)}`,
     { headers: headers(), signal: AbortSignal.timeout(10000) }
   );
-  if (!res.ok) throw new Error(`Offer tapılmadı və ya vaxtı keçib (${res.status})`);
+  if (res.status === 410) throw new Error("OFFER_EXPIRED");
+  if (!res.ok) throw new Error(`Offer tapılmadı (${res.status})`);
   const data = await res.json();
   const amount   = parseFloat(data?.data?.total_amount ?? "0");
   const currency = (data?.data?.total_currency as string) || "USD";
@@ -352,8 +359,12 @@ export function formatOffersForAI(offers: FlightOffer[]): string {
 
     const extraBag = o.extra_bag_kg > 0
       ? `əlavə ${o.extra_bag_kg}kq: +${o.extra_bag_azn}₼`
-      : "əlavə bagaj yoxdur";
+      : "əlavə bagaj məlumatı yoxlanılmadı";
 
-    return `[FLIGHT_ID:${o.offer_id}] ${i + 1}. ${o.airline} [${tripType}] — ${o.price_azn} ₼ CƏMİ (bütün nəfərlər daxil, markup daxil) | ${dep}–${arr} | ${dur} | ${stops} | ${includedBag} | ${extraBag}`;
+    const retDep = o.return_departure_time
+      ? ` / Qayıdış: ${fmtTime(o.return_departure_time)}`
+      : "";
+
+    return `[FLIGHT_ID:${o.offer_id}] ${i + 1}. ${o.airline} [${tripType}] — ${o.price_azn} ₼ CƏMİ (bütün nəfərlər daxil, markup daxil) | ${dep}–${arr}${retDep} | ${dur} | ${stops} | ${includedBag} | ${extraBag}`;
   }).join("\n");
 }

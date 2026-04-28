@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       passenger_names:   passengers.map(p => `${p.given_name} ${p.family_name}`),
       contact_email:     passengers[0].email,
       tour_booking_id:   tour_booking_id || null,
-      status:            "confirmed",
+      status:            "booked",
     });
 
     if (dbError) {
@@ -106,7 +106,12 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Book] Xəta:", msg);
-    // duffelOrderId var amma DB yazılmayıbsa yuxarıda idarə edildi
+    if (msg === "OFFER_EXPIRED") {
+      return NextResponse.json(
+        { error: "Bu uçuş artıq mövcud deyil. Zəhmət olmasa yenidən axtarış edin." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: "Bilet sifarişi zamanı xəta baş verdi" }, { status: 500 });
   }
 }

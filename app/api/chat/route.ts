@@ -67,32 +67,50 @@ export async function POST(req: NextRequest) {
     const handoffMatch = raw.match(/(?:^|\n)OPERATOR_HANDOFF:([^\n]+)/);
     const isHandoff = !!handoffMatch;
 
-    // Paket aşkarla — [^\n]* : eyni sətirdə sonuncu }-ə qədər (greedy, çox sətirli JSON-u da tutur)
-    let tourPackage: Record<string, unknown> | null = null;
-    const tourMatch = raw.match(/TOUR_PACKAGE:(\{[^\n]*\})/);
-    if (tourMatch) {
-      try { tourPackage = JSON.parse(tourMatch[1]); } catch { /* ignore */ }
+    // Brace-depth extraction — multiline JSON-u da düzgün tutur
+    function extractJsonBlock(text: string, key: string): Record<string, unknown> | null {
+      const idx = text.indexOf(`${key}:{`);
+      if (idx === -1) return null;
+      let depth = 0;
+      const start = idx + key.length + 1;
+      for (let i = start; i < text.length; i++) {
+        if (text[i] === "{") depth++;
+        else if (text[i] === "}") {
+          depth--;
+          if (depth === 0) {
+            try { return JSON.parse(text.slice(start, i + 1)) as Record<string, unknown>; } catch { return null; }
+          }
+        }
+      }
+      return null;
     }
 
-    let hotelPackage: Record<string, unknown> | null = null;
-    const hotelMatch = raw.match(/HOTEL_PACKAGE:(\{[^\n]*\})/);
-    if (hotelMatch) {
-      try { hotelPackage = JSON.parse(hotelMatch[1]); } catch { /* ignore */ }
+    function removeJsonBlock(text: string, key: string): string {
+      const idx = text.indexOf(`${key}:{`);
+      if (idx === -1) return text;
+      let depth = 0;
+      const start = idx + key.length + 1;
+      for (let i = start; i < text.length; i++) {
+        if (text[i] === "{") depth++;
+        else if (text[i] === "}") {
+          depth--;
+          if (depth === 0) return text.slice(0, idx) + text.slice(i + 1);
+        }
+      }
+      return text;
     }
 
-    let flightPackage: Record<string, unknown> | null = null;
-    const flightMatch = raw.match(/FLIGHT_PACKAGE:(\{[^\n]*\})/);
-    if (flightMatch) {
-      try { flightPackage = JSON.parse(flightMatch[1]); } catch { /* ignore */ }
-    }
+    const tourPackage   = extractJsonBlock(raw, "TOUR_PACKAGE");
+    const hotelPackage  = extractJsonBlock(raw, "HOTEL_PACKAGE");
+    const flightPackage = extractJsonBlock(raw, "FLIGHT_PACKAGE");
+
+    let cleaned = removeJsonBlock(raw, "TOUR_PACKAGE");
+    cleaned = removeJsonBlock(cleaned, "HOTEL_PACKAGE");
+    cleaned = removeJsonBlock(cleaned, "FLIGHT_PACKAGE");
 
     const reply = isHandoff
       ? (handoffMatch![1] || raw.replace(/(?:^|\n)OPERATOR_HANDOFF:[^\n]*/g, "")).trim()
-      : raw
-          .replace(/TOUR_PACKAGE:\{[^\n]*\}/g, "")
-          .replace(/HOTEL_PACKAGE:\{[^\n]*\}/g, "")
-          .replace(/FLIGHT_PACKAGE:\{[^\n]*\}/g, "")
-          .trim();
+      : cleaned.trim();
 
     const updated = [
       ...history,
