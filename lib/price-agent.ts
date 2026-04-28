@@ -141,9 +141,9 @@ function buildNaturalText(report: PriceReport): string {
     lines.push("✈️ **UÇUŞ VARİANTLARI** (artan qiymət sırası ile):\n");
     flights.forEach((f, i) => {
       const dep = f.departure_time
-        ? new Date(f.departure_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "";
+        ? new Date(f.departure_time).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" }) : "";
       const arr = f.arrival_time
-        ? new Date(f.arrival_time  ).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "";
+        ? new Date(f.arrival_time  ).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" }) : "";
       const time = dep && arr ? ` | ${dep} → ${arr}` : "";
 
       const perPerson = Math.round(f.price_azn / guests);

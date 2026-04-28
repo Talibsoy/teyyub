@@ -165,9 +165,9 @@ function FlightPackageCard({
   pkg: FlightPackage;
   onAlternative: () => void;
 }) {
-  const dep = pkg.departure ? new Date(pkg.departure).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "—";
-  const arr = pkg.arrival   ? new Date(pkg.arrival).toLocaleTimeString("az-AZ",   { hour: "2-digit", minute: "2-digit" }) : "—";
-  const depDate = pkg.departure ? new Date(pkg.departure).toLocaleDateString("az-AZ", { day: "numeric", month: "short" }) : "";
+  const dep = pkg.departure ? new Date(pkg.departure).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" }) : "—";
+  const arr = pkg.arrival   ? new Date(pkg.arrival).toLocaleTimeString("az-AZ",   { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" }) : "—";
+  const depDate = pkg.departure ? new Date(pkg.departure).toLocaleDateString("az-AZ", { day: "numeric", month: "short", timeZone: "Asia/Baku" }) : "";
   const dur = pkg.duration_min
     ? `${Math.floor(pkg.duration_min / 60)}s ${pkg.duration_min % 60}d`
     : "";
