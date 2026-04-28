@@ -39,9 +39,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // CRM üçün admin rolu yoxlanır
-  const role = session.user.app_metadata?.role as string | undefined;
-  if (!role || role !== "admin") {
+  // CRM üçün admin rolu yoxlanır — app_metadata server-side Supabase-dən gəlir, client dəyişə bilməz
+  const meta = session.user.app_metadata ?? {};
+  const role = typeof meta["role"] === "string" ? meta["role"] : undefined;
+  if (role !== "admin") {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

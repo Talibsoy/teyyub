@@ -56,11 +56,12 @@ export async function POST(req: NextRequest) {
       }).eq("id", payment.id);
 
       if (dbStatus === "paid") {
-        // Booking statusunu yenilə
+        // Booking statusunu yenilə — yalnız aktiv booking-lər (cancelled olanı dəyişmə)
         if (payment.booking_id) {
           await supabase.from("bookings")
             .update({ status: "confirmed" })
-            .eq("id", payment.booking_id);
+            .eq("id", payment.booking_id)
+            .in("status", ["new", "pending"]);
         }
 
         // Workflow trigger

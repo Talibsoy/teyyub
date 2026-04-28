@@ -109,7 +109,8 @@ export async function runWorkflows(event: TriggerEvent, data: TriggerData) {
         error,
       }]);
     }
-  } catch {
-    // Workflow xətası əsas işi dayandırmasın
+  } catch (err) {
+    // Workflow xətası əsas işi dayandırmasın, amma log edilsin
+    console.error("[Workflow] runWorkflows xətası:", err);
   }
 }

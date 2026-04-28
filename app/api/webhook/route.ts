@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
           // Rate limit yoxla
           const allowed = await checkRateLimit(`${platform.toLowerCase()}:${event.sender.id}`);
-          if (!allowed) continue;
+          if (!allowed) { console.warn(`[Webhook] Rate limit: ${platform} ${event.sender.id}`); continue; }
 
           // Postback (Get Started və s.)
           if (event.postback) {

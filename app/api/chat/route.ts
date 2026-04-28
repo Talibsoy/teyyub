@@ -67,23 +67,21 @@ export async function POST(req: NextRequest) {
     const handoffMatch = raw.match(/(?:^|\n)OPERATOR_HANDOFF:([^\n]+)/);
     const isHandoff = !!handoffMatch;
 
-    // Tur paketi aşkar et
+    // Paket aşkarla — [^\n]* : eyni sətirdə sonuncu }-ə qədər (greedy, çox sətirli JSON-u da tutur)
     let tourPackage: Record<string, unknown> | null = null;
-    const tourMatch = raw.match(/TOUR_PACKAGE:(\{[^}]+\})/);
+    const tourMatch = raw.match(/TOUR_PACKAGE:(\{[^\n]*\})/);
     if (tourMatch) {
       try { tourPackage = JSON.parse(tourMatch[1]); } catch { /* ignore */ }
     }
 
-    // Otel paketi aşkar et
     let hotelPackage: Record<string, unknown> | null = null;
-    const hotelMatch = raw.match(/HOTEL_PACKAGE:(\{[^}]+\})/);
+    const hotelMatch = raw.match(/HOTEL_PACKAGE:(\{[^\n]*\})/);
     if (hotelMatch) {
       try { hotelPackage = JSON.parse(hotelMatch[1]); } catch { /* ignore */ }
     }
 
-    // Uçuş paketi aşkar et
     let flightPackage: Record<string, unknown> | null = null;
-    const flightMatch = raw.match(/FLIGHT_PACKAGE:(\{[^}]+\})/);
+    const flightMatch = raw.match(/FLIGHT_PACKAGE:(\{[^\n]*\})/);
     if (flightMatch) {
       try { flightPackage = JSON.parse(flightMatch[1]); } catch { /* ignore */ }
     }
@@ -91,9 +89,9 @@ export async function POST(req: NextRequest) {
     const reply = isHandoff
       ? (handoffMatch![1] || raw.replace(/(?:^|\n)OPERATOR_HANDOFF:[^\n]*/g, "")).trim()
       : raw
-          .replace(/TOUR_PACKAGE:\{[^}]+\}/g, "")
-          .replace(/HOTEL_PACKAGE:\{[^}]+\}/g, "")
-          .replace(/FLIGHT_PACKAGE:\{[^}]+\}/g, "")
+          .replace(/TOUR_PACKAGE:\{[^\n]*\}/g, "")
+          .replace(/HOTEL_PACKAGE:\{[^\n]*\}/g, "")
+          .replace(/FLIGHT_PACKAGE:\{[^\n]*\}/g, "")
           .trim();
 
     const updated = [
