@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import AIChatPanel from "./AIChatPanel";
+import ErrorBoundary from "./ErrorBoundary";
 
 const BARE_ROUTES = ["/prototype"];
 
@@ -18,7 +19,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </main>
       <Footer />
       <AIChatPanel />
     </>

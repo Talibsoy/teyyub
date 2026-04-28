@@ -175,6 +175,10 @@ async function fetchWAMedia(
     if (contentLength > MAX_MEDIA_BYTES) return undefined;
 
     const buffer = await mediaRes.arrayBuffer();
+    if (buffer.byteLength > MAX_MEDIA_BYTES) {
+      console.warn(`[WA Media] Fayl hədd aşdı: ${buffer.byteLength} bayt`);
+      return undefined;
+    }
     const base64 = Buffer.from(buffer).toString("base64");
 
     return { type: "base64", data: base64, mimeType, mediaType };

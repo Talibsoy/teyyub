@@ -15,6 +15,16 @@ const redis =
     ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
     : null;
 
+// Redis olmadıqda warm instance-daxili dedup (cold start-dan sonra işləmir — qəbul edilə bilər)
+const localSeen = new Set<string>();
+const LOCAL_SEEN_MAX = 500;
+function localSeenCheck(key: string): boolean {
+  if (localSeen.has(key)) return true;
+  if (localSeen.size >= LOCAL_SEEN_MAX) localSeen.clear();
+  localSeen.add(key);
+  return false;
+}
+
 const PAGE_TOKEN = process.env.FB_PAGE_TOKEN!;
 const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
 const APP_SECRET = process.env.FB_APP_SECRET;
@@ -70,8 +80,8 @@ export async function POST(req: NextRequest) {
               const seen = await redis.get(`fb_seen:${mid}`);
               if (seen) continue;
               await redis.set(`fb_seen:${mid}`, 1, { ex: 300 });
-            } else {
-              console.warn("[Webhook] Redis yoxdur — FB/IG deduplication işləmir, duplicate mesaj riski var");
+            } else if (localSeenCheck(`fb:${mid}`)) {
+              continue;
             }
           }
 

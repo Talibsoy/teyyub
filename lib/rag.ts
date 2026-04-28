@@ -22,10 +22,9 @@ interface Tour {
   includes:    string[] | null;
 }
 
-// 5 dəqiqə cache
-let cachedTours: string | null = null;
-let cacheTime = 0;
 const CACHE_TTL = 5 * 60 * 1000;
+const GENERIC_KEY = "__all__";
+const tourCache = new Map<string, { result: string; time: number }>();
 
 // Müştərinin mesajından destinasiya axtarır
 function extractDestination(message: string): string | null {
@@ -53,13 +52,14 @@ function extractDestination(message: string): string | null {
 // ─── 1. Aktiv turlar + gizli paketlər (DB-dən) ───────────────────────────────
 
 async function getToursFromDB(userMessage?: string): Promise<string> {
-  if (cachedTours && Date.now() - cacheTime < CACHE_TTL && !userMessage) {
-    return cachedTours;
-  }
+  const destination = userMessage ? extractDestination(userMessage) : null;
+  const cacheKey = destination ?? GENERIC_KEY;
+
+  const cached = tourCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < CACHE_TTL) return cached.result;
 
   try {
     const admin = getSupabaseAdmin();
-    const destination = userMessage ? extractDestination(userMessage) : null;
 
     let query = admin
       .from("tours")
@@ -116,10 +116,7 @@ async function getToursFromDB(userMessage?: string): Promise<string> {
     });
 
     const result = [...lines, ...pkgLines].join("\n\n");
-    if (!userMessage) {
-      cachedTours = result;
-      cacheTime   = Date.now();
-    }
+    tourCache.set(cacheKey, { result, time: Date.now() });
     return result;
   } catch {
     return "";
