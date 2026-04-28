@@ -728,6 +728,10 @@ export async function getAIResponse(
     ];
   }
 
-  // Max dövrə çatdı — boş cavab
-  return parseCustomerData("");
+  // Max dövrə çatdı — operator keçidinə yönləndir
+  return parseCustomerData(
+    "Hal-hazırda sistemimizdə yüklənmə var. Komandamız sizinlə dərhal əlaqə saxlayacaq. " +
+    "Zəhmət olmasa bir neçə dəqiqə gözləyin.\n\n" +
+    "<customer_data>{\"name\":null,\"phone\":null,\"email\":null,\"destination\":null,\"travel_date\":null}</customer_data>"
+  );
 }

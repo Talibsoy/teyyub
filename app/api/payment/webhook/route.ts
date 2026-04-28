@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { verifyEpointWebhook, decodeEpointData } from "@/lib/epoint";
 import { runWorkflows } from "@/lib/workflow-engine";
+import { Redis } from "@upstash/redis";
+
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+    : null;
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +32,16 @@ export async function POST(req: NextRequest) {
     }
 
     const dbStatus = status === "success" ? "paid" : "failed";
+
+    // Idempotency — eyni order iki dəfə işlənməsin
+    if (redis) {
+      const dedupKey = `payment:webhook:${orderId}`;
+      const already = await redis.set(dedupKey, "1", { ex: 86400, nx: true });
+      if (already === null) {
+        // nx: true — key artıq mövcuddur, bu webhook artıq işlənib
+        return NextResponse.json({ ok: true });
+      }
+    }
 
     const { data: payment } = await supabase
       .from("payments")

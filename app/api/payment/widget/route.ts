@@ -4,10 +4,10 @@ import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
-    const { bookingId, amount, description } = await req.json();
+    const { bookingId, description } = await req.json();
 
-    if (!bookingId || !amount || amount <= 0) {
-      return NextResponse.json({ error: "bookingId və amount tələb olunur" }, { status: 400 });
+    if (!bookingId) {
+      return NextResponse.json({ error: "bookingId tələb olunur" }, { status: 400 });
     }
 
     let userId: string | null = null;
@@ -16,6 +16,18 @@ export async function POST(req: NextRequest) {
       const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.slice(7));
       if (user) userId = user.id;
     }
+
+    // Məbləği client-dən deyil, DB-dən al — client manipulation-dan qorunma
+    const { data: booking } = await supabaseAdmin
+      .from("bookings")
+      .select("total_price")
+      .eq("id", bookingId)
+      .single();
+
+    if (!booking || !booking.total_price || booking.total_price <= 0) {
+      return NextResponse.json({ error: "Rezervasiya tapılmadı" }, { status: 404 });
+    }
+    const amount = booking.total_price;
 
     const widget = await createEpointWidget({ amount, bookingId, description });
 

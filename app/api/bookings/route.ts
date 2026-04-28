@@ -11,9 +11,10 @@ function generateBookingNumber() {
 }
 
 export async function POST(req: NextRequest) {
-  // Auth ixtiyaridir — qeydiyyatlı istifadəçilər üçün booking-i hesaba bağla
+  // Auth məcburidir — qeydiyyatsız istifadəçi booking yarada bilməz
   const authResult = await requireAuth(req);
-  const authUserId = isAuthError(authResult) ? null : authResult.userId;
+  if (isAuthError(authResult)) return authResult;
+  const authUserId = authResult.userId;
 
   try {
     const {
@@ -44,6 +45,23 @@ export async function POST(req: NextRequest) {
     const seatsLeft = tour.max_seats - tour.booked_seats;
     if (seatsLeft < totalPersons) {
       return NextResponse.json({ error: "Kifayət qədər boş yer yoxdur" }, { status: 400 });
+    }
+
+    // Optimistic locking — atomic seat reservation
+    // booked_seats yalnız oxuduğumuz dəyərdədirsə update edir (race condition qorunması)
+    const { data: reserved } = await supabaseAdmin
+      .from("tours")
+      .update({ booked_seats: tour.booked_seats + totalPersons })
+      .eq("id", tour_id)
+      .eq("booked_seats", tour.booked_seats) // başqa request eyni anda dəyişibsə bu fail olur
+      .select("id")
+      .maybeSingle();
+
+    if (!reserved) {
+      return NextResponse.json(
+        { error: "Yer rezerv edilərkən xəta baş verdi. Yenidən cəhd edin." },
+        { status: 409 }
+      );
     }
 
     // Uşaq qiyməti: 50% endirim (2-11 yaş), körpə (0-1) pulsuz
@@ -106,6 +124,11 @@ export async function POST(req: NextRequest) {
 
     if (error || !booking) {
       console.error("[Bookings] Supabase xəta:", error);
+      // Seat rezervini geri al — booking yaranmadı
+      await supabaseAdmin
+        .from("tours")
+        .update({ booked_seats: tour.booked_seats })
+        .eq("id", tour_id);
       return NextResponse.json({ error: "Rezervasiya yaradıla bilmədi" }, { status: 500 });
     }
 
