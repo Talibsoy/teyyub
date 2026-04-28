@@ -146,7 +146,8 @@ function buildNaturalText(report: PriceReport): string {
         ? new Date(f.arrival_time  ).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "";
       const time = dep && arr ? ` | ${dep} → ${arr}` : "";
 
-      lines.push(`${i + 1}. **${f.airline}** — ${f.price_azn} AZN/nəfər`);
+      const perPerson = Math.round(f.price_azn / guests);
+      lines.push(`${i + 1}. **${f.airline}** — ${perPerson} AZN/nəfər (${guests} nəfər cəmi: ${f.price_azn} AZN)`);
       lines.push(`   ${f.stop_label}${time}${f.duration_label ? ` (${f.duration_label})` : ""}`);
       lines.push(`   🧳 ${f.baggage_summary}`);
       if (f.extra_bag_info) lines.push(`   ${f.extra_bag_info}`);
@@ -245,7 +246,7 @@ export async function analyzePrices(params: {
       ...h,
       address:          det.address        || h.address        || "",
       description:      det.description    || h.description    || "",
-      included_services: det.amenities.length ? undefined : h.included_services, // det.amenities reparse lazımdır
+      included_services: det.amenities.length ? det.amenities : h.included_services,
       wifi_free:        det.wifi_free      ?? h.wifi_free      ?? false,
       has_pool:         det.has_pool       ?? h.has_pool       ?? false,
       has_beach:        det.has_beach      ?? h.has_beach      ?? false,
@@ -318,7 +319,7 @@ export async function analyzePrices(params: {
     const flight = flights.find(f => f.class === tier) ?? flights[0];
     const hotel  = hotels.find(h  => h.class === tier) ?? hotels[0];
     if (!flight || !hotel) return [];
-    const total = flight.price_azn * guests + hotel.price_azn;
+    const total = flight.price_azn + hotel.price_azn;
     return [{ type: LABELS[tier], class: tier, flight, hotel, nights, guests,
       total_azn: Math.round(total), per_person_azn: Math.round(total / guests) }];
   });
