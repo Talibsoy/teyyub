@@ -58,14 +58,14 @@ export async function POST(req: NextRequest) {
 
         // Panel istifadəçisi varsa — loyalty xal əlavə et + CRM yenilə
         if (payment.user_id) {
-          const pointsEarned = Math.floor(payment.amount); // $1 = 1 xal
+          const pointsEarned = Math.floor(payment.amount / 100); // 100₼ = 1 xal (1000₼ → 10 xal)
 
           // loyalty_transactions-a yaz
           await supabaseAdmin.from("loyalty_transactions").insert({
             user_id:       payment.user_id,
             type:          "earn",
             amount_points: pointsEarned,
-            description:   `Ödəniş — $${payment.amount.toFixed(2)}`,
+            description:   `Ödəniş — ${payment.amount.toFixed(2)} ₼ (+${pointsEarned} xal)`,
             booking_id:    payment.booking_id || null,
           });
 

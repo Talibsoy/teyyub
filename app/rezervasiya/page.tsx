@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase, getSupabase } from "@/lib/supabase";
 import { Calendar, Users, Lock, AlertTriangle } from "lucide-react";
@@ -54,6 +54,7 @@ function RezervasiyaForm() {
   const [error, setError] = useState("");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   // Step 1
   const [adults, setAdults] = useState(1);
@@ -110,7 +111,8 @@ function RezervasiyaForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!tour) return;
+    if (!tour || submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitting(true);
     setError("");
     try {
@@ -150,6 +152,8 @@ function RezervasiyaForm() {
       window.location.href = payData.paymentUrl;
     } catch {
       setError("Xəta baş verdi, yenidən cəhd edin");
+    } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

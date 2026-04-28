@@ -63,8 +63,9 @@ export async function POST(req: NextRequest) {
       .replace(/\n{3,}/g, "\n\n")
       .trim();
 
-    // Operator keçidi aşkar et
-    const isHandoff = raw.startsWith("OPERATOR_HANDOFF:");
+    // Operator keçidi aşkar et — cavabın istənilən yerində ola bilər
+    const handoffMatch = raw.match(/(?:^|\n)OPERATOR_HANDOFF:([^\n]+)/);
+    const isHandoff = !!handoffMatch;
 
     // Tur paketi aşkar et
     let tourPackage: Record<string, unknown> | null = null;
@@ -88,11 +89,11 @@ export async function POST(req: NextRequest) {
     }
 
     const reply = isHandoff
-      ? raw.replace("OPERATOR_HANDOFF:", "").trim()
+      ? (handoffMatch![1] || raw.replace(/(?:^|\n)OPERATOR_HANDOFF:[^\n]*/g, "")).trim()
       : raw
-          .replace(/TOUR_PACKAGE:\{[^}]+\}/, "")
-          .replace(/HOTEL_PACKAGE:\{[^}]+\}/, "")
-          .replace(/FLIGHT_PACKAGE:\{[^}]+\}/, "")
+          .replace(/TOUR_PACKAGE:\{[^}]+\}/g, "")
+          .replace(/HOTEL_PACKAGE:\{[^}]+\}/g, "")
+          .replace(/FLIGHT_PACKAGE:\{[^}]+\}/g, "")
           .trim();
 
     const updated = [

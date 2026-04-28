@@ -36,8 +36,10 @@ export async function getHistory(key: string): Promise<Message[]> {
   return memoryStore.get(key) || [];
 }
 
+const MAX_HISTORY = 20; // agentic loop (5 raund × 2 msg) üçün kifayətli kontekst
+
 export async function saveHistory(key: string, history: Message[]): Promise<void> {
-  if (history.length > 8) history.splice(0, history.length - 8);
+  if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
   if (redis) {
     await redis.set(key, history, { ex: TTL });
   } else {
