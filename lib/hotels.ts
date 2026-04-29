@@ -32,6 +32,7 @@ async function rapidGet(path: string, params: Record<string, string>) {
     },
     signal: AbortSignal.timeout(10000),
   });
+  if (res.status === 429) throw new Error("RATE_LIMIT");
   if (!res.ok) throw new Error(`RapidAPI ${res.status}`);
   return res.json();
 }

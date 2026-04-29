@@ -489,10 +489,13 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
           signal: AbortSignal.timeout(12000),
         });
         const data = await res.json();
+        if (res.status === 429 || data.rateLimited) {
+          return `Otel axtarış sistemi müvəqqəti məhduddur. Müştəriyə de: "Otel variantlarını komandamız birbaşa seçib sizə təqdim edəcək — hansı tarixlər və neçə nəfərlik lazımdır?"`;
+        }
         const hotels = data.hotels || [];
         if (hotels.length === 0) {
           const starsInfo = input.stars ? `${input.stars} ulduzlu ` : "";
-          return `${input.destination} üçün ${starsInfo}otel tapılmadı (${input.checkin} – ${input.checkout}). Səbəb: yüksək sezon, yerlər dolub ola bilər. Müştəriyə de: "Komandamız bu tarixlərə ${starsInfo}otel üçün birbaşa axtarış edib sizə zəng edəcək — nömrənizi ala bilərəmmi?"`;
+          return `${input.destination} üçün ${starsInfo}otel tapılmadı (${input.checkin} – ${input.checkout}). Müştəriyə de: "Komandamız bu tarixlərə ${starsInfo}otel üçün birbaşa axtarış edib sizə zəng edəcək — nömrənizi ala bilərəmmi?"`;
         }
         return hotels.map((h: { name: string; price_marked_up: number; nights: number; rating: number | null; stars: number | null; id: string }) =>
           `[HOTEL_ID:${h.id}] ${h.name} | ${h.price_marked_up} AZN (${h.nights} gecə, xidmət haqqı daxil) | Reytinq: ${h.rating ?? "—"}/10 | ${h.stars ? h.stars + "★" : ""}`

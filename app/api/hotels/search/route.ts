@@ -12,6 +12,10 @@ export async function POST(req: NextRequest) {
     const hotels = await searchHotels({ destination, checkin, checkout, adults, rooms, currency, stars });
     return NextResponse.json({ ok: true, hotels });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "RATE_LIMIT") {
+      return NextResponse.json({ ok: false, hotels: [], rateLimited: true }, { status: 429 });
+    }
     console.error("[Hotels Search]", err);
     return NextResponse.json({ ok: false, hotels: [] });
   }
