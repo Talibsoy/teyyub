@@ -1,7 +1,13 @@
+import { Redis } from "@upstash/redis";
+
 const RAPIDAPI_KEY  = process.env.RAPIDAPI_KEY || "";
 const RAPIDAPI_HOST = "booking-com15.p.rapidapi.com";
 const BASE          = `https://${RAPIDAPI_HOST}/api/v1/hotels`;
 const MARKUP        = 1.17; // 17% xidmət haqqı
+
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+  : null;
 
 export interface HotelOffer {
   id:              string;
@@ -37,15 +43,21 @@ async function rapidGet(path: string, params: Record<string, string>) {
   return res.json();
 }
 
-// Destination ID-ni tap (şəhər adı → Booking.com dest_id)
+// Destination ID-ni tap — Redis-də 24 saat cache (RapidAPI limit qoruma)
 async function getDestId(query: string): Promise<{ dest_id: string; dest_type: string } | null> {
+  const cacheKey = `hotel_dest:${query.toLowerCase().trim()}`;
   try {
+    if (redis) {
+      const cached = await redis.get<{ dest_id: string; dest_type: string }>(cacheKey);
+      if (cached) return cached;
+    }
     const data = await rapidGet("searchDestination", { query, languagecode: "en-us" });
     const first = data.data?.[0];
     if (!first) return null;
-    // search_type üçün CITY, HOTEL, DISTRICT formatı lazımdır
     const rawType = String(first.dest_type || "CITY").toUpperCase();
-    return { dest_id: String(first.dest_id), dest_type: rawType };
+    const result = { dest_id: String(first.dest_id), dest_type: rawType };
+    if (redis) await redis.set(cacheKey, result, { ex: 86400 }); // 24 saat
+    return result;
   } catch {
     return null;
   }

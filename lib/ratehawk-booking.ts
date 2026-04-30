@@ -245,10 +245,10 @@ export async function getBookingStatus(orderIds: string[]): Promise<BookingStatu
   }
 }
 
-// Polling — "processing" olanda hər 5 san yoxla, max 60 san
+// Polling — "processing" olanda hər 5 san yoxla (ETG_POLLING_MAX env ilə konfiqurasiya)
 export async function pollBookingStatus(orderIds: string[]): Promise<BookingStatusResult> {
   const INTERVAL_MS  = 5000;
-  const MAX_ATTEMPTS = 12;
+  const MAX_ATTEMPTS = parseInt(process.env.ETG_POLLING_MAX || "18", 10); // default 90s (18×5s)
 
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     const result = await getBookingStatus(orderIds);

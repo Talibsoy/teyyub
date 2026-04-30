@@ -160,6 +160,7 @@ async function fetchWAMedia(
     // 1. Media URL-ni al
     const metaRes = await fetch(`https://graph.facebook.com/v19.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${WA_TOKEN}` },
+      signal: AbortSignal.timeout(8000),
     });
     const meta = await metaRes.json();
     const mediaUrl: string = meta.url;
@@ -168,6 +169,7 @@ async function fetchWAMedia(
     // 2. Binary faylı yüklə (Authorization header ilə)
     const mediaRes = await fetch(mediaUrl, {
       headers: { Authorization: `Bearer ${WA_TOKEN}` },
+      signal: AbortSignal.timeout(10000),
     });
     if (!mediaRes.ok) return undefined;
 

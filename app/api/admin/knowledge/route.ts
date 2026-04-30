@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { addKnowledge, deleteKnowledge } from "@/lib/knowledge";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 function checkSecret(req: NextRequest): boolean {
-  const auth = req.headers.get("authorization");
-  return auth === `Bearer ${process.env.CRON_SECRET}`;
+  const auth = req.headers.get("authorization") ?? "";
+  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
+  try {
+    return timingSafeEqual(Buffer.from(auth), Buffer.from(expected));
+  } catch {
+    return false; // buffer uzunluqları fərqlidirsə — rədd et
+  }
 }
 
 // Bütün biliklərə bax
