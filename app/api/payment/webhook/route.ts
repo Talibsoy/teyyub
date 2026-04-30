@@ -117,18 +117,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Refund — ödəniş geri qaytarıldısa loyalty xalları çıxart
-    if (dbStatus === "refunded" && payment.user_id) {
-      const pointsToDeduct = Math.floor((payment.amount || 0) / 100);
+    if (dbStatus === "refunded" && payment?.user_id) {
+      const pointsToDeduct = Math.floor((payment?.amount || 0) / 100);
       if (pointsToDeduct > 0) {
         await supabaseAdmin.from("loyalty_transactions").insert({
-          user_id:       payment.user_id,
+          user_id:       payment!.user_id,
           type:          "deduct",
           amount_points: -pointsToDeduct,
-          description:   `Geri qaytarma — ${(payment.amount || 0).toFixed(2)} ₼ (-${pointsToDeduct} xal)`,
-          booking_id:    payment.booking_id || null,
+          description:   `Geri qaytarma — ${(payment?.amount || 0).toFixed(2)} ₼ (-${pointsToDeduct} xal)`,
+          booking_id:    payment?.booking_id || null,
         });
         const { data: cust } = await supabaseAdmin.from("customers")
-          .select("id, loyalty_points").eq("auth_user_id", payment.user_id).maybeSingle();
+          .select("id, loyalty_points").eq("auth_user_id", payment!.user_id).maybeSingle();
         if (cust) {
           await supabaseAdmin.from("customers").update({
             loyalty_points: Math.max(0, (cust.loyalty_points || 0) - pointsToDeduct),
