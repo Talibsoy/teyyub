@@ -6,7 +6,7 @@ import { sendTelegramAlert } from "@/lib/telegram";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { book_hash, phone, email, comment, guests, payment_type } = body;
+    const { book_hash, phone, email, comment, guests } = body;
 
     if (!book_hash || !phone || !guests?.length) {
       return NextResponse.json(
@@ -15,14 +15,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Booking finish — bron yarat
+    // 1. Booking finish — bron yarat (payment_type client-dən qəbul edilmir)
     const finishResult = await bookingFinish({
       book_hash,
       phone,
       email,
       comment,
       guests,
-      payment_type: payment_type || "deposit",
+      payment_type: "deposit",  // həmişə deposit — client manipulyasiyası mümkün deyil
     });
 
     // Finish xətaları: booking_form_expired, rate_not_found → yenidən axtarış lazımdır

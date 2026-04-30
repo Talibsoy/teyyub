@@ -110,6 +110,10 @@ export async function prebook(hash: string): Promise<PrebookResult> {
     const nonRefundable = !cancel?.free_cancellation_before &&
                           (cancel?.policies?.length ?? 0) > 0;
 
+    if (!d.book_hash) {
+      return { ok: false, error: "no_book_hash" };
+    }
+
     return {
       ok:                    true,
       book_hash:             d.book_hash,
@@ -134,12 +138,14 @@ export interface GuestInfo {
 }
 
 export interface BookingParams {
-  book_hash:    string;
-  email?:       string;
-  phone:        string;
-  comment?:     string;
-  guests:       GuestInfo[];
-  payment_type?: "deposit" | "now" | "hotel";
+  book_hash:         string;
+  email?:            string;
+  phone:             string;
+  comment?:          string;
+  guests:            GuestInfo[];
+  payment_type?:     "deposit" | "now" | "hotel";
+  currency_code?:    string;
+  partner_order_id?: string;  // Sandbox test ssenariləri üçün
 }
 
 export interface BookingFinishResult {
@@ -164,7 +170,8 @@ export async function bookingFinish(params: BookingParams): Promise<BookingFinis
         last_name:   g.last_name,
         citizenship: g.citizenship,
       })),
-      payment: { type: params.payment_type || "deposit" },
+      payment: { type: params.payment_type || "deposit", currency_code: params.currency_code || "USD" },
+      ...(params.partner_order_id ? { partner_order_id: params.partner_order_id } : {}),
     });
 
     if (res.http_status && res.http_status >= 500) {

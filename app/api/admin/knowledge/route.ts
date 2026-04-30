@@ -33,8 +33,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "content və source lazımdır" }, { status: 400 });
   }
 
-  const id = await addKnowledge(content, source, metadata);
-  return NextResponse.json({ ok: true, id });
+  try {
+    const id = await addKnowledge(content, source, metadata);
+    return NextResponse.json({ ok: true, id });
+  } catch (e) {
+    console.error("[Knowledge POST]", e);
+    return NextResponse.json({ error: "Bilik əlavə edilə bilmədi" }, { status: 500 });
+  }
 }
 
 // Bilik sil
@@ -46,6 +51,11 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "id lazımdır" }, { status: 400 });
 
-  await deleteKnowledge(id);
-  return NextResponse.json({ ok: true });
+  try {
+    await deleteKnowledge(id);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[Knowledge DELETE]", e);
+    return NextResponse.json({ error: "Bilik silinə bilmədi" }, { status: 500 });
+  }
 }

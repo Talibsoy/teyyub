@@ -196,8 +196,8 @@ function ratehawkPost(endpoint: string, body: object): Promise<RatehawkResponse>
             ? { "x-proxy-secret": process.env.RATEHAWK_PROXY_SECRET }
             : {}),
         },
-        // Sandbox-da TLS yoxlamasını söndür (self-signed cert)
-        ...(isHttp ? {} : { rejectUnauthorized: !isSandbox && !process.env.RATEHAWK_PROXY_URL }),
+        // Sandbox-da TLS yoxlamasını söndür; proxy istifadəsində də TLS aktiv qalır
+        ...(isHttp ? {} : { rejectUnauthorized: !isSandbox }),
       },
       (res) => {
         let data = "";

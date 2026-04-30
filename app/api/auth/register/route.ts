@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("[Register] Customer xətası:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Qeydiyyat tamamlana bilmədi" }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true, customerId: customer.id });
