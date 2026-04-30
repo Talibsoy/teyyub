@@ -11,10 +11,11 @@ const redis =
     ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
     : null;
 
-// Ehtiyat kurslar (CBAR cavab verməsə istifadə olunur)
+// Ehtiyat kurslar — CBAR cavab verməsə istifadə olunur (son yenilənmə: 2026-04)
+// Vaxtaşırı real kurslarla yenilə: https://www.cbar.az
 const FALLBACK_AZN: Record<string, number> = {
-  USD: 1.70, EUR: 1.87, GBP: 2.16, AED: 0.463,
-  TRY: 0.052, RUB: 0.019, GEL: 0.62,
+  USD: 1.70, EUR: 1.88, GBP: 2.18, AED: 0.463,
+  TRY: 0.051, RUB: 0.019, GEL: 0.62,
 };
 
 async function getAznRates(): Promise<Record<string, number>> {

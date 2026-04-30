@@ -223,14 +223,14 @@ async function handleWhatsApp(from: string, userMessage: string, media?: MediaIn
       ]);
     }
 
-    await sendTelegramAlert("WhatsApp", userMessage || `[${mediaLabel} göndərdi]`, customerData).catch(() => {});
+    await sendTelegramAlert("WhatsApp", userMessage || `[${mediaLabel} göndərdi]`, customerData).catch((e) => console.warn("[Telegram]", e?.message ?? e));
   } catch (err) {
     console.error(`[WA handleWhatsApp] from=${from} xəta:`, err);
     // Müştəriyə fallback mesaj göndər
     await sendWhatsAppMessage(
       from,
       "Bağlantı xətası baş verdi. Zəhmət olmasa bir az sonra yenidən yazın və ya +994517769632 nömrəsinə zəng edin."
-    ).catch(() => {});
+    ).catch((e) => console.warn("[Telegram]", e?.message ?? e));
   }
 }
 

@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       email:       email || "",
       destination: body.destination || "",
       travel_date: body.checkin || "",
-    }).catch(() => {});
+    }).catch((e) => console.warn("[Telegram]", e?.message ?? e));
 
     return NextResponse.json({
       ok:       true,

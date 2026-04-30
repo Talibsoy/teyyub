@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       .trim();
 
     // Operator keçidi aşkar et — cavabın istənilən yerində ola bilər
-    const handoffMatch = raw.match(/(?:^|\n)OPERATOR_HANDOFF:([^\n]+)/);
+    const handoffMatch = raw.match(/(?:^|\n)OPERATOR_HANDOFF:([^\n]+)/i);
     const isHandoff = !!handoffMatch;
 
     // Brace-depth extraction — multiline JSON-u da düzgün tutur
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     cleaned = removeJsonBlock(cleaned, "FLIGHT_PACKAGE");
 
     const reply = isHandoff
-      ? (handoffMatch![1] || raw.replace(/(?:^|\n)OPERATOR_HANDOFF:[^\n]*/g, "")).trim()
+      ? (handoffMatch![1] || raw.replace(/(?:^|\n)OPERATOR_HANDOFF:[^\n]*/gi, "")).trim()
       : cleaned.trim();
 
     const updated = [

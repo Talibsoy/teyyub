@@ -3,7 +3,7 @@ import { createOrder, OrderPassenger }    from "@/lib/duffel";
 import { getSupabaseAdmin }               from "@/lib/supabase";
 import { requireAuth, isAuthError }       from "@/lib/require-auth";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuth(req);
