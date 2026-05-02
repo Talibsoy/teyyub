@@ -1,0 +1,40 @@
+# Claude Code — ignored files and directories
+# These are excluded from context to reduce noise and token usage
+
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+
+# Environment files (secrets)
+.env
+.env.local
+.env.vercel
+.env.production
+*.env.*
+
+# Lock files (large, not useful for code analysis)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Git internals
+.git/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Generated / cache
+.cache/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Large static assets
+public/screenshots/
+public/images/
+
+# Test fixtures / recorded cassettes
+tests/cassettes/
