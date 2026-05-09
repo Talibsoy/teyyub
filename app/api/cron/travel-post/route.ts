@@ -115,11 +115,6 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
       image_url,
     });
 
-    // ── Facebook Səhifəsinə paylaş ──────────────────────────────────────────
-    let fb_post_id: string | null = null;
-    const fbToken = process.env.FB_PAGE_TOKEN;
-    const fbPageId = process.env.FB_PAGE_ID;
-
     const caption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com`;
 
     // ── Facebook Səhifəsinə paylaş ──────────────────────────────────────────
