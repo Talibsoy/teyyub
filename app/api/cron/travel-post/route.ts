@@ -120,39 +120,29 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
     const fbToken = process.env.FB_PAGE_TOKEN;
     const fbPageId = process.env.FB_PAGE_ID;
 
+    const caption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com`;
+
+    // ── Facebook Səhifəsinə paylaş ──────────────────────────────────────────
+    let fb_post_id: string | null = null;
+    const fbToken = process.env.FB_PAGE_TOKEN;
+    const fbPageId = process.env.FB_PAGE_ID;
+
     if (fbToken && fbPageId) {
       try {
-        const fbCaption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com`;
+        const feedBody: Record<string, string> = {
+          message: caption,
+          access_token: fbToken,
+        };
+        if (image_url) feedBody.link = image_url;
 
-        let fbRes: Response;
-        if (image_url) {
-          // Şəkilli post
-          fbRes = await fetch(
-            `https://graph.facebook.com/v19.0/${fbPageId}/photos`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                url: image_url,
-                caption: fbCaption,
-                access_token: fbToken,
-              }),
-            }
-          );
-        } else {
-          // Şəkilsiz post
-          fbRes = await fetch(
-            `https://graph.facebook.com/v19.0/${fbPageId}/feed`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                message: fbCaption,
-                access_token: fbToken,
-              }),
-            }
-          );
-        }
+        const fbRes = await fetch(
+          `https://graph.facebook.com/v19.0/${fbPageId}/feed`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(feedBody),
+          }
+        );
 
         const fbData = await fbRes.json() as { id?: string; error?: { message: string } };
         if (fbData.id) {
@@ -166,7 +156,67 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
       }
     }
 
-    return NextResponse.json({ success: true, country: dest.country, title, fb_post_id });
+    // ── Instagram-a paylaş ──────────────────────────────────────────────────
+    let ig_post_id: string | null = null;
+    const igToken = process.env.FB_PAGE_TOKEN;
+    const igUserId = process.env.IG_USER_ID;
+
+    if (igToken && igUserId) {
+      try {
+        // Step 1: Media container yarat
+        const containerBody: Record<string, string> = {
+          caption,
+          access_token: igToken,
+        };
+        if (image_url) {
+          containerBody.image_url = image_url;
+          containerBody.media_type = "IMAGE";
+        } else {
+          // Şəkil yoxdursa post atmaq olmaz — Instagram şəkil tələb edir
+          console.warn("[IG] Şəkil yoxdur, post atılmır");
+        }
+
+        if (image_url) {
+          const containerRes = await fetch(
+            `https://graph.facebook.com/v19.0/${igUserId}/media`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(containerBody),
+            }
+          );
+          const containerData = await containerRes.json() as { id?: string; error?: { message: string } };
+
+          if (containerData.id) {
+            // Step 2: Publish
+            const publishRes = await fetch(
+              `https://graph.facebook.com/v19.0/${igUserId}/media_publish`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  creation_id: containerData.id,
+                  access_token: igToken,
+                }),
+              }
+            );
+            const publishData = await publishRes.json() as { id?: string; error?: { message: string } };
+            if (publishData.id) {
+              ig_post_id = publishData.id;
+              console.log("[IG] Post uğurlu:", ig_post_id);
+            } else {
+              console.error("[IG] Publish xəta:", publishData.error?.message);
+            }
+          } else {
+            console.error("[IG] Container xəta:", containerData.error?.message);
+          }
+        }
+      } catch (e) {
+        console.error("[IG] Exception:", e);
+      }
+    }
+
+    return NextResponse.json({ success: true, country: dest.country, title, fb_post_id, ig_post_id });
   } catch (err) {
     console.error("[Cron] Travel post xətası:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
