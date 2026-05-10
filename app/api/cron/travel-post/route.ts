@@ -38,6 +38,10 @@ export async function GET(req: NextRequest) {
   try {
     const db = getSupabaseAdmin();
 
+    // 30 gündən köhnə qeydləri sil
+    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+    await db.from("travel_posts").delete().lt("created_at", fifteenDaysAgo);
+
     // Bu həftə hansı ölkələr yazılıb — dublikat olmasın
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: recent } = await db
