@@ -130,7 +130,7 @@ async function fetchUnsplashImage(query: string): Promise<string | null> {
 export async function GET(req: NextRequest) {
   const authHeader  = req.headers.get("authorization");
   const querySecret = req.nextUrl.searchParams.get("secret");
-  const secret      = process.env.CRON_SECRET;
+  const secret      = process.env.HOTELS_CRONSECRET;
 
   const authorized  = authHeader === `Bearer ${secret}` || querySecret === secret;
   if (!secret || !authorized) {

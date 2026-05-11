@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   // Vercel Cron və ya manual token yoxlaması
   const authHeader = req.headers.get("authorization");
   const querySecret = req.nextUrl.searchParams.get("secret");
-  const secret = process.env.CRON_SECRET;
+  const secret = process.env.HOTELS_CRONSECRET;
   if (!secret || (authHeader !== `Bearer ${secret}` && querySecret !== secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
