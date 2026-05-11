@@ -24,13 +24,6 @@ function fmt(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-function isoWeek(d: Date): number {
-  const tmp = new Date(d);
-  tmp.setHours(0, 0, 0, 0);
-  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
-  const w1 = new Date(tmp.getFullYear(), 0, 4);
-  return 1 + Math.round(((tmp.getTime() - w1.getTime()) / 86400000 - 3 + ((w1.getDay() + 6) % 7)) / 7);
-}
 
 interface DestConfig {
   slug: string; labelAz: string; iata: string;
@@ -38,16 +31,69 @@ interface DestConfig {
   stars: number; nights: number;
 }
 
+// Qlobal destination hovuzu — hər gün fərqli 6 seçilir
+const ALL_DESTINATIONS: DestConfig[] = [
+  // ── Orta Şərq ─────────────────────────────────────────────────────────────
+  { slug: "dubai",       labelAz: "Dubai",             iata: "DXB", hotelQuery: "Dubai",              unsplashQuery: "Dubai skyline luxury",         stars: 4, nights: 5 },
+  { slug: "abu-dhabi",   labelAz: "Əbu Dabi",          iata: "AUH", hotelQuery: "Abu Dhabi",           unsplashQuery: "Abu Dhabi skyline UAE",        stars: 5, nights: 5 },
+  { slug: "doha",        labelAz: "Doha",              iata: "DOH", hotelQuery: "Doha",                unsplashQuery: "Doha Qatar skyline",           stars: 5, nights: 5 },
+  { slug: "muscat",      labelAz: "Muskat",            iata: "MCT", hotelQuery: "Muscat",              unsplashQuery: "Muscat Oman sea",              stars: 4, nights: 6 },
+  { slug: "riyadh",      labelAz: "Riyad",             iata: "RUH", hotelQuery: "Riyadh",              unsplashQuery: "Riyadh Saudi Arabia city",     stars: 4, nights: 5 },
+  // ── Türkiyə ───────────────────────────────────────────────────────────────
+  { slug: "antalya",     labelAz: "Antalya",           iata: "AYT", hotelQuery: "Antalya",             unsplashQuery: "Antalya Turkey beach",         stars: 5, nights: 7 },
+  { slug: "istanbul",    labelAz: "İstanbul",          iata: "IST", hotelQuery: "Istanbul",            unsplashQuery: "Istanbul Bosphorus city",      stars: 4, nights: 4 },
+  { slug: "bodrum",      labelAz: "Bodrum",            iata: "BJV", hotelQuery: "Bodrum",              unsplashQuery: "Bodrum Turkey coast",          stars: 5, nights: 7 },
+  // ── Afrika ────────────────────────────────────────────────────────────────
+  { slug: "cairo",       labelAz: "Qahirə",            iata: "CAI", hotelQuery: "Cairo",               unsplashQuery: "Cairo Egypt pyramids",         stars: 4, nights: 6 },
+  { slug: "sharm",       labelAz: "Şarm əş-Şeyx",      iata: "SSH", hotelQuery: "Sharm El Sheikh",     unsplashQuery: "Sharm El Sheikh Red Sea",      stars: 5, nights: 7 },
+  { slug: "marrakech",   labelAz: "Marakeş",           iata: "RAK", hotelQuery: "Marrakech",           unsplashQuery: "Marrakech Morocco medina",     stars: 4, nights: 6 },
+  { slug: "cape-town",   labelAz: "Kəp Toun",          iata: "CPT", hotelQuery: "Cape Town",           unsplashQuery: "Cape Town South Africa",       stars: 4, nights: 8 },
+  { slug: "nairobi",     labelAz: "Nairobi",           iata: "NBO", hotelQuery: "Nairobi",             unsplashQuery: "Nairobi Kenya safari",         stars: 4, nights: 7 },
+  { slug: "zanzibar",    labelAz: "Zənzibar",          iata: "ZNZ", hotelQuery: "Zanzibar",            unsplashQuery: "Zanzibar beach island",        stars: 4, nights: 8 },
+  // ── Avropa ────────────────────────────────────────────────────────────────
+  { slug: "paris",       labelAz: "Paris",             iata: "CDG", hotelQuery: "Paris",               unsplashQuery: "Paris Eiffel Tower France",    stars: 4, nights: 5 },
+  { slug: "london",      labelAz: "London",            iata: "LHR", hotelQuery: "London",              unsplashQuery: "London Big Ben Thames",        stars: 4, nights: 5 },
+  { slug: "barcelona",   labelAz: "Barselona",         iata: "BCN", hotelQuery: "Barcelona",           unsplashQuery: "Barcelona Spain Sagrada",      stars: 4, nights: 5 },
+  { slug: "rome",        labelAz: "Roma",              iata: "FCO", hotelQuery: "Rome",                unsplashQuery: "Rome Colosseum Italy",         stars: 4, nights: 5 },
+  { slug: "amsterdam",   labelAz: "Amsterdam",         iata: "AMS", hotelQuery: "Amsterdam",           unsplashQuery: "Amsterdam canals Netherlands", stars: 4, nights: 4 },
+  { slug: "prague",      labelAz: "Praqa",             iata: "PRG", hotelQuery: "Prague",              unsplashQuery: "Prague castle Czech Republic", stars: 4, nights: 5 },
+  { slug: "vienna",      labelAz: "Vyana",             iata: "VIE", hotelQuery: "Vienna",              unsplashQuery: "Vienna Austria city",          stars: 4, nights: 5 },
+  { slug: "athens",      labelAz: "Afina",             iata: "ATH", hotelQuery: "Athens",              unsplashQuery: "Athens Acropolis Greece",      stars: 4, nights: 5 },
+  { slug: "lisbon",      labelAz: "Lissabon",          iata: "LIS", hotelQuery: "Lisbon",              unsplashQuery: "Lisbon Portugal city",         stars: 4, nights: 5 },
+  { slug: "santorini",   labelAz: "Santorini",         iata: "JTR", hotelQuery: "Santorini",           unsplashQuery: "Santorini Greece sunset",      stars: 4, nights: 6 },
+  { slug: "zurich",      labelAz: "Sürix",             iata: "ZRH", hotelQuery: "Zurich",              unsplashQuery: "Zurich Switzerland Alps",      stars: 4, nights: 5 },
+  // ── Asiya-Sakit Okean ─────────────────────────────────────────────────────
+  { slug: "bangkok",     labelAz: "Bangkok",           iata: "BKK", hotelQuery: "Bangkok",             unsplashQuery: "Bangkok Thailand temple",      stars: 4, nights: 7 },
+  { slug: "bali",        labelAz: "Bali",              iata: "DPS", hotelQuery: "Bali",                unsplashQuery: "Bali Indonesia temple rice",   stars: 4, nights: 8 },
+  { slug: "singapore",   labelAz: "Sinqapur",          iata: "SIN", hotelQuery: "Singapore",           unsplashQuery: "Singapore skyline Gardens",    stars: 5, nights: 6 },
+  { slug: "tokyo",       labelAz: "Tokio",             iata: "NRT", hotelQuery: "Tokyo",               unsplashQuery: "Tokyo Japan cherry blossom",   stars: 4, nights: 7 },
+  { slug: "seoul",       labelAz: "Seul",              iata: "ICN", hotelQuery: "Seoul",               unsplashQuery: "Seoul South Korea city",       stars: 4, nights: 7 },
+  { slug: "kuala-lumpur",labelAz: "Kuala Lumpur",      iata: "KUL", hotelQuery: "Kuala Lumpur",        unsplashQuery: "Kuala Lumpur Malaysia towers", stars: 4, nights: 6 },
+  { slug: "maldives",    labelAz: "Maldiv adaları",    iata: "MLE", hotelQuery: "Maldives",            unsplashQuery: "Maldives overwater bungalow",  stars: 5, nights: 7 },
+  { slug: "sydney",      labelAz: "Sidney",            iata: "SYD", hotelQuery: "Sydney",              unsplashQuery: "Sydney Opera House Australia", stars: 4, nights: 9 },
+  { slug: "phuket",      labelAz: "Phuket",            iata: "HKT", hotelQuery: "Phuket",              unsplashQuery: "Phuket Thailand beach",        stars: 4, nights: 7 },
+  { slug: "hong-kong",   labelAz: "Honq Konq",         iata: "HKG", hotelQuery: "Hong Kong",           unsplashQuery: "Hong Kong skyline harbour",    stars: 4, nights: 5 },
+  // ── Amerika ───────────────────────────────────────────────────────────────
+  { slug: "new-york",    labelAz: "Nyu-York",          iata: "JFK", hotelQuery: "New York",            unsplashQuery: "New York Manhattan skyline",   stars: 4, nights: 7 },
+  { slug: "miami",       labelAz: "Mayami",            iata: "MIA", hotelQuery: "Miami",               unsplashQuery: "Miami beach Florida sunset",   stars: 4, nights: 7 },
+  { slug: "los-angeles", labelAz: "Los-Anceles",       iata: "LAX", hotelQuery: "Los Angeles",         unsplashQuery: "Los Angeles Hollywood sunset", stars: 4, nights: 8 },
+  { slug: "cancun",      labelAz: "Kankun",            iata: "CUN", hotelQuery: "Cancun",              unsplashQuery: "Cancun Mexico beach resort",   stars: 5, nights: 8 },
+  { slug: "toronto",     labelAz: "Toronto",           iata: "YYZ", hotelQuery: "Toronto",             unsplashQuery: "Toronto Canada city skyline",  stars: 4, nights: 7 },
+  { slug: "sao-paulo",   labelAz: "San-Paulo",         iata: "GRU", hotelQuery: "Sao Paulo",           unsplashQuery: "Sao Paulo Brazil city",        stars: 4, nights: 8 },
+  { slug: "buenos-aires",labelAz: "Buenos-Aires",      iata: "EZE", hotelQuery: "Buenos Aires",        unsplashQuery: "Buenos Aires Argentina city",  stars: 4, nights: 9 },
+];
+
+// Hər gün ilin günündən asılı olaraq 6 unikal destination seç (fırlanma)
 function getDestinations(today: Date): DestConfig[] {
-  const evenWeek = isoWeek(today) % 2 === 0;
-  return [
-    { slug: "antalya",  labelAz: "Antalya",        iata: "AYT", hotelQuery: "Antalya",         unsplashQuery: "Antalya Turkey beach resort",  stars: 5, nights: 7 },
-    { slug: "dubai",    labelAz: "Dubai",           iata: "DXB", hotelQuery: "Dubai",            unsplashQuery: "Dubai skyline luxury hotel",   stars: 4, nights: 5 },
-    { slug: "istanbul", labelAz: "İstanbul",        iata: "IST", hotelQuery: "Istanbul",         unsplashQuery: "Istanbul Bosphorus city",      stars: 4, nights: 4 },
-    evenWeek
-      ? { slug: "cairo", labelAz: "Qahirə",         iata: "CAI", hotelQuery: "Cairo",            unsplashQuery: "Cairo Egypt pyramids",         stars: 4, nights: 6 }
-      : { slug: "sharm", labelAz: "Şarm əş-Şeyx",   iata: "SSH", hotelQuery: "Sharm El Sheikh",  unsplashQuery: "Sharm El Sheikh Red Sea beach", stars: 5, nights: 7 },
-  ];
+  const dayOfYear = Math.floor(
+    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  const total = ALL_DESTINATIONS.length;
+  const picked: DestConfig[] = [];
+  for (let i = 0; i < 6; i++) {
+    picked.push(ALL_DESTINATIONS[(dayOfYear + i * 7) % total]);
+  }
+  return picked;
 }
 
 function buildDescription(dest: DestConfig, flight: FlightOffer, hotel: HotelOffer): string {
