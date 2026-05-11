@@ -149,24 +149,41 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
         const containerData = await containerRes.json() as { id?: string; error?: { message: string } };
 
         if (containerData.id) {
-          const publishRes = await fetch(
-            `https://graph.facebook.com/v20.0/${igUserId}/media_publish`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                creation_id: containerData.id,
-                access_token: igToken,
-              }),
+          // Instagram şəkli emal etməsi üçün gözlə, sonra status yoxla
+          const containerId = containerData.id;
+          let ready = false;
+          for (let attempt = 0; attempt < 6; attempt++) {
+            await new Promise(r => setTimeout(r, 5000));
+            const statusRes = await fetch(
+              `https://graph.facebook.com/v20.0/${containerId}?fields=status_code&access_token=${igToken}`
+            );
+            const statusData = await statusRes.json() as { status_code?: string };
+            if (statusData.status_code === "FINISHED") { ready = true; break; }
+            if (statusData.status_code === "ERROR") { ig_error = "Container emal xətası"; break; }
+          }
+
+          if (ready) {
+            const publishRes = await fetch(
+              `https://graph.facebook.com/v20.0/${igUserId}/media_publish`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  creation_id: containerId,
+                  access_token: igToken,
+                }),
+              }
+            );
+            const publishData = await publishRes.json() as { id?: string; error?: { message: string } };
+            if (publishData.id) {
+              ig_post_id = publishData.id;
+              console.log("[IG] Post uğurlu:", ig_post_id);
+            } else {
+              ig_error = publishData.error?.message || "Publish xəta";
+              console.error("[IG] Publish xəta:", ig_error);
             }
-          );
-          const publishData = await publishRes.json() as { id?: string; error?: { message: string } };
-          if (publishData.id) {
-            ig_post_id = publishData.id;
-            console.log("[IG] Post uğurlu:", ig_post_id);
-          } else {
-            ig_error = publishData.error?.message || "Publish xəta";
-            console.error("[IG] Publish xəta:", ig_error);
+          } else if (!ig_error) {
+            ig_error = "Container 30 saniyədə hazır olmadı";
           }
         } else {
           ig_error = containerData.error?.message || "Container xəta";
