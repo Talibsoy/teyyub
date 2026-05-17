@@ -4,10 +4,15 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 // Vercel Cron + manual trigger üçün
 export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get("authorization");
   const secret = req.headers.get("x-cron-secret")
     ?? new URL(req.url).searchParams.get("secret");
+  const cronSecret = process.env.CRON_SECRET;
 
-  if (secret !== process.env.CRON_SECRET) {
+  const isVercelCron = cronSecret && authHeader === `Bearer ${cronSecret}`;
+  const isAuthorizedSecret = cronSecret && (secret === cronSecret);
+
+  if (!isVercelCron && !isAuthorizedSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -23,11 +23,13 @@ type DestResult = {
 export async function GET(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
   const cronHeader = req.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
+  const hotelsSecret = process.env.HOTELS_CRON_SECRET;
 
-  const isVercelCron = cronHeader === `Bearer ${process.env.HOTELS_CRON_SECRET}`;
-  const isManual = secret === process.env.HOTELS_CRON_SECRET;
+  const isVercelCron = cronSecret && cronHeader === `Bearer ${cronSecret}`;
+  const isAuthorizedSecret = hotelsSecret && (cronHeader === `Bearer ${hotelsSecret}` || secret === hotelsSecret);
 
-  if (!isVercelCron && !isManual) {
+  if (!isVercelCron && !isAuthorizedSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

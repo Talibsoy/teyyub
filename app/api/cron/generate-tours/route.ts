@@ -131,9 +131,12 @@ export async function GET(req: NextRequest) {
   const authHeader  = req.headers.get("authorization");
   const querySecret = req.nextUrl.searchParams.get("secret");
   const secret      = process.env.HOTELS_CRONSECRET;
+  const cronSecret  = process.env.CRON_SECRET;
 
-  const authorized  = authHeader === `Bearer ${secret}` || querySecret === secret;
-  if (!secret || !authorized) {
+  const isVercelCron = cronSecret && authHeader === `Bearer ${cronSecret}`;
+  const isAuthorizedSecret = secret && (authHeader === `Bearer ${secret}` || querySecret === secret);
+
+  if (!isVercelCron && !isAuthorizedSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
