@@ -500,7 +500,8 @@ export async function getAIResponse(
   conversationHistory: { role: "user" | "assistant"; content: string }[] = [],
   media?: MediaInput,
   crmProfile?: CRMProfile | null,
-  options?: { maxRounds?: number; maxTokens?: number }
+  options?: { maxRounds?: number; maxTokens?: number },
+  language?: string
 ): Promise<AIResponse> {
   let userContent: Anthropic.MessageParam["content"];
 
@@ -510,8 +511,8 @@ export async function getAIResponse(
 
     if (media.type === "url" && media.url) {
       userContent = [
-        { type: "image", source: { type: "url", url: media.url } },
-        { type: "text", text: textPrompt },
+         { type: "image", source: { type: "url", url: media.url } },
+         { type: "text", text: textPrompt },
       ];
     } else if (media.type === "base64" && media.data && media.mimeType) {
       const supported = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -556,7 +557,12 @@ export async function getAIResponse(
   const staticFinal = await getStaticFinal();
 
   // Dinamik hissə — hər çağırışda dəyişir, cache-lənmir
+  const activeLangStr = language
+    ? `=== USER'S ACTIVE INTERFACE LANGUAGE ===\nThe user has set their language preference to: "${language.toUpperCase()}". Please default to conversing in this language, unless they explicitly switch. If the language is "TR" (Turkish), converse in clean, elegant, and friendly Turkish. If the language is "EN" (English), converse in premium, elegant English. If the language is "AZ" (Azerbaijani), adopt the regional Azerbaijani language rules outlined in SYSTEM_PROMPT.\n\n`
+    : "";
+
   const dynamicContext =
+    activeLangStr +
     `=== AKTUAL TURLAR ===\n${toursContext || "Hal-hazırda aktiv tur məlumatı yoxdur."}\n\n` +
     `=== MÜŞTƏRİ PROFİLİ ===\n${crmContext}`;
 

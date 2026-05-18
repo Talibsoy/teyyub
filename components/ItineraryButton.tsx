@@ -7,9 +7,10 @@ interface Props {
   start_date?: string | null;
   end_date?: string | null;
   duration_days?: number | null;
+  language?: string;
 }
 
-export default function ItineraryButton({ destination, start_date, end_date, duration_days }: Props) {
+export default function ItineraryButton({ destination, start_date, end_date, duration_days, language = "az" }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -41,15 +42,32 @@ export default function ItineraryButton({ destination, start_date, end_date, dur
           start_date: startDate,
           duration_days: days,
           guests: 2,
+          language, // pass language down to the API if needed
         }),
       });
 
-      if (!res.ok) throw new Error("Proqram yaradıla bilmədi. Yenidən cəhd edin.");
+      if (!res.ok) {
+        throw new Error(
+          language === "az"
+            ? "Proqram yaradıla bilmədi. Yenidən cəhd edin."
+            : language === "tr"
+            ? "Program oluşturulamadı. Lütfen tekrar deneyin."
+            : "Could not create the itinerary. Please try again."
+        );
+      }
       const data = await res.json();
       router.push(`/itinerary/${data.id}`);
     } catch (err) {
       setLoading(false);
-      setError(err instanceof Error ? err.message : "Xəta baş verdi");
+      setError(
+        err instanceof Error
+          ? err.message
+          : language === "az"
+          ? "Xəta baş verdi"
+          : language === "tr"
+          ? "Bir hata oluştu"
+          : "An error occurred"
+      );
     }
   }
 
@@ -81,14 +99,14 @@ export default function ItineraryButton({ destination, start_date, end_date, dur
               <path d="M21 12a9 9 0 11-6.219-8.56"/>
             </svg>
             <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
-            Proqram hazırlanır...
+            {language === "az" ? "Proqram hazırlanır..." : language === "tr" ? "Program hazırlanıyor..." : "Preparing itinerary..."}
           </>
         ) : (
           <>
             <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
             </svg>
-            AI Günlük Proqram Yarat
+            {language === "az" ? "AI Günlük Proqram Yarat" : language === "tr" ? "AI Günlük Program Oluştur" : "Create Daily Itinerary with AI"}
           </>
         )}
       </button>

@@ -8,6 +8,7 @@ import WishlistButton from "@/components/WishlistButton";
 import type { Archetype } from "@/lib/quiz-processor";
 import { ARCHETYPE_LABELS } from "@/lib/quiz-processor";
 import { tracker } from "@/lib/tracking-client";
+import { useLanguage } from "@/components/LanguageContext";
 
 interface Tour {
   id: string;
@@ -27,26 +28,15 @@ function getDuration(start: string | null, end: string | null): number {
   return Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
 }
 
-function getDurationLabel(start: string | null, end: string | null): string {
+function getDurationLabel(start: string | null, end: string | null, language: string): string {
   const d = getDuration(start, end);
   if (!d) return "";
-  return `${d} gün / ${d - 1} gecə`;
+  return language === "az"
+    ? `${d} gün / ${d - 1} gecə`
+    : language === "tr"
+    ? `${d} gün / ${d - 1} gece`
+    : `${d} days / ${d - 1} nights`;
 }
-
-const categories = [
-  { id: "hamisi",  label: "Hamısı" },
-  { id: "turkiye", label: "🇹🇷 Türkiyə" },
-  { id: "ereb",    label: "🇦🇪 Ərəb" },
-  { id: "misir",   label: "🇪🇬 Misir" },
-  { id: "avropa",  label: "🇪🇺 Avropa" },
-];
-
-const durations = [
-  { id: "hamisi", label: "Hamısı" },
-  { id: "1-5",    label: "1–5 gün" },
-  { id: "6-8",    label: "6–8 gün" },
-  { id: "9+",     label: "9+ gün" },
-];
 
 const DEST_CATEGORY: Record<string, string> = {
   "türkiyə": "turkiye", "istanbul": "turkiye", "antalya": "turkiye", "bodrum": "turkiye",
@@ -104,9 +94,10 @@ function calcTourMatchScore(tour: Tour, archetype: Archetype | null): number | n
   return Math.min(99, Math.max(30, score));
 }
 
-function MatchBadge({ score }: { score: number }) {
+function MatchBadge({ score, language }: { score: number; language: string }) {
   const color = score >= 80 ? "#16a34a" : score >= 60 ? "#0284c7" : "#64748b";
   const bg    = score >= 80 ? "rgba(22,163,74,0.1)" : score >= 60 ? "rgba(2,132,199,0.1)" : "rgba(100,116,139,0.08)";
+  const label = language === "az" ? "uyğun" : language === "tr" ? "uyumlu" : "match";
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 4,
@@ -114,12 +105,13 @@ function MatchBadge({ score }: { score: number }) {
       borderRadius: 20, padding: "3px 8px",
     }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
-      <span style={{ fontSize: 11, fontWeight: 700, color }}>{score}% uyğun</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color }}>{score}% {label}</span>
     </div>
   );
 }
 
 function TurlarContent() {
+  const { language } = useLanguage();
   const searchParams = useSearchParams();
   const [active, setActive]       = useState(searchParams.get("dest") || "hamisi");
   const [durFilter, setDurFilter] = useState(searchParams.get("dur") || "hamisi");
@@ -130,6 +122,21 @@ function TurlarContent() {
   const [loading, setLoading]     = useState(true);
   const [archetype, setArchetype] = useState<Archetype | null>(null);
   const [rankedIds, setRankedIds] = useState<string[] | null>(null);
+
+  const categories = useMemo(() => [
+    { id: "hamisi",  label: language === "az" ? "Hamısı" : language === "tr" ? "Hepsi" : "All" },
+    { id: "turkiye", label: language === "az" ? "🇹🇷 Türkiyə" : language === "tr" ? "🇹🇷 Türkiye" : "🇹🇷 Turkey" },
+    { id: "ereb",    label: language === "az" ? "🇦🇪 Ərəb" : language === "tr" ? "🇦🇪 Arap" : "🇦🇪 Arab" },
+    { id: "misir",   label: language === "az" ? "🇪🇬 Misir" : language === "tr" ? "🇪🇬 Mısır" : "🇪🇬 Egypt" },
+    { id: "avropa",  label: language === "az" ? "🇪🇺 Avropa" : language === "tr" ? "🇪🇺 Avrupa" : "🇪🇺 Europe" },
+  ], [language]);
+
+  const durations = useMemo(() => [
+    { id: "hamisi", label: language === "az" ? "Hamısı" : language === "tr" ? "Hepsi" : "All" },
+    { id: "1-5",    label: language === "az" ? "1–5 gün" : language === "tr" ? "1–5 gün" : "1–5 days" },
+    { id: "6-8",    label: language === "az" ? "6–8 gün" : language === "tr" ? "6–8 gün" : "6–8 days" },
+    { id: "9+",     label: language === "az" ? "9+ gün" : language === "tr" ? "9+ gün" : "9+ days" },
+  ], [language]);
 
   useEffect(() => {
     (async () => {
@@ -227,8 +234,16 @@ function TurlarContent() {
     <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
       {/* Header */}
       <div className="px-4 py-12 md:py-16 text-center" style={{ background: "#f1f5f9", borderBottom: "1px solid #e2e8f0" }}>
-        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: "#1e40af" }}>Bütün Turlar</h1>
-        <p className="text-sm" style={{ color: "#475569" }}>Türkiyə, Ərəb ölkələri, Misir və Avropa istiqamətlərindəki bütün tur paketlərimiz</p>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: "#1e40af" }}>
+          {language === "az" ? "Bütün Turlar" : language === "tr" ? "Tüm Turlar" : "All Tours"}
+        </h1>
+        <p className="text-sm" style={{ color: "#475569" }}>
+          {language === "az"
+            ? "Türkiyə, Ərəb ölkələri, Misir və Avropa istiqamətlərindəki bütün tur paketlərimiz"
+            : language === "tr"
+            ? "Türkiye, Arap ülkeleri, Mısır ve Avrupa destinasyonlarındaki tüm tur paketlerimiz"
+            : "All our tour packages in Turkey, Arab countries, Egypt, and Europe destinations"}
+        </p>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
@@ -237,11 +252,11 @@ function TurlarContent() {
         {archetype && archetype !== "undetermined" && (() => {
           const label = ARCHETYPE_LABELS[archetype];
           const sortDesc: Record<Archetype, string> = {
-            budget_optimizer:  "Ən sərfəli qiymətdən başlayaraq sıralandı",
-            luxury_curator:    "Ən premium paketlər birinci göstərilir",
-            deep_relaxer:      "Çimərliq & istirahət turları öndə",
-            silent_explorer:   "Mədəniyyət & kəşf turları öndə",
-            efficiency_seeker: "Qısa müddətli sürətli turlar öndə",
+            budget_optimizer:  language === "az" ? "Ən sərfəli qiymətdən başlayaraq sıralandı" : language === "tr" ? "En uygun fiyattan başlayarak sıralandı" : "Sorted starting from the most budget-friendly price",
+            luxury_curator:    language === "az" ? "Ən premium paketlər birinci göstərilir" : language === "tr" ? "En premium paketler önce gösteriliyor" : "Premium packages displayed first",
+            deep_relaxer:      language === "az" ? "Çimərlik & istirahət turları öndə" : language === "tr" ? "Plaj & tatil turları önde" : "Beach & leisure tours displayed first",
+            silent_explorer:   language === "az" ? "Mədəniyyət & kəşf turları öndə" : language === "tr" ? "Kültür & keşif turları önde" : "Culture & exploration tours displayed first",
+            efficiency_seeker: language === "az" ? "Qısa müddətli sürətli turlar öndə" : language === "tr" ? "Kısa süreli hızlı turlar önde" : "Short duration active tours displayed first",
             undetermined:      "",
           };
           return (
@@ -261,14 +276,14 @@ function TurlarContent() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, color: "#0284c7", fontWeight: 700 }}>
-                  {label.name} profili üçün
+                  {language === "az" ? `${label.name} profili üçün` : language === "tr" ? `${label.name} profili için` : `For ${label.name} profile`}
                 </div>
                 <div style={{ fontSize: 13, color: "#475569" }}>
                   {sortDesc[archetype]}
                 </div>
               </div>
               <a href="/" style={{ fontSize: 12, color: "#94a3b8", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Dəyiş →
+                {language === "az" ? "Dəyiş →" : language === "tr" ? "Değiştir →" : "Change →"}
               </a>
             </div>
           );
@@ -282,7 +297,7 @@ function TurlarContent() {
             </svg>
             <input
               type="text"
-              placeholder="Tur adı və ya istiqamət axtar..."
+              placeholder={language === "az" ? "Tur adı və ya istiqamət axtar..." : language === "tr" ? "Tur adı veya destinasyon ara..." : "Search tour name or destination..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
@@ -290,10 +305,12 @@ function TurlarContent() {
             />
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#555" }}>Min.</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#555" }}>
+              {language === "az" ? "Min." : language === "tr" ? "Min." : "Min"}
+            </span>
             <input
               type="number"
-              placeholder="Min (AZN)"
+              placeholder={language === "az" ? "Min (AZN)" : language === "tr" ? "Min (AZN)" : "Min (AZN)"}
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
               className="pl-10 pr-3 py-2.5 rounded-xl text-sm outline-none w-full sm:w-32"
@@ -301,10 +318,12 @@ function TurlarContent() {
             />
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#555" }}>Maks.</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#555" }}>
+              {language === "az" ? "Maks." : language === "tr" ? "Maks" : "Max"}
+            </span>
             <input
               type="number"
-              placeholder="Maks (AZN)"
+              placeholder={language === "az" ? "Maks (AZN)" : language === "tr" ? "Maks (AZN)" : "Max (AZN)"}
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
               className="pl-12 pr-4 py-2.5 rounded-xl text-sm outline-none w-full sm:w-36"
@@ -343,29 +362,33 @@ function TurlarContent() {
         {!loading && (
           <div className="flex items-center justify-between mb-5">
             <p className="text-sm" style={{ color: "#555" }}>
-              {filtered.length} tur tapıldı
+              {filtered.length} {language === "az" ? "tur tapıldı" : language === "tr" ? "tur bulundu" : "tours found"}
             </p>
             {hasFilters && (
               <button onClick={clearFilters} className="text-xs underline" style={{ color: "#0284c7" }}>
-                Filterləri sil
+                {language === "az" ? "Filterləri sil" : language === "tr" ? "Filtreleri temizle" : "Clear filters"}
               </button>
             )}
           </div>
         )}
 
-        {loading && <div className="text-center py-16" style={{ color: "#555" }}>Yüklənir...</div>}
+        {loading && <div className="text-center py-16" style={{ color: "#555" }}>{language === "az" ? "Yüklənir..." : language === "tr" ? "Yükleniyor..." : "Loading..."}</div>}
 
         {!loading && filtered.length === 0 && (
           <div className="text-center py-16">
-            <p style={{ color: "#555" }} className="mb-3">Bu filterlərə uyğun tur tapılmadı.</p>
-            <button onClick={clearFilters} className="text-sm underline" style={{ color: "#D4AF37" }}>Filterləri sil</button>
+            <p style={{ color: "#555" }} className="mb-3">
+              {language === "az" ? "Bu filterlərə uyğun tur tapılmadı." : language === "tr" ? "Bu filtrelere uygun tur bulunamadı." : "No tours found matching these filters."}
+            </p>
+            <button onClick={clearFilters} className="text-sm underline" style={{ color: "#D4AF37" }}>
+              {language === "az" ? "Filterləri sil" : language === "tr" ? "Filtreleri temizle" : "Clear filters"}
+            </button>
           </div>
         )}
 
         {!loading && filtered.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((tour) => {
-              const durationLabel = getDurationLabel(tour.start_date, tour.end_date);
+              const durationLabel = getDurationLabel(tour.start_date, tour.end_date, language);
               const seatsLeft = tour.max_seats - tour.booked_seats;
               const almostFull = seatsLeft <= 3 && seatsLeft > 0;
               const matchScore = calcTourMatchScore(tour, archetype);
@@ -384,14 +407,14 @@ function TurlarContent() {
                 >
                   {almostFull && (
                     <div className="text-xs font-bold text-center py-1.5" style={{ background: "#ef4444",  }}>
-                      Son {seatsLeft} yer!
+                      {language === "az" ? `Son ${seatsLeft} yer!` : language === "tr" ? `Son ${seatsLeft} koltuk!` : `Only ${seatsLeft} seats left!`}
                     </div>
                   )}
                   <div className="p-4 flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs" style={{ color: "#94a3b8" }}>{tour.destination}</p>
                       <div className="flex items-center gap-2">
-                        {matchScore !== null && <MatchBadge score={matchScore} />}
+                        {matchScore !== null && <MatchBadge score={matchScore} language={language} />}
                         <WishlistButton tourId={tour.id} />
                       </div>
                     </div>
@@ -405,13 +428,15 @@ function TurlarContent() {
                   <div className="p-4 pt-0">
                     <div className="flex items-center justify-between mb-3 pt-3" style={{ borderTop: "1px solid #e2e8f0" }}>
                       <span className="text-lg font-bold" style={{ color: "#0284c7" }}>{tour.price_azn} AZN</span>
-                      <span className="text-xs" style={{ color: "#555" }}>/nəfər</span>
+                      <span className="text-xs" style={{ color: "#555" }}>
+                        {language === "az" ? "/nəfər" : language === "tr" ? "/kişi" : "/person"}
+                      </span>
                     </div>
                     <Link href={`/turlar/${tour.id}`}
                       onClick={() => tracker.track({ event_type: "booking_start", entity_type: "package", entity_id: tour.id, metadata: { price: tour.price_azn, destination: tour.destination } })}
                       className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-lg hover:opacity-90 transition-opacity text-xs font-semibold"
                       style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white" }}>
-                      Ətraflı bax →
+                      {language === "az" ? "Ətraflı bax →" : language === "tr" ? "Detayları gör →" : "View details →"}
                     </Link>
                   </div>
                 </div>
@@ -422,13 +447,17 @@ function TurlarContent() {
 
         {/* CTA */}
         <div className="mt-12 rounded-2xl p-8 md:p-10 text-center" style={{ background: "white", border: "1px solid #e2e8f0" }}>
-          <h3 className="text-xl md:text-2xl font-bold mb-2" style={{ color: "#0f172a" }}>İstədiyiniz Turu Tapmadınız?</h3>
-          <p className="text-sm mb-5" style={{ color: "#475569" }}>Fərdi tur paketləri də hazırlayırıq. WhatsApp-da yazın.</p>
-          <a href={waLink("Salam, fərdi tur paketi haqqında məlumat almaq istəyirəm")}
+          <h3 className="text-xl md:text-2xl font-bold mb-2" style={{ color: "#0f172a" }}>
+            {language === "az" ? "İstədiyiniz Turu Tapmadınız?" : language === "tr" ? "Aradığınız Turu Bulamadınız mı?" : "Didn't Find the Tour You Wanted?"}
+          </h3>
+          <p className="text-sm mb-5" style={{ color: "#475569" }}>
+            {language === "az" ? "Fərdi tur paketləri də hazırlayırıq. WhatsApp-da yazın." : language === "tr" ? "Kişiye özel tur paketleri de hazırlıyoruz. WhatsApp'tan yazın." : "We also design custom tour packages. Write to us on WhatsApp."}
+          </p>
+          <a href={waLink(language === "az" ? "Salam, fərdi tur paketi haqqında məlumat almaq istəyirəm" : language === "tr" ? "Merhaba, kişiye özel tur paketi hakkında bilgi almak istiyorum." : "Hello, I would like to get information about custom tour packages.")}
             target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity text-sm font-bold py-3 px-6 rounded-xl"
             style={{ background: "#25D366",  }}>
-            Fərdi Tur Sifariş Et
+            {language === "az" ? "Fərdi Tur Sifariş Et" : language === "tr" ? "Özel Tur Talep Et" : "Order Custom Tour"}
           </a>
         </div>
       </div>

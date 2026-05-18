@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useLanguage } from "./LanguageContext";
 
 interface Msg {
   from: "user" | "ai";
@@ -21,6 +22,7 @@ function getSessionId(): string {
 }
 
 export default function ChatWidget() {
+  const { language } = useLanguage();
   const [open, setOpen]         = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput]       = useState("");
@@ -29,20 +31,26 @@ export default function ChatWidget() {
   const [welcomed, setWelcomed] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const welcomeText = language === "az"
+    ? "Salam! Mən Nigar xanımam, Natoure-nin turizm məsləhətçisi. Sizə necə kömək edə bilərəm?"
+    : language === "tr"
+    ? "Merhaba! Ben Nigar Hanım, Natoure seyahat danışmanınız. Size nasıl yardımcı olabilirim?"
+    : "Hello! I am Ms. Nigar, Natoure's travel consultant. How can I assist you today?";
+
   useEffect(() => {
     if (open) {
       setUnread(0);
       if (!welcomed) {
         setMessages([{
           from: "ai",
-          text: "Salam! Mən Nigar xanımam, Natoure-nin turizm məsləhətçisi. Sizə necə kömək edə bilərəm?",
+          text: welcomeText,
           time: Date.now(),
         }]);
         setWelcomed(true);
       }
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  }, [open]);
+  }, [open, welcomed, welcomeText]);
 
   // Admin mesajlarını 4 saniyədə bir yoxla
   useEffect(() => {
@@ -82,7 +90,7 @@ export default function ChatWidget() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: getSessionId(), message: text }),
+        body: JSON.stringify({ sessionId: getSessionId(), message: text, language }),
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -163,7 +171,13 @@ export default function ChatWidget() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Nigar xanım</div>
-              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>Onlayn • Natoure məsləhətçisi</div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>
+                {language === "az"
+                  ? "Onlayn • Natoure məsləhətçisi"
+                  : language === "tr"
+                  ? "Çevrimiçi • Natoure Danışmanı"
+                  : "Online • Natoure Advisor"}
+              </div>
             </div>
             <button onClick={() => setOpen(false)}
               style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>
@@ -205,7 +219,11 @@ export default function ChatWidget() {
                     display: "flex", flexDirection: "column", gap: 8,
                   }}>
                     <p style={{ margin: 0, fontSize: 12, color: "#0369a1", fontWeight: 600 }}>
-                      Bizimlə birbaşa əlaqə saxlayın:
+                      {language === "az"
+                        ? "Bizimlə birbaşa əlaqə saxlayın:"
+                        : language === "tr"
+                        ? "Bizimle doğrudan iletişime geçin:"
+                        : "Contact us directly:"}
                     </p>
                     <a href="tel:+994517769632"
                       style={{
@@ -219,7 +237,11 @@ export default function ChatWidget() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.22 2.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.16 6.16l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
                       </svg>
-                      +994 51 776 96 32 — Zəng edin
+                      {language === "az"
+                        ? "+994 51 776 96 32 — Zəng edin"
+                        : language === "tr"
+                        ? "+994 51 776 96 32 — Arayın"
+                        : "+994 51 776 96 32 — Call Us"}
                     </a>
                   </div>
                 )}
@@ -252,7 +274,13 @@ export default function ChatWidget() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              placeholder="Mesajınızı yazın..."
+              placeholder={
+                language === "az"
+                  ? "Mesajınızı yazın..."
+                  : language === "tr"
+                  ? "Mesajınızı yazın..."
+                  : "Type your message..."
+              }
               disabled={loading}
               style={{
                 flex: 1, padding: "9px 12px", borderRadius: 10,

@@ -33,7 +33,7 @@ async function notifyTelegram(sessionId: string, userMsg: string, aiReply: strin
 
 export async function POST(req: NextRequest) {
   try {
-    const { sessionId, message, userId } = await req.json();
+    const { sessionId, message, userId, language } = await req.json();
     if (!sessionId || !message) {
       return NextResponse.json({ error: "sessionId və message lazımdır" }, { status: 400 });
     }
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     // CRM profili — qeydiyyatlı istifadəçi varsa çək
     const crmProfile = userId ? await getCRMProfileByUserId(userId) : null;
 
-    const result = await getAIResponse(message, history, undefined, crmProfile);
+    const result = await getAIResponse(message, history, undefined, crmProfile, undefined, language);
     const raw = result.message
       .replace(/[\u{1F000}-\u{1FFFF}]/gu, "")
       .replace(/[\u{2600}-\u{27BF}]/gu, "")

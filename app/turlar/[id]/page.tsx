@@ -2,6 +2,7 @@ import { getSupabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import ItineraryButton from "@/components/ItineraryButton";
 import BookingCTA from "@/components/BookingCTA";
 import ShareButtons from "@/components/ShareButtons";
@@ -75,9 +76,18 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
 
   if (!tour) notFound();
 
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("nf_locale")?.value || "az";
+  const language = (locale === "az" || locale === "en" || locale === "tr") ? locale : "az";
+
   const dur = getDuration(tour.start_date, tour.end_date);
   const seatsLeft = tour.max_seats - tour.booked_seats;
-  const waMsg = encodeURIComponent(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`);
+  const waMsgText = language === "az"
+    ? `Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`
+    : language === "tr"
+    ? `Merhaba, "${tour.name}" turu hakkında bilgi almak istiyorum`
+    : `Hi, I would like to get information about the "${tour.name}" tour`;
+  const waMsg = encodeURIComponent(waMsgText);
 
   function toList(v: string | string[] | null): string[] {
     if (!v) return [];
@@ -124,7 +134,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "28px 24px" }}>
         {/* Back */}
         <Link href="/turlar" style={{ color: "#64748b", fontSize: 13, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 28 }}>
-          <ArrowLeft size={14} /> Bütün turlar
+          <ArrowLeft size={14} /> {language === "az" ? "Bütün turlar" : language === "tr" ? "Tüm turlar" : "All tours"}
         </Link>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
@@ -132,39 +142,55 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
           {/* Key info cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" }}>
-              <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>QİYMƏT</p>
+              <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
+                {language === "az" ? "QİYMƏT" : language === "tr" ? "FİYAT" : "PRICE"}
+              </p>
               <p style={{ color: "#0284c7", fontSize: 22, fontWeight: 800 }}>{tour.price_azn} <span style={{ fontSize: 14 }}>AZN</span></p>
               {tour.price_usd && <p style={{ color: "#94a3b8", fontSize: 12 }}>~${tour.price_usd}</p>}
-              <p style={{ color: "#94a3b8", fontSize: 11 }}>/nəfər</p>
+              <p style={{ color: "#94a3b8", fontSize: 11 }}>
+                {language === "az" ? "/nəfər" : language === "tr" ? "/kişi" : "/person"}
+              </p>
             </div>
 
             {dur && (
               <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" }}>
-                <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>MÜDDƏT</p>
-                <p style={{ color: "#0f172a", fontSize: 20, fontWeight: 700 }}>{dur.days} <span style={{ fontSize: 14 }}>gün</span></p>
-                <p style={{ color: "#94a3b8", fontSize: 12 }}>{dur.nights} gecə</p>
+                <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
+                  {language === "az" ? "MÜDDƏT" : language === "tr" ? "SÜRE" : "DURATION"}
+                </p>
+                <p style={{ color: "#0f172a", fontSize: 20, fontWeight: 700 }}>
+                  {dur.days} <span style={{ fontSize: 14 }}>{language === "az" ? "gün" : language === "tr" ? "gün" : "days"}</span>
+                </p>
+                <p style={{ color: "#94a3b8", fontSize: 12 }}>
+                  {dur.nights} {language === "az" ? "gecə" : language === "tr" ? "gece" : "nights"}
+                </p>
               </div>
             )}
 
             {(tour.start_date || tour.end_date) && (
               <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" }}>
-                <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>TARİX</p>
+                <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
+                  {language === "az" ? "TARİX" : language === "tr" ? "TARİH" : "DATE"}
+                </p>
                 {tour.start_date && <p style={{ color: "#0f172a", fontSize: 14, fontWeight: 600 }}>
-                  {new Date(tour.start_date).toLocaleDateString("az-AZ", { day: "numeric", month: "short" })}
+                  {new Date(tour.start_date).toLocaleDateString(language === "az" ? "az-AZ" : language === "tr" ? "tr-TR" : "en-US", { day: "numeric", month: "short" })}
                 </p>}
                 {tour.end_date && <p style={{ color: "#94a3b8", fontSize: 12 }}>
-                  — {new Date(tour.end_date).toLocaleDateString("az-AZ", { day: "numeric", month: "short", year: "numeric" })}
+                  — {new Date(tour.end_date).toLocaleDateString(language === "az" ? "az-AZ" : language === "tr" ? "tr-TR" : "en-US", { day: "numeric", month: "short", year: "numeric" })}
                 </p>}
               </div>
             )}
 
             <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" }}>
-              <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>YER</p>
+              <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
+                {language === "az" ? "YER" : language === "tr" ? "KONTENJAN" : "SEATS"}
+              </p>
               <p style={{
                 color: seatsLeft > 5 ? "#16a34a" : seatsLeft > 0 ? "#ca8a04" : "#ef4444",
                 fontSize: 22, fontWeight: 800
               }}>{seatsLeft}</p>
-              <p style={{ color: "#94a3b8", fontSize: 11 }}>boş yer / {tour.max_seats}</p>
+              <p style={{ color: "#94a3b8", fontSize: 11 }}>
+                {language === "az" ? `boş yer / ${tour.max_seats}` : language === "tr" ? `boş koltuk / ${tour.max_seats}` : `seats left / ${tour.max_seats}`}
+              </p>
             </div>
           </div>
 
@@ -175,7 +201,9 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
                 <Building2 size={18} color="#0284c7" />
               </div>
               <div>
-                <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, margin: "0 0 2px", textTransform: "uppercase" }}>OTEL</p>
+                <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, margin: "0 0 2px", textTransform: "uppercase" }}>
+                  {language === "az" ? "OTEL" : language === "tr" ? "OTEL" : "HOTEL"}
+                </p>
                 <p style={{ color: "#0f172a", fontSize: 15, fontWeight: 600, margin: 0 }}>{tour.hotel}</p>
               </div>
             </div>
@@ -184,7 +212,9 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
           {/* Description */}
           {tour.description && (
             <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "18px 20px" }}>
-              <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>TUR HAQQINDA</p>
+              <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>
+                {language === "az" ? "TUR HAQQINDA" : language === "tr" ? "TUR HAKKINDA" : "ABOUT TOUR"}
+              </p>
               <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{tour.description}</p>
             </div>
           )}
@@ -194,7 +224,9 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {includesList.length > 0 && (
                 <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "18px 20px" }}>
-                  <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>DAXİLDİR</p>
+                  <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>
+                    {language === "az" ? "DAXİLDİR" : language === "tr" ? "DAHİL OLANLAR" : "INCLUDES"}
+                  </p>
                   <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
                     {includesList.map((item, i) => (
                       <li key={i} style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -207,7 +239,9 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
               )}
               {excludesList.length > 0 && (
                 <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "18px 20px" }}>
-                  <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>DAXİL DEYİL</p>
+                  <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>
+                    {language === "az" ? "DAXİL DEYİL" : language === "tr" ? "DAHİL OLMAYANLAR" : "EXCLUDES"}
+                  </p>
                   <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
                     {excludesList.map((item, i) => (
                       <li key={i} style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -224,7 +258,9 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
           {/* Itinerary */}
           {itineraryList.length > 0 && (
             <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 12, padding: "18px 20px" }}>
-              <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>GÜNDƏLIK PROQRAM</p>
+              <p style={{ color: "#64748b", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>
+                {language === "az" ? "GÜNDƏLİK PROQRAM" : language === "tr" ? "GÜNLÜK PROGRAM" : "DAILY ITINERARY"}
+              </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {itineraryList.map((item, i) => (
                   <div key={i} style={{ display: "flex", gap: 14, paddingBottom: 16, position: "relative" }}>
@@ -248,26 +284,35 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
 
           {/* AI Itinerary */}
           <div style={{ background: "linear-gradient(135deg, #f0f9ff, #f0f4ff)", border: "1px solid #bae6fd", borderRadius: 16, padding: "20px 24px" }}>
-            <p style={{ color: "#0284c7", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>YENİ</p>
-            <p style={{ color: "#0f172a", fontWeight: 700, fontSize: 15, marginBottom: 4 }}>AI ilə Günlük Proqram</p>
+            <p style={{ color: "#0284c7", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>
+              {language === "az" ? "YENİ" : language === "tr" ? "YENİ" : "NEW"}
+            </p>
+            <p style={{ color: "#0f172a", fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+              {language === "az" ? "AI ilə Günlük Proqram" : language === "tr" ? "AI ile Günlük Program" : "Daily Itinerary with AI"}
+            </p>
             <p style={{ color: "#64748b", fontSize: 13, marginBottom: 0 }}>
-              Claude AI {tour.destination} üçün detallı günlük aktivlik proqramı hazırlayır — vaxt, yer, qiymət və məsləhətlərlə.
+              {language === "az"
+                ? `Claude AI ${tour.destination} üçün detallı günlük aktivlik proqramı hazırlayır — vaxt, yer, qiymət və məsləhətlərlə.`
+                : language === "tr"
+                ? `Claude AI ${tour.destination} için detaylı günlük aktivite programı hazurlar — zaman, mekan, fiyat ve ipuçlarıyla.`
+                : `Claude AI creates a detailed daily itinerary for ${tour.destination} — including timings, places, prices, and travel tips.`}
             </p>
             <ItineraryButton
               destination={tour.destination}
               start_date={tour.start_date}
               end_date={tour.end_date}
               duration_days={dur?.days ?? null}
+              language={language}
             />
           </div>
 
           {/* CTA */}
           <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 16, padding: "24px 28px" }}>
-            <BookingCTA tourId={tour.id} seatsLeft={seatsLeft} tourName={tour.name} />
+            <BookingCTA tourId={tour.id} seatsLeft={seatsLeft} tourName={tour.name} language={language} />
           </div>
 
           {/* Paylaş */}
-          <ShareButtons tourId={tour.id} tourName={tour.name} priceAzn={tour.price_azn} />
+          <ShareButtons tourId={tour.id} tourName={tour.name} priceAzn={tour.price_azn} language={language} />
 
         </div>
       </div>

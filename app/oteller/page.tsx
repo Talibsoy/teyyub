@@ -2,17 +2,11 @@
 
 import { useState } from "react";
 import type { HotelOffer } from "@/lib/hotels";
+import { useLanguage } from "@/components/LanguageContext";
 
 const DESTINATIONS = [
   "Antalya", "Dubai", "Istanbul", "Bali", "Paris",
   "Barcelona", "Rome", "Maldives", "Bangkok", "Cairo",
-];
-
-const STAR_OPTIONS = [
-  { value: 0, label: "Hamısı" },
-  { value: 3, label: "⭐⭐⭐ 3+" },
-  { value: 4, label: "⭐⭐⭐⭐ 4+" },
-  { value: 5, label: "⭐⭐⭐⭐⭐ 5" },
 ];
 
 function todayPlus(days: number) {
@@ -21,10 +15,15 @@ function todayPlus(days: number) {
   return d.toISOString().split("T")[0];
 }
 
-function HotelCard({ hotel }: { hotel: HotelOffer }) {
+function HotelCard({ hotel, language }: { hotel: HotelOffer; language: string }) {
   const perNight = Math.ceil(hotel.price_marked_up / hotel.nights);
   const starsStr = hotel.stars ? "⭐".repeat(Math.min(hotel.stars, 5)) : "";
-  const waMsg = `Salam! "${hotel.name}" oteli ilə maraqlanıram.\nMəkan: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıxış: ${hotel.checkout} (${hotel.nights} gecə)\nQiymət: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasiya etmək istəyirəm.`;
+
+  const waMsg = language === "az"
+    ? `Salam! "${hotel.name}" oteli ilə maraqlanıram.\nMəkan: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıxış: ${hotel.checkout} (${hotel.nights} gecə)\nQiymət: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasiya etmək istəyirəm.`
+    : language === "tr"
+    ? `Merhaba! "${hotel.name}" oteli ile ilgileniyorum.\nBölge: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıkış: ${hotel.checkout} (${hotel.nights} gece)\nFiyat: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasyon yaptırmak istiyorum.`
+    : `Hello! I'm interested in the "${hotel.name}" hotel.\nLocation: ${hotel.destination}\nCheck-in: ${hotel.checkin} | Check-out: ${hotel.checkout} (${hotel.nights} nights)\nPrice: ${hotel.price_marked_up.toLocaleString()} AZN\nI would like to make a booking.`;
 
   return (
     <div style={{
@@ -52,8 +51,12 @@ function HotelCard({ hotel }: { hotel: HotelOffer }) {
               {hotel.rating.toFixed(1)}
             </span>
             <span style={{ fontSize: 12, color: "#94a3b8" }}>
-              {hotel.rating >= 9 ? "Əla" : hotel.rating >= 8 ? "Çox yaxşı" : "Yaxşı"}
-              {hotel.review_count > 0 && ` · ${hotel.review_count.toLocaleString()} rəy`}
+              {hotel.rating >= 9
+                ? (language === "az" ? "Əla" : language === "tr" ? "Harika" : "Exceptional")
+                : hotel.rating >= 8
+                ? (language === "az" ? "Çox yaxşı" : language === "tr" ? "Çok iyi" : "Very Good")
+                : (language === "az" ? "Yaxşı" : language === "tr" ? "İyi" : "Good")}
+              {hotel.review_count > 0 && ` · ${hotel.review_count.toLocaleString()} ${language === "az" ? "rəy" : language === "tr" ? "değerlendirme" : "reviews"}`}
             </span>
           </div>
         )}
@@ -62,9 +65,19 @@ function HotelCard({ hotel }: { hotel: HotelOffer }) {
       <div style={{ padding: "14px 20px 0" }}>
         <div style={{ display: "flex", gap: 8 }}>
           {[
-            { label: "Giriş", val: new Date(hotel.checkin).toLocaleDateString("az-AZ", { day: "numeric", month: "short" }) },
-            { label: "Çıxış", val: new Date(hotel.checkout).toLocaleDateString("az-AZ", { day: "numeric", month: "short" }) },
-            { label: "Gecə", val: String(hotel.nights), hl: true },
+            {
+              label: language === "az" ? "Giriş" : language === "tr" ? "Giriş" : "Check-in",
+              val: new Date(hotel.checkin).toLocaleDateString(language === "az" ? "az-AZ" : language === "tr" ? "tr-TR" : "en-US", { day: "numeric", month: "short" })
+            },
+            {
+              label: language === "az" ? "Çıxış" : language === "tr" ? "Çıkış" : "Check-out",
+              val: new Date(hotel.checkout).toLocaleDateString(language === "az" ? "az-AZ" : language === "tr" ? "tr-TR" : "en-US", { day: "numeric", month: "short" })
+            },
+            {
+              label: language === "az" ? "Gecə" : language === "tr" ? "Gece" : "Nights",
+              val: String(hotel.nights),
+              hl: true
+            },
           ].map(item => (
             <div key={item.label} style={{ flex: item.hl ? "0 0 auto" : 1, background: item.hl ? "#f0f9ff" : "#f8fafc", borderRadius: 10, padding: "9px 12px" }}>
               <p style={{ margin: 0, fontSize: 10, color: item.hl ? "#0284c7" : "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>{item.label}</p>
@@ -76,15 +89,23 @@ function HotelCard({ hotel }: { hotel: HotelOffer }) {
 
       <div style={{ padding: "12px 20px", flex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>Gecəlik</p>
+          <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>{language === "az" ? "Gecəlik" : language === "tr" ? "Gecelik" : "Per night"}</p>
           <p style={{ margin: "2px 0 0", fontSize: 14, color: "#64748b", fontWeight: 600 }}>{perNight.toLocaleString()} AZN</p>
         </div>
         <div style={{ textAlign: "right" }}>
-          <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>{hotel.nights} gecə üçün</p>
+          <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
+            {language === "az"
+              ? `${hotel.nights} gecə üçün`
+              : language === "tr"
+              ? `${hotel.nights} gece için`
+              : `for ${hotel.nights} nights`}
+          </p>
           <p style={{ margin: "2px 0 0", fontSize: 24, fontWeight: 800, color: "#0284c7", lineHeight: 1 }}>
             {hotel.price_marked_up.toLocaleString()} <span style={{ fontSize: 14 }}>AZN</span>
           </p>
-          <p style={{ margin: "2px 0 0", fontSize: 10, color: "#94a3b8" }}>Xidmət haqqı daxil</p>
+          <p style={{ margin: "2px 0 0", fontSize: 10, color: "#94a3b8" }}>
+            {language === "az" ? "Xidmət haqqı daxil" : language === "tr" ? "Hizmet bedeli dahil" : "Service fee included"}
+          </p>
         </div>
       </div>
 
@@ -95,7 +116,7 @@ function HotelCard({ hotel }: { hotel: HotelOffer }) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
-          WhatsApp-da Rezervasiya Et
+          {language === "az" ? "WhatsApp-da Rezervasiya Et" : language === "tr" ? "WhatsApp'tan Rezervasyon Et" : "Book on WhatsApp"}
         </a>
       </div>
     </div>
@@ -103,6 +124,7 @@ function HotelCard({ hotel }: { hotel: HotelOffer }) {
 }
 
 export default function OtellerPage() {
+  const { language } = useLanguage();
   const [destination, setDestination] = useState("");
   const [checkin,  setCheckin]  = useState(todayPlus(14));
   const [checkout, setCheckout] = useState(todayPlus(21));
@@ -113,13 +135,26 @@ export default function OtellerPage() {
   const [searched, setSearched] = useState(false);
   const [error,    setError]    = useState("");
 
+  const STAR_OPTIONS = [
+    { value: 0, label: language === "az" ? "Hamısı" : language === "tr" ? "Hepsi" : "All" },
+    { value: 3, label: "⭐⭐⭐ 3+" },
+    { value: 4, label: "⭐⭐⭐⭐ 4+" },
+    { value: 5, label: "⭐⭐⭐⭐⭐ 5" },
+  ];
+
   const nights = Math.max(1, Math.ceil(
     (new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000
   ));
 
   async function search() {
-    if (!destination.trim()) { setError("Zəhmət olmasa məkan daxil edin"); return; }
-    if (checkin >= checkout)  { setError("Çıxış tarixi giriş tarixindən sonra olmalıdır"); return; }
+    if (!destination.trim()) {
+      setError(language === "az" ? "Zəhmət olmasa məkan daxil edin" : language === "tr" ? "Lütfen bir bölge girin" : "Please enter a destination");
+      return;
+    }
+    if (checkin >= checkout)  {
+      setError(language === "az" ? "Çıxış tarixi giriş tarixindən sonra olmalıdır" : language === "tr" ? "Çıkış tarihi giriş tarihinden sonra olmalıdır" : "Check-out date must be after check-in date");
+      return;
+    }
     setError(""); setLoading(true); setSearched(true);
     try {
       const res = await fetch("/api/hotels/search", {
@@ -130,11 +165,17 @@ export default function OtellerPage() {
       const data = await res.json();
       setHotels(data.hotels || []);
     } catch {
-      setError("Axtarış zamanı xəta baş verdi. Yenidən cəhd edin.");
+      setError(language === "az" ? "Axtarış zamanı xəta baş verdi. Yenidən cəhd edin." : language === "tr" ? "Arama sırasında bir hata oluştu. Lütfen tekrar deneyin." : "An error occurred during the search. Please try again.");
     } finally {
       setLoading(false);
     }
   }
+
+  const fallbackWaMsg = language === "az"
+    ? `Salam! ${destination} üçün ${checkin}–${checkout} tarixlərə ${adults} nəfər otel axtarıram.`
+    : language === "tr"
+    ? `Merhaba! ${destination} için ${checkin}–${checkout} tarihlerinde ${adults} kişi otel arıyorum.`
+    : `Hello! I am looking for a hotel in ${destination} for dates ${checkin}–${checkout} for ${adults} guests.`;
 
   const inp: React.CSSProperties = {
     width: "100%", padding: "12px 14px", borderRadius: 10,
@@ -156,13 +197,17 @@ export default function OtellerPage() {
           {/* Başlıq */}
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <span style={{ display: "inline-block", background: "rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.9)", fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", padding: "5px 16px", borderRadius: 20, marginBottom: 14 }}>
-              Canlı Qiymətlər · Dünya Üzrə
+              {language === "az" ? "Canlı Qiymətlər · Dünya Üzrə" : language === "tr" ? "Canlı Fiyatlar · Dünya Çapında" : "Live Rates · Worldwide"}
             </span>
             <h1 style={{ color: "white", fontWeight: 900, fontSize: 36, margin: "0 0 8px" }}>
-              Otel Axtarışı
+              {language === "az" ? "Otel Axtarışı" : language === "tr" ? "Otel Arama" : "Hotel Search"}
             </h1>
             <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 15, margin: 0 }}>
-              Minlərlə otel — anlıq qiymətlər, xidmət haqqı daxil
+              {language === "az"
+                ? "Minlərlə otel — anlıq qiymətlər, xidmət haqqı daxil"
+                : language === "tr"
+                ? "Binlerce otel — anlık fiyatlar, hizmet bedeli dahil"
+                : "Thousands of hotels — instant rates, service fee included"}
             </p>
           </div>
 
@@ -172,7 +217,7 @@ export default function OtellerPage() {
             {/* Sıra 1 — mobil: bir sütun, desktop: 4 sütun */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 14 }}>
               <div>
-                <label style={lbl}>📍 Məkan</label>
+                <label style={lbl}>📍 {language === "az" ? "Məkan" : language === "tr" ? "Mekan/Bölge" : "Destination"}</label>
                 <input list="dest-list" value={destination}
                   onChange={e => setDestination(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && search()}
@@ -186,7 +231,7 @@ export default function OtellerPage() {
               </div>
 
               <div>
-                <label style={lbl}>📅 Giriş</label>
+                <label style={lbl}>📅 {language === "az" ? "Giriş" : language === "tr" ? "Giriş" : "Check-in"}</label>
                 <input type="date" value={checkin} min={todayPlus(1)}
                   onChange={e => setCheckin(e.target.value)} style={inp}
                   onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
@@ -194,7 +239,12 @@ export default function OtellerPage() {
               </div>
 
               <div>
-                <label style={lbl}>📅 Çıxış <span style={{ color: "#0284c7", textTransform: "none", fontSize: 11 }}>· {nights} gecə</span></label>
+                <label style={lbl}>
+                  📅 {language === "az" ? "Çıxış" : language === "tr" ? "Çıkış" : "Check-out"}{" "}
+                  <span style={{ color: "#0284c7", textTransform: "none", fontSize: 11 }}>
+                    · {language === "az" ? `${nights} gecə` : language === "tr" ? `${nights} gece` : `${nights} nights`}
+                  </span>
+                </label>
                 <input type="date" value={checkout} min={checkin}
                   onChange={e => setCheckout(e.target.value)} style={inp}
                   onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
@@ -202,7 +252,7 @@ export default function OtellerPage() {
               </div>
 
               <div>
-                <label style={lbl}>👥 Nəfər</label>
+                <label style={lbl}>👥 {language === "az" ? "Nəfər" : language === "tr" ? "Kişi" : "Guests"}</label>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0" }}>
                   <button onClick={() => setAdults(a => Math.max(1, a - 1))}
                     style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#475569" }}>−</button>
@@ -216,7 +266,7 @@ export default function OtellerPage() {
             {/* Sıra 2 */}
             <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
               <div style={{ width: 180 }}>
-                <label style={lbl}>⭐ Ulduz</label>
+                <label style={lbl}>⭐ {language === "az" ? "Ulduz" : language === "tr" ? "Yıldız" : "Stars"}</label>
                 <select value={stars} onChange={e => setStars(Number(e.target.value))} style={inp}>
                   {STAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -231,9 +281,15 @@ export default function OtellerPage() {
                 transition: "all 0.2s", display: "flex", alignItems: "center", gap: 10,
               }}>
                 {loading ? (
-                  <><div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite" }} />Axtarılır...</>
+                  <>
+                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite" }} />
+                    {language === "az" ? "Axtarılır..." : language === "tr" ? "Aranıyor..." : "Searching..."}
+                  </>
                 ) : (
-                  <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Otel Axtar</>
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    {language === "az" ? "Otel Axtar" : language === "tr" ? "Otel Ara" : "Search Hotels"}
+                  </>
                 )}
               </button>
             </div>
@@ -251,17 +307,31 @@ export default function OtellerPage() {
         {loading && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <div style={{ width: 44, height: 44, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0284c7", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-            <p style={{ color: "#64748b", fontSize: 15 }}>Booking.com-dan otellər yüklənir...</p>
+            <p style={{ color: "#64748b", fontSize: 15 }}>
+              {language === "az"
+                ? "Booking.com-dan otellər yüklənir..."
+                : language === "tr"
+                ? "Booking.com'dan oteller yükleniyor..."
+                : "Loading hotels from Booking.com..."}
+            </p>
           </div>
         )}
 
         {!loading && searched && hotels.length > 0 && (
           <>
             <p style={{ fontSize: 15, color: "#475569", fontWeight: 600, marginBottom: 20 }}>
-              <span style={{ color: "#0284c7", fontWeight: 800 }}>{hotels.length} otel</span> tapıldı · {destination} · {nights} gecə · {adults} nəfər
+              <span style={{ color: "#0284c7", fontWeight: 800 }}>
+                {language === "az" ? `${hotels.length} otel` : language === "tr" ? `${hotels.length} otel` : `${hotels.length} hotels`}{" "}
+              </span>
+              {language === "az"
+                ? "tapıldı"
+                : language === "tr"
+                ? "bulundu"
+                : "found"}{" "}
+              · {destination} · {language === "az" ? `${nights} gecə` : language === "tr" ? `${nights} gece` : `${nights} nights`} · {language === "az" ? `${adults} nəfər` : language === "tr" ? `${adults} kişi` : `${adults} guests`}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
-              {hotels.map(h => <HotelCard key={h.id} hotel={h} />)}
+              {hotels.map(h => <HotelCard key={h.id} hotel={h} language={language} />)}
             </div>
           </>
         )}
@@ -273,12 +343,20 @@ export default function OtellerPage() {
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
             </div>
-            <p style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Nəticə tapılmadı</p>
-            <p style={{ color: "#64748b", fontSize: 14, marginBottom: 20 }}>Tarixləri dəyişin və ya ulduz filtrini azaldın</p>
-            <a href={`https://wa.me/994517769632?text=${encodeURIComponent(`Salam! ${destination} üçün ${checkin}–${checkout} tarixlərə ${adults} nəfər otel axtarıram.`)}`}
+            <p style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>
+              {language === "az" ? "Nəticə tapılmadı" : language === "tr" ? "Sonuç bulunamadı" : "No results found"}
+            </p>
+            <p style={{ color: "#64748b", fontSize: 14, marginBottom: 20 }}>
+              {language === "az"
+                ? "Tarixləri dəyişin və ya ulduz filtrini azaldın"
+                : language === "tr"
+                ? "Tarihleri değiştirin veya yıldız filtresini azaltın"
+                : "Change travel dates or reduce the star filter"}
+            </p>
+            <a href={`https://wa.me/994517769632?text=${encodeURIComponent(fallbackWaMsg)}`}
               target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#25D366", color: "white", borderRadius: 12, padding: "12px 24px", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
-              Komandamızla əlaqə saxlayın
+              {language === "az" ? "Komandamızla əlaqə saxlayın" : language === "tr" ? "Ekibimizle iletişime geçin" : "Contact our support team"}
             </a>
           </div>
         )}
@@ -291,8 +369,16 @@ export default function OtellerPage() {
                 <polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Otel axtarışını başladın</h2>
-            <p style={{ color: "#64748b", fontSize: 15, maxWidth: 360, margin: "0 auto" }}>Məkan, tarix və nəfər sayını seçin — anlıq qiymətlər göstəriləcək</p>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>
+              {language === "az" ? "Otel axtarışını başladın" : language === "tr" ? "Otel aramasını başlatın" : "Start your hotel search"}
+            </h2>
+            <p style={{ color: "#64748b", fontSize: 15, maxWidth: 360, margin: "0 auto" }}>
+              {language === "az"
+                ? "Məkan, tarix və nəfər sayını seçin — anlıq qiymətlər göstəriləcək"
+                : language === "tr"
+                ? "Bölge, tarih ve kişi sayısını seçin — anlık fiyatlar gösterilecektir"
+                : "Select destination, dates, and guest count — live prices will be shown instantly"}
+            </p>
           </div>
         )}
       </div>

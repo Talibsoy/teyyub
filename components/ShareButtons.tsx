@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-export default function ShareButtons({ tourId, tourName, priceAzn }: {
+export default function ShareButtons({ tourId, tourName, priceAzn, language = "az" }: {
   tourId: string;
   tourName: string;
   priceAzn: number;
+  language?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const url = `https://www.natourefly.com/turlar/${tourId}`;
@@ -21,7 +22,7 @@ export default function ShareButtons({ tourId, tourName, priceAzn }: {
   return (
     <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: 16, padding: "20px 28px" }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, margin: "0 0 12px" }}>
-        Bu turu paylaş
+        {language === "az" ? "Bu turu paylaş" : language === "tr" ? "Bu turu paylaş" : "Share this tour"}
       </p>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <a href={`https://wa.me/?text=${encodeURIComponent(text)}`}
@@ -43,7 +44,9 @@ export default function ShareButtons({ tourId, tourName, priceAzn }: {
           ) : (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           )}
-          {copied ? "Kopyalandı!" : "Linki kopyala"}
+          {copied
+            ? (language === "az" ? "Kopyalandı!" : language === "tr" ? "Kopyalandı!" : "Copied!")
+            : (language === "az" ? "Linki kopyala" : language === "tr" ? "Linki kopyala" : "Copy link")}
         </button>
       </div>
     </div>

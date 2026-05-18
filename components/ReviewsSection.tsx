@@ -3,22 +3,56 @@
 import { useEffect, useState } from "react";
 import ReviewForm from "./ReviewForm";
 import { getSupabase } from "@/lib/supabase";
+import { useLanguage } from "./LanguageContext";
 
 interface Review {
   id: string;
   name: string;
-  destination: string | null;
+  destination: any;
   rating: number;
-  message: string;
+  message: any;
   image_urls?: string[];
   created_at: string;
 }
 
 // Fallback static reviews if DB is empty
 const STATIC = [
-  { id: "s1", name: "Aytən X.",  destination: "Dubai",   rating: 5, message: "Hər şey mükəmməl idi — otel, transfer, ekskursiyalar. Natoure komandası 24/7 əlaqədə idi.", created_at: "" },
-  { id: "s2", name: "Müşfiq A.", destination: "Türkiyə", rating: 5, message: "İlk dəfə xarici turda idim, heç problem yaşamadım. Çox professional yanaşdılar.",          created_at: "" },
-  { id: "s3", name: "Leyla M.",  destination: "Misir",   rating: 5, message: "Qiymət-keyfiyyət nisbəti əla idi. Ailə ilə getdik, hamı razı qaldı.",                       created_at: "" },
+  {
+    id: "s1",
+    name: "Aytən X.",
+    destination: { az: "Dubay", tr: "Dubai", en: "Dubai" },
+    rating: 5,
+    message: {
+      az: "Hər şey mükəmməl idi — otel, transfer, ekskursiyalar. Natoure komandası 24/7 əlaqədə idi.",
+      tr: "Her şey mükemmeldi — otel, transfer, geziler. Natoure ekibi 24/7 iletişimdeydi.",
+      en: "Everything was perfect — hotel, transfer, excursions. The Natoure team was in touch 24/7."
+    },
+    created_at: ""
+  },
+  {
+    id: "s2",
+    name: "Müşfiq A.",
+    destination: { az: "Türkiyə", tr: "Türkiye", en: "Turkey" },
+    rating: 5,
+    message: {
+      az: "İlk dəfə xarici turda idim, heç problem yaşamadım. Çox professional yanaşdılar.",
+      tr: "İlk defa yurt dışı tura katıldım, hiç sorun yaşamadım. Çok profesyonelce yaklaştılar.",
+      en: "It was my first time on a tour abroad, I had no issues at all. They approached it very professionally."
+    },
+    created_at: ""
+  },
+  {
+    id: "s3",
+    name: "Leyla M.",
+    destination: { az: "Misir", tr: "Mısır", en: "Egypt" },
+    rating: 5,
+    message: {
+      az: "Qiymət-keyfiyyət nisbəti əla idi. Ailə ilə getdik, hamı razı qaldı.",
+      tr: "Fiyat-performans oranı harikaydı. Ailemizle gittik, herkes çok memnun kaldı.",
+      en: "The price-quality ratio was excellent. We went as a family, everyone was satisfied."
+    },
+    created_at: ""
+  },
 ];
 
 function Stars({ n }: { n: number }) {
@@ -34,10 +68,19 @@ function Stars({ n }: { n: number }) {
 const PER_PAGE = 3;
 
 export default function ReviewsSection() {
+  const { language } = useLanguage();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [page, setPage] = useState(0);
+
+  const getVal = (val: any, lang: string) => {
+    if (!val) return "";
+    if (typeof val === "object") {
+      return val[lang] || val["az"] || "";
+    }
+    return val;
+  };
 
   async function load() {
     try {
@@ -64,8 +107,12 @@ export default function ReviewsSection() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">Müştərilərimiz Nə Deyir?</h2>
-            <p className="text-sm" style={{ color: "#666" }}>Real müştərilərin rəyləri</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">
+              {language === "az" ? "Müştərilərimiz Nə Deyir?" : language === "tr" ? "Müşterilerimiz Ne Diyor?" : "What Our Customers Say"}
+            </h2>
+            <p className="text-sm" style={{ color: "#666" }}>
+              {language === "az" ? "Real müştərilərin rəyləri" : language === "tr" ? "Gerçek müşterilerin yorumları" : "Real reviews from real customers"}
+            </p>
           </div>
           <button
             onClick={() => setShowForm(v => !v)}
@@ -78,7 +125,11 @@ export default function ReviewsSection() {
               transition: "all 0.2s", whiteSpace: "nowrap",
             }}
           >
-            {showForm ? "✕ Bağla" : "✍️ Rəy Yaz"}
+            {showForm ? (
+              language === "az" ? "✕ Bağla" : language === "tr" ? "✕ Kapat" : "✕ Close"
+            ) : (
+              language === "az" ? "✍️ Rəy Yaz" : language === "tr" ? "✍️ Değerlendirme Yaz" : "✍️ Write a Review"
+            )}
           </button>
         </div>
 
@@ -91,7 +142,9 @@ export default function ReviewsSection() {
 
         {/* Reviews grid */}
         {!loaded ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#555" }}>Yüklənir...</div>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#555" }}>
+            {language === "az" ? "Yüklənir..." : language === "tr" ? "Yükleniyor..." : "Loading..."}
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -107,11 +160,14 @@ export default function ReviewsSection() {
                   <div className="p-5">
                     <Stars n={r.rating} />
                     <p className="my-3 text-sm leading-relaxed" style={{ color: "#aaa" }}>
-                      &ldquo;{r.message}&rdquo;
+                      &ldquo;{getVal(r.message, language)}&rdquo;
                     </p>
                     <div className="font-semibold text-white text-sm">{r.name}</div>
                     {r.destination && (
-                      <div className="text-xs mt-0.5" style={{ color: "#555" }}>{r.destination} səfəri</div>
+                      <div className="text-xs mt-0.5" style={{ color: "#555" }}>
+                        {getVal(r.destination, language)}
+                        {language === "az" ? " səfəri" : language === "tr" ? " seyahati" : " trip"}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -130,7 +186,7 @@ export default function ReviewsSection() {
                     cursor: page === 0 ? "not-allowed" : "pointer", fontSize: 13,
                   }}
                 >
-                  ← Əvvəlki
+                  {language === "az" ? "← Əvvəlki" : language === "tr" ? "← Önceki" : "← Previous"}
                 </button>
                 {Array.from({ length: Math.ceil(reviews.length / PER_PAGE) }).map((_, i) => (
                   <button
@@ -157,7 +213,7 @@ export default function ReviewsSection() {
                     cursor: page >= Math.ceil(reviews.length / PER_PAGE) - 1 ? "not-allowed" : "pointer", fontSize: 13,
                   }}
                 >
-                  Növbəti →
+                  {language === "az" ? "Növbəti →" : language === "tr" ? "Sonraki →" : "Next →"}
                 </button>
               </div>
             )}

@@ -1,44 +1,142 @@
+"use client";
 import Link from "next/link";
 import { Globe2, MapPin, Sun, Building2, Briefcase, Zap, RefreshCw, Target, TrendingUp, CheckCircle } from "lucide-react";
-
-const services = [
-  { Icon: Globe2,    title: "Avropa Turları",  items: ["İtaliya, Fransa, Almaniya", "Şəhər turları + mədəni təcrübələr", "Viza dəstəyi ilə paketlər"] },
-  { Icon: MapPin,    title: "Türkiyə Turları", items: ["Antalya, Bodrum, İstanbul", "Ailəvi və premium resort paketləri", "Hər büdcəyə uyğun seçimlər"] },
-  { Icon: Sun,       title: "Misir Turları",   items: ["Şarm El-Şeyx, Hurqada", "Hər şey daxil otellər", "Dəniz və istirahət paketləri"] },
-  { Icon: Building2, title: "Dubai Turları",   items: ["Lüks və premium paketlər", "Şəhər + əyləncə kombinasiyaları", "Alış-veriş və təcrübə turları"] },
-  { Icon: Briefcase, title: "Fərdi Planlama",  items: ["Müştəriyə xüsusi proqram", "Büdcəyə uyğun optimizasiya", "Tam xidmət (bilet+otel+transfer)"] },
-];
-
-const usps = [
-  { Icon: Zap,        title: "AI əsaslı sistem",           desc: "Müştəri ilə chatbot danışır, tələbatı analiz edir, avtomatik uyğun paket təklif edir." },
-  { Icon: RefreshCw,  title: "Avtomatlaşdırılmış prosess", desc: "Lead-lər avtomatik toplanır, CRM inteqrasiyası, satış prosesi optimallaşdırılır." },
-  { Icon: Target,     title: "Fərdi yanaşma",              desc: "Hər müştəri üçün xüsusi plan. Büdcəyə uyğun maksimum dəyər." },
-  { Icon: TrendingUp, title: "Satış yönümlü",              desc: "Sadəcə məlumat verilmir — müştəri qərar mərhələsinə gətirilir." },
-];
-
-const stats = [
-  { num: "5+",   label: "İstiqamət" },
-  { num: "100%", label: "Fərdi yanaşma" },
-  { num: "AI",   label: "Dəstəkli sistem" },
-  { num: "24/7", label: "WhatsApp dəstəyi" },
-];
-
-const whyItems = [
-  "Araşdırma etməyə vaxt itirmirsən",
-  "Sənə uyğun ən optimal variant təqdim olunur",
-  "Sürətli və rahat qərar prosesi",
-  "Minimum risk, maksimum rahatlıq",
-];
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function HaqqimızdaPage() {
+  const { language } = useLanguage();
+
+  const services = [
+    {
+      Icon: Globe2,
+      title: language === "az" ? "Avropa Turları" : language === "tr" ? "Avrupa Turları" : "Europe Tours",
+      items: language === "az"
+        ? ["İtaliya, Fransa, Almaniya", "Şəhər turları + mədəni təcrübələr", "Viza dəstəyi ilə paketlər"]
+        : language === "tr"
+        ? ["İtalya, Fransa, Almanya", "Şehir turları + kültürel deneyimler", "Vize desteği içeren paketler"]
+        : ["Italy, France, Germany", "City tours + cultural experiences", "Packages with visa support"]
+    },
+    {
+      Icon: MapPin,
+      title: language === "az" ? "Türkiyə Turları" : language === "tr" ? "Türkiye Turları" : "Turkey Tours",
+      items: language === "az"
+        ? ["Antalya, Bodrum, İstanbul", "Ailəvi və premium resort paketləri", "Hər büdcəyə uyğun seçimlər"]
+        : language === "tr"
+        ? ["Antalya, Bodrum, İstanbul", "Aile ve premium resort paketleri", "Her bütçeye uygun seçenekler"]
+        : ["Antalya, Bodrum, Istanbul", "Family & premium resort packages", "Options for every budget"]
+    },
+    {
+      Icon: Sun,
+      title: language === "az" ? "Misir Turları" : language === "tr" ? "Mısır Turları" : "Egypt Tours",
+      items: language === "az"
+        ? ["Şarm El-Şeyx, Hurqada", "Hər şey daxil otellər", "Dəniz və istirahət paketləri"]
+        : language === "tr"
+        ? ["Şarm El-Şeyh, Hurghada", "Her şey dahil oteller", "Deniz ve dinlenme paketleri"]
+        : ["Sharm El-Sheikh, Hurghada", "All-inclusive hotels", "Sea & relaxation packages"]
+    },
+    {
+      Icon: Building2,
+      title: language === "az" ? "Dubai Turları" : language === "tr" ? "Dubai Turları" : "Dubai Tours",
+      items: language === "az"
+        ? ["Lüks və premium paketlər", "Şəhər + əyləncə kombinasiyaları", "Alış-veriş və təcrübə turları"]
+        : language === "tr"
+        ? ["Lüks ve premium paketler", "Şehir + eğlence kombinasyonları", "Alışveriş ve deneyim turları"]
+        : ["Luxury & premium packages", "City + entertainment combinations", "Shopping & experience tours"]
+    },
+    {
+      Icon: Briefcase,
+      title: language === "az" ? "Fərdi Planlama" : language === "tr" ? "Kişisel Planlama" : "Custom Planning",
+      items: language === "az"
+        ? ["Müştəriyə xüsusi proqram", "Büdcəyə uyğun optimizasiya", "Tam xidmət (bilet+otel+transfer)"]
+        : language === "tr"
+        ? ["Müşteriye özel program", "Bütçeye uygun optimizasyon", "Tam hizmet (bilet+otel+transfer)"]
+        : ["Tailored program for clients", "Budget optimization", "Full service (ticket+hotel+transfer)"]
+    },
+  ];
+
+  const usps = [
+    {
+      Icon: Zap,
+      title: language === "az" ? "AI əsaslı sistem" : language === "tr" ? "Yapay Zeka Destekli" : "AI-Powered System",
+      desc: language === "az"
+        ? "Müştəri ilə chatbot danışır, tələbatı analiz edir, avtomatik uyğun paket təklif edir."
+        : language === "tr"
+        ? "Müşteri ile chatbot konuşur, talepleri analiz eder ve otomatik uygun paketleri önerir."
+        : "The chatbot communicates with the client, analyzes needs, and automatically suggests matching packages."
+    },
+    {
+      Icon: RefreshCw,
+      title: language === "az" ? "Avtomatlaşdırılmış proses" : language === "tr" ? "Otomasyon Süreci" : "Automated Processes",
+      desc: language === "az"
+        ? "Lead-lər avtomatik toplanır, CRM inteqrasiyası, satış prosesi optimallaşdırılır."
+        : language === "tr"
+        ? "Potansiyel müşteriler otomatik toplanır, CRM entegrasyonu ile satış süreçleri optimize edilir."
+        : "Leads are collected automatically, CRM integration, and sales workflow is optimized."
+    },
+    {
+      Icon: Target,
+      title: language === "az" ? "Fərdi yanaşma" : language === "tr" ? "Kişisel Yaklaşım" : "Personal Approach",
+      desc: language === "az"
+        ? "Hər müştəri üçün xüsusi plan. Büdcəyə uyğun maksimum dəyər."
+        : language === "tr"
+        ? "Her müşteri için özel bir plan. Bütçeye göre maksimum değer."
+        : "Custom travel plans for every client. Maximum value for your budget."
+    },
+    {
+      Icon: TrendingUp,
+      title: language === "az" ? "Satış yönümlü" : language === "tr" ? "Satış Odaklı" : "Sales-Oriented",
+      desc: language === "az"
+        ? "Sadəcə məlumat verilmir — müştəri qərar mərhələsinə gətirilir."
+        : language === "tr"
+        ? "Sadece bilgi verilmez — müşteri karar verme aşamasına getirilir."
+        : "We don't just provide information — we guide the customer to the buying decision."
+    },
+  ];
+
+  const stats = [
+    { num: "5+",   label: language === "az" ? "İstiqamət" : language === "tr" ? "Destinasyon" : "Destinations" },
+    { num: "100%", label: language === "az" ? "Fərdi yanaşma" : language === "tr" ? "Kişisel Yaklaşım" : "Personalized" },
+    { num: "AI",   label: language === "az" ? "Dəstəkli sistem" : language === "tr" ? "Destekli Sistem" : "Powered System" },
+    { num: "24/7", label: language === "az" ? "WhatsApp dəstəyi" : language === "tr" ? "WhatsApp Desteği" : "WhatsApp Support" },
+  ];
+
+  const whyItems = language === "az"
+    ? [
+        "Araşdırma etməyə vaxt itirmirsən",
+        "Sənə uyğun ən optimal variant təqdim olunur",
+        "Sürətli və rahat qərar prosesi",
+        "Minimum risk, maksimum rahatlıq",
+      ]
+    : language === "tr"
+    ? [
+        "Araştırma yaparken zaman kaybetmezsiniz",
+        "Size en uygun ve en optimal seçenekler sunulur",
+        "Hızlı ve konforlu bir karar süreci",
+        "Minimum risk, maksimum rahatlık",
+      ]
+    : [
+        "You don't waste time doing hours of research",
+        "The most optimal options tailored to you are presented",
+        "Fast and hassle-free decision process",
+        "Minimum risk, maximum comfort",
+      ];
+
   return (
     <div className="ns-page">
 
       {/* Page Header */}
       <div className="ns-page-header">
-        <span className="ns-label">Biz Kimik?</span>
-        <h1>Haqqımızda</h1>
-        <p>AI + avtomatlaşdırma + satış psixologiyası üzərində qurulmuş müasir turizm platforması</p>
+        <span className="ns-label">
+          {language === "az" ? "Biz Kimik?" : language === "tr" ? "Biz Kimiz?" : "Who We Are?"}
+        </span>
+        <h1>{language === "az" ? "Haqqımızda" : language === "tr" ? "Hakkımızda" : "About Us"}</h1>
+        <p>
+          {language === "az"
+            ? "AI + avtomatlaşdırma + satış psixologiyası üzərində qurulmuş müasir turizm platforması"
+            : language === "tr"
+            ? "Yapay zeka + otomasyon + satış psikolojisi üzerine kurulmuş modern turizm platformu"
+            : "Modern tourism platform built on AI + automation + sales psychology"}
+        </p>
       </div>
 
       {/* What is Natoure */}
@@ -46,22 +144,32 @@ export default function HaqqimızdaPage() {
         <div className="ns-container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div>
-              <span className="ns-label">Platformamız</span>
-              <h2 className="ns-title mb-5">Natoure Nədir?</h2>
+              <span className="ns-label">
+                {language === "az" ? "Platformamız" : language === "tr" ? "Platformumuz" : "Our Platform"}
+              </span>
+              <h2 className="ns-title mb-5">
+                {language === "az" ? "Natoure Nədir?" : language === "tr" ? "Natoure Nedir?" : "What is Natoure?"}
+              </h2>
               <p className="ns-subtitle mb-4">
-                Natoure — müasir yanaşma ilə fəaliyyət göstərən, fərdi və korporativ
-                müştərilər üçün optimallaşdırılmış turizm platformasıdır.
+                {language === "az"
+                  ? "Natoure — müasir yanaşma ilə fəaliyyət göstərən, fərdi və korporativ müştərilər üçün optimallaşdırılmış turizm platformasıdır."
+                  : language === "tr"
+                  ? "Natoure — modern bir yaklaşımla faaliyet gösteren, bireysel ve kurumsal müşteriler için optimize edilmiş bir turizm platformudur."
+                  : "Natoure is a modern tourism platform optimized for individual and corporate clients using an innovative approach."}
               </p>
               <p className="ns-subtitle mb-4">
-                Bizim əsas məqsədimiz standart tur paketləri satmaq yox —
-                müştəriyə uyğun <strong className="text-slate-700">fərdi təcrübə</strong> yaratmaqdır.
+                {language === "az"
+                  ? "Bizim əsas məqsədimiz standart tur paketləri satmaq yox — müştəriyə uyğun fərdi təcrübə yaratmaqdır."
+                  : language === "tr"
+                  ? "Bizim temel amacımız standart tur paketleri satmak değil — müşteriye uygun kişisel deneyimler yaratmaktır."
+                  : "Our primary goal is not just selling standard packages — but crafting personalized experiences tailored to each client."}
               </p>
               <p className="ns-subtitle">
-                Natoure, klassik turizm agentliyi deyil —{" "}
-                <strong className="bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                  AI + avtomatlaşdırma + satış psixologiyası
-                </strong>{" "}
-                üzərində qurulmuş sistemdir.
+                {language === "az"
+                  ? "Natoure, klassik turizm agentliyi deyil — AI + avtomatlaşdırma + satış psixologiyası üzərində qurulmuş sistemdir."
+                  : language === "tr"
+                  ? "Natoure, klasik bir turizm acentesi değildir — yapay zeka + otomasyon + satış psikolojisi üzerine kurulu bir sistemdir."
+                  : "Natoure is not a classic travel agency — it is a smart system built on AI + automation + sales psychology."}
               </p>
             </div>
 
@@ -86,9 +194,15 @@ export default function HaqqimızdaPage() {
       <section className="ns-section">
         <div className="ns-container-lg">
           <div className="text-center mb-10">
-            <span className="ns-label">Nə Təklif Edirik?</span>
-            <h2 className="ns-title">Xidmətlərimiz</h2>
-            <p className="ns-subtitle">5 əsas istiqamətdə tam xidmət</p>
+            <span className="ns-label">
+              {language === "az" ? "Nə Təklif Edirik?" : language === "tr" ? "Ne Sunuyoruz?" : "What We Offer?"}
+            </span>
+            <h2 className="ns-title">
+              {language === "az" ? "Xidmətlərimiz" : language === "tr" ? "Hizmetlerimiz" : "Our Services"}
+            </h2>
+            <p className="ns-subtitle">
+              {language === "az" ? "5 əsas istiqamətdə tam xidmət" : language === "tr" ? "5 ana yönde tam hizmet" : "Full support across 5 key areas"}
+            </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {services.map(s => (
@@ -114,8 +228,12 @@ export default function HaqqimızdaPage() {
       <section className="ns-section-w">
         <div className="ns-container">
           <div className="text-center mb-10">
-            <span className="ns-label">Üstünlüklərimiz</span>
-            <h2 className="ns-title">Digər Şirkətlərdən Fərqimiz</h2>
+            <span className="ns-label">
+              {language === "az" ? "Üstünlüklərimiz" : language === "tr" ? "Farkımız" : "Why Choose Us"}
+            </span>
+            <h2 className="ns-title">
+              {language === "az" ? "Digər Şirkətlərdən Fərqimiz" : language === "tr" ? "Diğer Şirketlerden Farkımız" : "How We Are Different"}
+            </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {usps.map(u => (
@@ -136,8 +254,12 @@ export default function HaqqimızdaPage() {
       {/* Why */}
       <section className="ns-section">
         <div className="ns-container-sm text-center">
-          <span className="ns-label">Seçim Etmək Asan</span>
-          <h2 className="ns-title mb-10">Niyə Natoure?</h2>
+          <span className="ns-label">
+            {language === "az" ? "Seçim Etmək Asan" : language === "tr" ? "Seçim Yapmak Kolay" : "Easy Choices"}
+          </span>
+          <h2 className="ns-title mb-10">
+            {language === "az" ? "Niyə Natoure?" : language === "tr" ? "Neden Natoure?" : "Why Natoure?"}
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-10">
             {whyItems.map(item => (
               <div key={item} className="flex items-start gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm">
@@ -146,9 +268,9 @@ export default function HaqqimızdaPage() {
               </div>
             ))}
           </div>
-          <a href="/elaqe" className="ns-btn ns-btn-primary">
-            Bizimlə Əlaqə
-          </a>
+          <Link href="/elaqe" className="ns-btn ns-btn-primary">
+            {language === "az" ? "Bizimlə Əlaqə" : language === "tr" ? "Bizimle İletişim" : "Contact Us"}
+          </Link>
         </div>
       </section>
 

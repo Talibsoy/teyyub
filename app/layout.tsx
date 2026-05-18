@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import SiteShell from "@/components/SiteShell";
+import { LanguageProvider } from "@/components/LanguageContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -99,7 +100,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <SiteShell>{children}</SiteShell>
+        <LanguageProvider>
+          <SiteShell>{children}</SiteShell>
+        </LanguageProvider>
       </body>
     </html>
   );
