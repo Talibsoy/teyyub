@@ -5,7 +5,7 @@ import NewsletterSection from "@/components/NewsletterSection";
 import ReviewsSection from "@/components/ReviewsSection";
 import QuizWidget from "@/components/personalization/QuizWidget";
 import DNAProfileCard from "@/components/DNAProfileCard";
-import { Sparkles, X, Loader2, ArrowRight, Brain, Zap, Plane, Calendar, Shield, TrendingUp } from "lucide-react";
+import { Sparkles, X, Loader2, ArrowRight, Brain, Zap, Plane, Calendar, Shield, TrendingUp, Bed, Compass, Train, Bus, Ship, MapPin, Search } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface SearchTour {
@@ -14,10 +14,13 @@ interface SearchTour {
   max_seats: number; booked_seats: number;
 }
 interface DynamicPackage {
+  origin?: string;
   destination: string; checkin: string; checkout: string;
   nights: number; passengers: number;
   hotel_name: string; hotel_stars: number | null; hotel_rating: number | null;
-  flight_stops: number; price_azn: number; per_person_azn: number; wa_text: string;
+  flight_stops: number; price_azn: number; per_person_azn: number;
+  price_usd?: number; per_person_usd?: number; currency?: "USD" | "AZN";
+  wa_text: string;
 }
 interface SearchResult { tours: SearchTour[]; ai_intro: string; fallback: boolean; dynamicPackage?: DynamicPackage | null; }
 
@@ -43,27 +46,31 @@ const ITINERARY_PREVIEW = [
   { day: "+4", title: "4 gün tam planlaşdırılıb", sub: "Gizli nöqtələr, yerli icma, büdcə izlənməsi", tags: ["AI seçimi"] },
 ];
 
-
 const LOADING_STEPS = ["Təhlil edilir...", "Məkanlar axtarılır...", "Paket hazırlanır...", "Tamamlanır..."];
 
 /* ─── Dynamic Package Card ───────────────────────────── */
 function DynamicPackageCard({ pkg }: { pkg: DynamicPackage }) {
-  const checkInFmt  = new Date(pkg.checkin).toLocaleDateString("az-AZ",  { day: "numeric", month: "long" });
-  const checkOutFmt = new Date(pkg.checkout).toLocaleDateString("az-AZ", { day: "numeric", month: "long" });
+  const isAzn = pkg.currency === "AZN";
+  const currencySymbol = isAzn ? "AZN" : "USD";
+  const displayPrice = isAzn ? pkg.price_azn : (pkg.price_usd ?? pkg.price_azn);
+  const displayPerPerson = isAzn ? pkg.per_person_azn : (pkg.per_person_usd ?? pkg.per_person_azn);
+
+  const checkInFmt  = new Date(pkg.checkin).toLocaleDateString(isAzn ? "az-AZ" : "en-US",  { day: "numeric", month: "long" });
+  const checkOutFmt = new Date(pkg.checkout).toLocaleDateString(isAzn ? "az-AZ" : "en-US", { day: "numeric", month: "long" });
   const stars = pkg.hotel_stars ? "★".repeat(pkg.hotel_stars) : "";
 
   return (
-    <div className="rounded-2xl overflow-hidden mb-4 shadow-lg border border-sky-100">
+    <div className="rounded-2xl overflow-hidden mb-4 shadow-lg border border-sky-100 text-left">
       {/* Header */}
       <div className="bg-gradient-to-r from-sky-600 to-indigo-600 px-5 py-4">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest">Natoure Paketi</span>
+          <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest">Natoure Package</span>
         </div>
         <p className="text-white font-extrabold text-lg leading-tight">
-          Bakı → {pkg.destination}
+          {pkg.origin || "Departure"} → {pkg.destination}
         </p>
         <p className="text-white/80 text-sm mt-0.5">
-          {checkInFmt} – {checkOutFmt} · {pkg.nights} gecə · {pkg.passengers} nəfər
+          {checkInFmt} – {checkOutFmt} · {pkg.nights} nights · {pkg.passengers} travelers
         </p>
       </div>
 
@@ -79,22 +86,24 @@ function DynamicPackageCard({ pkg }: { pkg: DynamicPackage }) {
         </div>
         <div className="flex items-center gap-2.5 text-sm text-slate-600">
           <span className="text-sky-500">✈️</span>
-          <span>Gediş-dönüş uçuş daxil{pkg.flight_stops === 0 ? " · Birbaşa" : ` · ${pkg.flight_stops} dayanacaq`}</span>
+          <span>Round-trip flight included{pkg.flight_stops === 0 ? " · Direct" : ` · ${pkg.flight_stops} stop${pkg.flight_stops > 1 ? "s" : ""}`}</span>
         </div>
         <div className="flex items-center gap-2.5 text-sm text-slate-500">
           <span className="text-sky-500">✓</span>
-          <span>Xidmət haqqı daxildir</span>
+          <span> flynatoure concierge fee & taxes included</span>
         </div>
 
         {/* Price */}
         <div className="flex items-end justify-between pt-1 border-t border-slate-100 mt-1">
           <div>
-            <p className="text-xs text-slate-400">Nəfər başına</p>
-            <p className="text-sm font-semibold text-slate-600">{pkg.per_person_azn.toLocaleString()} AZN</p>
+            <p className="text-xs text-slate-400">{isAzn ? "Nəfər başına" : "Per person"}</p>
+            <p className="text-sm font-semibold text-slate-600">{isAzn ? "" : "$"}{displayPerPerson.toLocaleString()} {isAzn ? "AZN" : ""}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-400">Cəmi ({pkg.passengers} nəfər)</p>
-            <p className="text-2xl font-extrabold text-sky-600">{pkg.price_azn.toLocaleString()} <span className="text-base">AZN</span></p>
+            <p className="text-xs text-slate-400">{isAzn ? `Cəmi (${pkg.passengers} nəfər)` : `Total (${pkg.passengers} travelers)`}</p>
+            <p className="text-2xl font-extrabold text-sky-600">
+              {isAzn ? "" : "$"}{displayPrice.toLocaleString()} <span className="text-base">{isAzn ? "AZN" : "USD"}</span>
+            </p>
           </div>
         </div>
 
@@ -104,7 +113,7 @@ function DynamicPackageCard({ pkg }: { pkg: DynamicPackage }) {
           className="flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white mt-1"
           style={{ background: "#25D366", boxShadow: "0 4px 14px rgba(37,211,102,0.35)" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          WhatsApp-da Rezervasiya Et
+          Reserve on WhatsApp
         </a>
       </div>
     </div>
@@ -122,19 +131,19 @@ function ResultModal({ onClose, result }: { onClose: () => void; result: SearchR
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600">
           <div className="flex items-center gap-2">
             <Sparkles size={18} className="text-white" />
-            <span className="text-white font-bold text-base">AI Tövsiyəsi</span>
+            <span className="text-white font-bold text-base">Natoure AI Selection</span>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition"><X size={16} /></button>
         </div>
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {ai_intro && (
-            <div className="bg-sky-50 border-l-4 border-sky-500 rounded-xl p-4 mb-4">
+            <div className="bg-sky-50 border-l-4 border-sky-500 rounded-xl p-4 mb-4 text-left">
               <p className="text-slate-700 text-sm leading-relaxed m-0">{ai_intro}</p>
             </div>
           )}
           {dynamicPackage && <DynamicPackageCard pkg={dynamicPackage} />}
           {tours.length > 0 ? (
-            <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col gap-3 mb-4 text-left">
               {tours.map(tour => {
                 const seatsLeft = tour.max_seats - tour.booked_seats;
                 return (
@@ -144,26 +153,26 @@ function ResultModal({ onClose, result }: { onClose: () => void; result: SearchR
                         <span className="text-[11px] font-semibold text-sky-600 bg-sky-50 px-3 py-0.5 rounded-full">{tour.destination}</span>
                         <p className="mt-2 font-bold text-slate-800 text-sm leading-snug">{tour.name}</p>
                         {tour.hotel && <p className="text-xs text-slate-400 mt-1">🏨 {tour.hotel}</p>}
-                        {seatsLeft > 0 && seatsLeft <= 3 && <span className="text-xs text-red-500 font-bold">Son {seatsLeft} yer!</span>}
+                        {seatsLeft > 0 && seatsLeft <= 3 && <span className="text-xs text-red-500 font-bold">Only {seatsLeft} seats left!</span>}
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="font-extrabold text-sky-600 text-lg">{tour.price_azn} AZN</p>
-                        <p className="text-xs text-slate-400">/nəfər</p>
+                        <p className="text-xs text-slate-400">/person</p>
                       </div>
                     </div>
                     <div className="border-t border-slate-100 flex items-center justify-between px-4 py-2.5">
-                      <a href={`/turlar/${tour.id}`} className="text-sm font-semibold text-sky-600 hover:underline">Ətraflı bax →</a>
-                      <a href={waLink(`Salam, "${tour.name}" turu haqqında məlumat almaq istəyirəm`)} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 hover:underline">WhatsApp ↗</a>
+                      <a href={`/turlar/${tour.id}`} className="text-sm font-semibold text-sky-600 hover:underline">View details →</a>
+                      <a href={waLink(`Hi, I would like to get more information about the "${tour.name}" tour.`)} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 hover:underline">WhatsApp ↗</a>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-slate-500 text-sm text-center mb-4">Hal-hazırda uyğun tur tapılmadı. Yeni turlar üçün bizi izləyin.</p>
+            <p className="text-slate-500 text-sm text-center mb-4">No matching tours found right now. Stay tuned for new routes!</p>
           )}
           <a href="/turlar" className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-sm">
-            Bütün Turlara Bax <ArrowRight size={16} />
+            View All Tours <ArrowRight size={16} />
           </a>
         </div>
       </div>
@@ -180,7 +189,51 @@ export default function HomePage() {
   const [quizDone, setQuizDone]       = useState(false);
   const [archetypeName, setArchetypeName] = useState("");
 
+  // Location detection states
+  const [userLocation, setUserLocation] = useState<{
+    country: string;
+    city: string;
+    airportCode: string;
+    airportName: string;
+  } | null>(null);
+
+  // Bento search tabs state
+  const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "cruises" | "trains" | "buses" | "tours">("flights");
+
+  // Flight Search Form States
+  const [flightOrigin, setFlightOrigin] = useState("");
+  const [flightDest, setFlightDest] = useState("");
+  const [flightDate, setFlightDate] = useState("");
+  const [flightPassengers, setFlightPassengers] = useState(1);
+
+  // Hotel Search Form States
+  const [hotelDest, setHotelDest] = useState("");
+  const [hotelCheckIn, setHotelCheckIn] = useState("");
+  const [hotelCheckOut, setHotelCheckOut] = useState("");
+  const [hotelGuests, setHotelGuests] = useState(2);
+
+  // Cruise Search Form States
+  const [cruiseRegion, setCruiseRegion] = useState("Caribbean");
+  const [cruiseDate, setCruiseDate] = useState("");
+
+  // Train Search Form States
+  const [trainOrigin, setTrainOrigin] = useState("");
+  const [trainDest, setTrainDest] = useState("");
+  const [trainDate, setTrainDate] = useState("");
+  const [trainPassengers, setTrainPassengers] = useState(1);
+
+  // Bus Search Form States
+  const [busOrigin, setBusOrigin] = useState("");
+  const [busDest, setBusDest] = useState("");
+  const [busDate, setBusDate] = useState("");
+  const [busPassengers, setBusPassengers] = useState(1);
+
+  // Tour Search Form States
+  const [tourRegion, setTourRegion] = useState("");
+  const [tourMonth, setTourMonth] = useState("");
+
   useEffect(() => {
+    // 1. Check user persona archetype
     const arch = localStorage.getItem("nf_archetype");
     const scores = localStorage.getItem("nf_dna_scores");
     if (arch && scores) { setQuizDone(true); }
@@ -194,17 +247,47 @@ export default function HomePage() {
       };
       setArchetypeName(labels[arch] || arch);
     }
+
+    // 2. Perform Dynamic Auto-Location Resolution
+    async function detectLocation() {
+      try {
+        const res = await fetch("/api/location");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok) {
+            setUserLocation({
+              country: data.country,
+              city: data.city,
+              airportCode: data.nearestAirport.code,
+              airportName: data.nearestAirport.name,
+            });
+            // Pre-populate flight origin dynamically!
+            setFlightOrigin(data.nearestAirport.code);
+            setTrainOrigin(data.city);
+            setBusOrigin(data.city);
+          }
+        }
+      } catch (err) {
+        console.error("Auto-location failed:", err);
+      }
+    }
+    detectLocation();
   }, []);
 
-  const handleGenerate = async () => {
-    if (!prompt.trim() || isLoading) return;
+  const handleGenerate = async (customPrompt?: string) => {
+    const activePrompt = customPrompt || prompt;
+    if (!activePrompt.trim() || isLoading) return;
     setIsLoading(true); setLoadingStep(0);
     const timers = LOADING_STEPS.map((_, i) => setTimeout(() => setLoadingStep(i), i * 900));
     try {
       const sessionToken = localStorage.getItem("nf_session_token") ?? undefined;
       const res = await fetch("/api/ai-search", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, session_token: sessionToken }),
+        body: JSON.stringify({
+          prompt: activePrompt,
+          session_token: sessionToken,
+          origin: flightOrigin || userLocation?.airportCode || "JFK" // Dynamically route flight parameters globally!
+        }),
       });
       const data = await res.json();
       timers.forEach(clearTimeout);
@@ -217,6 +300,33 @@ export default function HomePage() {
       setIsLoading(false); setLoadingStep(-1);
       setSearchResult({ tours: [], ai_intro: "Bağlantı xətası. Yenidən cəhd edin.", fallback: true });
     }
+  };
+
+  const handleTabSearch = async () => {
+    let queryPrompt = "";
+    if (activeTab === "flights") {
+      if (!flightDest.trim() || !flightDate) return;
+      queryPrompt = `Search flights from ${flightOrigin || "JFK"} to ${flightDest} on ${flightDate} for ${flightPassengers} passengers`;
+    } else if (activeTab === "hotels") {
+      if (!hotelDest.trim() || !hotelCheckIn || !hotelCheckOut) return;
+      queryPrompt = `Search hotels in ${hotelDest} checking in on ${hotelCheckIn} and checking out on ${hotelCheckOut} for ${hotelGuests} guests`;
+    } else if (activeTab === "cruises") {
+      if (!cruiseDate) return;
+      queryPrompt = `Search cruises to ${cruiseRegion} starting on ${cruiseDate}`;
+    } else if (activeTab === "trains") {
+      if (!trainOrigin.trim() || !trainDest.trim() || !trainDate) return;
+      queryPrompt = `Search trains from ${trainOrigin} to ${trainDest} on ${trainDate} for ${trainPassengers} passengers`;
+    } else if (activeTab === "buses") {
+      if (!busOrigin.trim() || !busDest.trim() || !busDate) return;
+      queryPrompt = `Search buses from ${busOrigin} to ${busDest} on ${busDate} for ${busPassengers} passengers`;
+    } else if (activeTab === "tours") {
+      if (!tourRegion.trim()) return;
+      queryPrompt = `Search package tours to ${tourRegion} ${tourMonth ? "in " + tourMonth : ""}`;
+    }
+
+    if (!queryPrompt) return;
+    setPrompt(queryPrompt);
+    await handleGenerate(queryPrompt);
   };
 
   return (
@@ -246,10 +356,20 @@ export default function HomePage() {
           <div className="blob blob-delay2 absolute top-[40%] left-[35%] w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full max-w-3xl mx-auto">
-          <div className="fade-in-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-bold tracking-widest uppercase mb-8">
-            <Sparkles size={12} /> AI Qərar Mühərriki
-          </div>
+        <div className="relative z-10 w-full max-w-4xl mx-auto">
+          {userLocation ? (
+            <div className="fade-in-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold tracking-wide mb-8 border border-emerald-100 shadow-sm">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              📍 Welcoming you from {userLocation.city}, {userLocation.country}! Nearest airport: <strong>{userLocation.airportCode} ({userLocation.airportName})</strong>
+            </div>
+          ) : (
+            <div className="fade-in-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-bold tracking-widest uppercase mb-8">
+              <Sparkles size={12} /> AI Travel Decision Engine
+            </div>
+          )}
 
           {/* Main headline */}
           <h1 className="fade-in-up text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.08] text-slate-900 mb-6 tracking-tight"
@@ -293,37 +413,301 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* AI Prompt Box */}
-          <div className="fade-in-up bg-white/90 backdrop-blur-xl rounded-3xl p-2 shadow-xl ring-1 ring-sky-200/60 mb-5" style={{ animationDelay: ".35s" }}>
-            <textarea
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && e.ctrlKey) handleGenerate(); }}
-              placeholder="Məsələn: Gələn ay yoldaşımla romantik bir yerə getmək istəyirik, büdcəmiz 2000 AZN-dir..."
-              className="w-full min-h-[100px] p-5 bg-transparent text-slate-800 text-base leading-relaxed resize-none outline-none placeholder:text-slate-400 rounded-2xl"
-            />
-            <div className="flex items-center justify-between px-3 pb-3 gap-3">
-              <span className="text-xs text-slate-400">Ctrl+Enter ilə göndər</span>
-              <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()}
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm text-white transition-all"
-                style={{
-                  background: isLoading || !prompt.trim() ? "#cbd5e1" : "linear-gradient(135deg,#0284c7,#4f46e5)",
-                  boxShadow: isLoading || !prompt.trim() ? "none" : "0 8px 25px rgba(2,132,199,.4)",
-                  cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer",
-                }}>
-                {isLoading ? <><Loader2 size={16} className="animate-spin" />{LOADING_STEPS[loadingStep] || "..."}</> : <><Sparkles size={16} />Generasiya Et</>}
+          {/* Bento Search Tabs */}
+          <div className="fade-in-up bg-white/95 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl ring-1 ring-slate-200/50 mb-8 border border-white" style={{ animationDelay: ".35s" }}>
+            {/* Tabs Selector */}
+            <div className="flex flex-wrap gap-1.5 p-1 bg-slate-100 rounded-2xl mb-6">
+              {[
+                { id: "flights", label: "Flights", icon: <Plane size={15} /> },
+                { id: "hotels", label: "Hotels", icon: <Bed size={15} /> },
+                { id: "cruises", label: "Cruises", icon: <Ship size={15} /> },
+                { id: "trains", label: "Trains", icon: <Train size={15} /> },
+                { id: "buses", label: "Buses", icon: <Bus size={15} /> },
+                { id: "tours", label: "Tours", icon: <Compass size={15} /> },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    activeTab === tab.id
+                      ? "bg-white text-sky-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-white/40"
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Active Tab Form Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              {activeTab === "flights" && (
+                <>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">From</label>
+                    <input
+                      type="text"
+                      value={flightOrigin}
+                      onChange={e => setFlightOrigin(e.target.value.toUpperCase())}
+                      placeholder="e.g. JFK or GYD"
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">To</label>
+                    <input
+                      type="text"
+                      value={flightDest}
+                      onChange={e => setFlightDest(e.target.value.toUpperCase())}
+                      placeholder="e.g. DXB or LHR"
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={flightDate}
+                      onChange={e => setFlightDate(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Passengers</label>
+                    <select
+                      value={flightPassengers}
+                      onChange={e => setFlightPassengers(Number(e.target.value))}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm bg-white"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} traveler{n > 1 ? "s" : ""}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "hotels" && (
+                <>
+                  <div className="flex flex-col text-left md:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Destination</label>
+                    <input
+                      type="text"
+                      value={hotelDest}
+                      onChange={e => setHotelDest(e.target.value)}
+                      placeholder="Where are you staying? (e.g. Paris, Dubai)"
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Check-in</label>
+                    <input
+                      type="date"
+                      value={hotelCheckIn}
+                      onChange={e => setHotelCheckIn(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Check-out</label>
+                    <input
+                      type="date"
+                      value={hotelCheckOut}
+                      onChange={e => setHotelCheckOut(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                </>
+              )}
+
+              {activeTab === "cruises" && (
+                <>
+                  <div className="flex flex-col text-left md:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Cruise Region</label>
+                    <select
+                      value={cruiseRegion}
+                      onChange={e => setCruiseRegion(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm bg-white"
+                    >
+                      {["Caribbean", "Mediterranean", "Alaska", "Europe", "Asia"].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col text-left md:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Departure Month / Date</label>
+                    <input
+                      type="date"
+                      value={cruiseDate}
+                      onChange={e => setCruiseDate(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                </>
+              )}
+
+              {activeTab === "trains" && (
+                <>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">From City</label>
+                    <input
+                      type="text"
+                      value={trainOrigin}
+                      onChange={e => setTrainOrigin(e.target.value)}
+                      placeholder="e.g. London or New York"
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">To City</label>
+                    <input
+                      type="text"
+                      value={trainDest}
+                      onChange={e => setTrainDest(e.target.value)}
+                      placeholder="e.g. Paris or Washington D.C."
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={trainDate}
+                      onChange={e => setTrainDate(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Passengers</label>
+                    <select
+                      value={trainPassengers}
+                      onChange={e => setTrainPassengers(Number(e.target.value))}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm bg-white"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} traveler{n > 1 ? "s" : ""}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "buses" && (
+                <>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">From City</label>
+                    <input
+                      type="text"
+                      value={busOrigin}
+                      onChange={e => setBusOrigin(e.target.value)}
+                      placeholder="Departure City"
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">To City</label>
+                    <input
+                      type="text"
+                      value={busDest}
+                      onChange={e => setBusDest(e.target.value)}
+                      placeholder="Arrival City"
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={busDate}
+                      onChange={e => setBusDate(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Passengers</label>
+                    <select
+                      value={busPassengers}
+                      onChange={e => setBusPassengers(Number(e.target.value))}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm bg-white"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} traveler{n > 1 ? "s" : ""}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "tours" && (
+                <>
+                  <div className="flex flex-col text-left md:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Where to?</label>
+                    <input
+                      type="text"
+                      value={tourRegion}
+                      onChange={e => setTourRegion(e.target.value)}
+                      placeholder="e.g. Dubai, Europe, Antalya"
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col text-left md:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Preferred Month</label>
+                    <select
+                      value={tourMonth}
+                      onChange={e => setTourMonth(e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm bg-white"
+                    >
+                      <option value="">Any Month</option>
+                      {["June", "July", "August", "September", "October", "November"].map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Structured Search Trigger & Natural Language Toggle */}
+            <div className="flex flex-col md:flex-row items-center justify-between border-t border-slate-100 pt-5 gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                <span className="text-xs font-semibold text-slate-500">Fast, premium routing directly resolved.</span>
+              </div>
+              <button
+                onClick={handleTabSearch}
+                disabled={isLoading}
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-extrabold text-sm text-white transition-all shadow-md bg-gradient-to-r from-sky-600 to-indigo-600 hover:shadow-lg disabled:bg-slate-300"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    {LOADING_STEPS[loadingStep] || "Searching..."}
+                  </>
+                ) : (
+                  <>
+                    <Search size={16} />
+                    Search Now
+                  </>
+                )}
               </button>
             </div>
-          </div>
 
-          {/* Tags */}
-          <div className="fade-in-up flex flex-wrap gap-2 justify-center mb-8" style={{ animationDelay: ".4s" }}>
-            {TAGS.map(tag => (
-              <button key={tag} onClick={() => setPrompt(tag)}
-                className="px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-white/80 border border-sky-200/60 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-400 transition-all backdrop-blur">
-                {tag}
-              </button>
-            ))}
+            {/* Or Natural Language Prompt area */}
+            <div className="mt-6 border-t border-slate-100 pt-6">
+              <p className="text-xs font-bold text-slate-400 uppercase mb-3 text-left">Or Search with Natural Language Prompt</p>
+              <div className="relative">
+                <textarea
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && e.ctrlKey) handleGenerate(); }}
+                  placeholder="Məsələn: Gələn ay yoldaşımla romantik bir yerə getmək istəyirik, büdcəmiz 2000 AZN-dir..."
+                  className="w-full min-h-[80px] p-4 bg-slate-50 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800 text-sm leading-relaxed outline-none placeholder:text-slate-400"
+                />
+                <button
+                  onClick={() => handleGenerate()}
+                  disabled={isLoading || !prompt.trim()}
+                  className="absolute right-3 bottom-3 flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs text-white transition-all"
+                  style={{
+                    background: isLoading || !prompt.trim() ? "#cbd5e1" : "linear-gradient(135deg,#0284c7,#4f46e5)",
+                    cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer"
+                  }}
+                >
+                  <Sparkles size={12} />
+                  AI Ask
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Quiz section */}

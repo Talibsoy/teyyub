@@ -52,8 +52,11 @@ export interface DynamicPackage {
   hotel_stars:    number | null;
   hotel_rating:   number | null;
   flight_stops:   number;
-  price_azn:      number;       // Cəmi (uçuş + otel, 17% daxil)
+  price_azn:      number;       // AZN total
+  price_usd:      number;       // USD total
   per_person_azn: number;
+  per_person_usd: number;
+  currency:       "USD" | "AZN";
   wa_text:        string;
 }
 
@@ -76,7 +79,7 @@ async function extractIntent(prompt: string): Promise<SearchIntent> {
 
 JSON sahələri:
 - destination: ingilis dilindəki şəhər adı (string|null). Azərbaycan/Türk/Rus dilindən çevir.
-- max_budget_azn: büdcə AZN (number|null)
+- max_budget_azn: büdcə AZN (number|null). Əgər istifadəçi USD ($) qeyd edibsə, onu 1.70-ə vurub AZN-ə çevir.
 - group_type: "couple"|"family"|"solo"|"friends"|null
 - duration_days: gün sayı (number|null)
 - travel_style: "beach"|"culture"|"adventure"|"luxury"|"budget"|null
@@ -117,7 +120,7 @@ function scoreTour(tour: Tour, intent: SearchIntent, archetype: string | null): 
   return score;
 }
 
-async function buildDynamicPackage(intent: SearchIntent): Promise<DynamicPackage | null> {
+async function buildDynamicPackage(intent: SearchIntent, origin: string): Promise<DynamicPackage | null> {
   if (!intent.checkin_date || !intent.checkout_date || !intent.destination) return null;
 
   const destKey = intent.destination.toLowerCase();
@@ -130,9 +133,11 @@ async function buildDynamicPackage(intent: SearchIntent): Promise<DynamicPackage
     (new Date(intent.checkout_date).getTime() - new Date(intent.checkin_date).getTime()) / 86400000
   ));
 
+  const userCurrency = origin === "GYD" ? "AZN" : "USD";
+
   const [flightRes, hotelRes] = await Promise.allSettled([
-    searchFlights({ origin: "GYD", destination: iata, date: intent.checkin_date, return_date: intent.checkout_date, passengers }),
-    searchHotels({ destination: hotelQuery, checkin: intent.checkin_date, checkout: intent.checkout_date, adults: passengers, rooms: 1 }),
+    searchFlights({ origin, destination: iata, date: intent.checkin_date, return_date: intent.checkout_date, passengers }),
+    searchHotels({ destination: hotelQuery, checkin: intent.checkin_date, checkout: intent.checkout_date, adults: passengers, rooms: 1, currency: userCurrency }),
   ]);
 
   if (flightRes.status === "rejected" || !flightRes.value.length) return null;
@@ -140,12 +145,24 @@ async function buildDynamicPackage(intent: SearchIntent): Promise<DynamicPackage
 
   const flight = flightRes.value[0];
   const hotel  = hotelRes.value[0];
-  const priceAzn = Math.ceil(flight.price_azn + hotel.price_marked_up);
 
-  const checkInFmt  = new Date(intent.checkin_date).toLocaleDateString("az-AZ",  { day: "numeric", month: "long" });
-  const checkOutFmt = new Date(intent.checkout_date).toLocaleDateString("az-AZ", { day: "numeric", month: "long" });
+  let priceAzn = 0;
+  let priceUsd = 0;
 
-  const waText = `Salam! Natoure paket turu ilə maraqlanıram.\nMəkan: ${intent.destination}\nTarix: ${checkInFmt} – ${checkOutFmt} (${nights} gecə)\nNəfər: ${passengers}\nQiymət: ${priceAzn.toLocaleString()} AZN\nRezervasiya etmək istəyirəm.`;
+  if (userCurrency === "AZN") {
+    priceAzn = Math.ceil(flight.price_azn + hotel.price_marked_up);
+    priceUsd = Math.ceil(flight.price_usd + (hotel.price_marked_up / 1.7));
+  } else {
+    priceUsd = Math.ceil(flight.price_usd + hotel.price_marked_up);
+    priceAzn = Math.ceil(flight.price_azn + (hotel.price_marked_up * 1.7));
+  }
+
+  const checkInFmt  = new Date(intent.checkin_date).toLocaleDateString(userCurrency === "AZN" ? "az-AZ" : "en-US",  { day: "numeric", month: "long" });
+  const checkOutFmt = new Date(intent.checkout_date).toLocaleDateString(userCurrency === "AZN" ? "az-AZ" : "en-US", { day: "numeric", month: "long" });
+
+  const waText = userCurrency === "AZN"
+    ? `Salam! Natoure paket turu ilə maraqlanıram.\nMəkan: ${intent.destination}\nTarix: ${checkInFmt} – ${checkOutFmt} (${nights} gecə)\nNəfər: ${passengers}\nQiymət: ${priceAzn.toLocaleString()} AZN\nRezervasiya etmək istəyirəm.`
+    : `Hi! I am interested in the Natoure package tour.\nDestination: ${intent.destination}\nDates: ${checkInFmt} – ${checkOutFmt} (${nights} nights)\nTravelers: ${passengers}\nPrice: $${priceUsd.toLocaleString()} USD\nI would like to make a reservation.`;
 
   return {
     destination:    intent.destination,
@@ -158,14 +175,17 @@ async function buildDynamicPackage(intent: SearchIntent): Promise<DynamicPackage
     hotel_rating:   hotel.rating,
     flight_stops:   flight.stops,
     price_azn:      priceAzn,
+    price_usd:      priceUsd,
     per_person_azn: Math.ceil(priceAzn / passengers),
+    per_person_usd: Math.ceil(priceUsd / passengers),
+    currency:       userCurrency,
     wa_text:        waText,
   };
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, session_token } = await req.json() as { prompt: string; session_token?: string };
+    const { prompt, session_token, origin } = await req.json() as { prompt: string; session_token?: string; origin?: string };
     if (!prompt?.trim()) return NextResponse.json({ ok: false, error: "Prompt boşdur" }, { status: 400 });
 
     const supabase = getSupabaseAdmin();
@@ -188,8 +208,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Try dynamic package if dates specified (parallel with Supabase query)
+    const resolvedOrigin = origin || "JFK";
+    const userCurrency = resolvedOrigin === "GYD" ? "AZN" : "USD";
+
     const [dynamicPackageResult, toursResult] = await Promise.allSettled([
-      buildDynamicPackage(intent),
+      buildDynamicPackage(intent, resolvedOrigin),
       (async () => {
         let q = supabase
           .from("tours")
@@ -209,22 +232,28 @@ export async function POST(req: NextRequest) {
     let scored: (Tour & { _score: number })[] = [];
     if (toursData?.length) {
       scored = (toursData as Tour[])
-        .map(t => ({ ...t, _score: scoreTour(t, intent, archetype) }))
-        .sort((a, b) => b._score - a._score)
-        .slice(0, dynamicPackage ? 3 : 6); // dynamicPackage varsa 3 tur göstər
+          .map(t => ({ ...t, _score: scoreTour(t, intent, archetype) }))
+          .sort((a, b) => b._score - a._score)
+          .slice(0, dynamicPackage ? 3 : 6); // dynamicPackage varsa 3 tur göstər
     } else {
       const { data: fallback } = await supabase
-        .from("tours").select("id, name, destination, price_azn, start_date, end_date, max_seats, booked_seats, hotel, description, tags")
-        .eq("is_active", true).limit(4);
+          .from("tours").select("id, name, destination, price_azn, start_date, end_date, max_seats, booked_seats, hotel, description, tags")
+          .eq("is_active", true).limit(4);
       scored = (fallback || []).map(t => ({ ...(t as Tour), _score: 0 }));
     }
 
-    // 5. AI intro — template əsasında (əlavə API çağırışı yoxdur)
+    // 5. AI intro — dynamic translation depending on resolved user currency
     const ai_intro = dynamicPackage
-      ? `${dynamicPackage.destination} üçün ${dynamicPackage.nights} gecəlik paket hazırlandı — ${dynamicPackage.price_azn.toLocaleString()} AZN.`
+      ? (userCurrency === "AZN"
+          ? `${dynamicPackage.destination} üçün ${dynamicPackage.nights} gecəlik paket hazırlandı — ${dynamicPackage.price_azn.toLocaleString()} AZN.`
+          : `A custom ${dynamicPackage.nights}-night package to ${dynamicPackage.destination} has been prepared — $${dynamicPackage.price_usd.toLocaleString()} USD.`)
       : scored.length > 0
-        ? `${intent.destination ? intent.destination + " üçün " : ""}${scored.length} tur tapıldı.`
-        : "Axtarışınıza uyğun tur tapılmadı. Ən populyar turlarımıza baxın.";
+        ? (userCurrency === "AZN"
+            ? `${intent.destination ? intent.destination + " üçün " : ""}${scored.length} tur tapıldı.`
+            : `Found ${scored.length} tours${intent.destination ? " for " + intent.destination : ""}.`)
+        : (userCurrency === "AZN"
+            ? "Axtarışınıza uyğun tur tapılmadı. Ən populyar turlarımıza baxın."
+            : "No matching tours found. Check out our most popular departures.");
 
     return NextResponse.json({
       ok: true,

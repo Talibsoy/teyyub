@@ -89,26 +89,40 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
     // Unsplash-dan şəkil tap
     let image_url: string | null = null;
     try {
-      const query = encodeURIComponent(dest.query);
       const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
-      console.log("[Unsplash] Key var:", !!unsplashKey, "Query:", query);
-      const imgRes = await fetch(
-        `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&per_page=5`,
-        { headers: { Authorization: `Client-ID ${unsplashKey}` } }
-      );
-      console.log("[Unsplash] Status:", imgRes.status);
-      if (imgRes.ok) {
-        const imgData = await imgRes.json();
-        const results = imgData.results || [];
-        console.log("[Unsplash] Nəticə sayı:", results.length);
-        if (results.length > 0) {
-          const pick = results[Math.floor(Math.random() * results.length)];
-          image_url = pick.urls?.regular || null;
-          console.log("[Unsplash] URL:", image_url);
+      
+      const fetchImages = async (searchQuery: string) => {
+        const imgRes = await fetch(
+          `https://api.unsplash.com/search/photos?query=${searchQuery}&orientation=landscape&per_page=5`,
+          { headers: { Authorization: `Client-ID ${unsplashKey}` } }
+        );
+        if (imgRes.ok) {
+          const imgData = await imgRes.json();
+          return imgData.results || [];
         }
+        return [];
+      };
+
+      let query = encodeURIComponent(dest.query);
+      console.log("[Unsplash] Key var:", !!unsplashKey, "İlkin Query:", query);
+      
+      let results = await fetchImages(query);
+      console.log("[Unsplash] İlkin Nəticə sayı:", results.length);
+      
+      if (results.length === 0) {
+        // Fallback: Təkcə ölkə adını və ya "travel" sözünü axtar
+        query = encodeURIComponent(`${dest.country} landscape`);
+        console.log("[Unsplash] Fallback Query:", query);
+        results = await fetchImages(query);
+        console.log("[Unsplash] Fallback Nəticə sayı:", results.length);
+      }
+
+      if (results.length > 0) {
+        const pick = results[Math.floor(Math.random() * results.length)];
+        image_url = pick.urls?.regular || null;
+        console.log("[Unsplash] URL:", image_url);
       } else {
-        const errText = await imgRes.text();
-        console.log("[Unsplash] Xəta:", errText);
+        console.log("[Unsplash] Xəta: Heç bir şəkil tapılmadı.");
       }
     } catch (e) {
       console.log("[Unsplash] Exception:", e);
