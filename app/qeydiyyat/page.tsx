@@ -5,10 +5,12 @@ import { getSupabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "@/components/LanguageContext";
 
 function SignupForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || null;
+  const { language } = useLanguage();
 
   const [name,     setName]     = useState("");
   const [email,    setEmail]    = useState("");
@@ -19,10 +21,30 @@ function SignupForm() {
 
   const loginHref = redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login";
 
+  const t = {
+    title:         language === "tr" ? "Natoure'ye Katılın" : language === "en" ? "Join Natoure" : "Natoure-yə Qoşulun",
+    subtitle:      language === "tr" ? "Özel teklifler ve indirimler için kayıt olun" : language === "en" ? "Register for exclusive offers and discounts" : "Xüsusi təkliflər və endirimlər üçün qeydiyyatdan keçin",
+    nameLabel:     language === "tr" ? "Ad Soyad" : language === "en" ? "Full Name" : "Ad Soyad",
+    namePH:        language === "tr" ? "Ahmet Yılmaz" : language === "en" ? "John Smith" : "Nurlan Əfəndiyev",
+    emailLabel:    "Email",
+    pwLabel:       language === "tr" ? "Şifre" : language === "en" ? "Password" : "Şifrə",
+    pwPH:          language === "tr" ? "En az 6 karakter" : language === "en" ? "At least 6 characters" : "Ən az 6 simvol",
+    submitBtn:     language === "tr" ? "Kayıt Ol" : language === "en" ? "Create Account" : "Qeydiyyatdan Keç",
+    loadingBtn:    language === "tr" ? "Bekleyin..." : language === "en" ? "Please wait..." : "Gözləyin...",
+    alreadyMember: language === "tr" ? "Zaten üye misiniz?" : language === "en" ? "Already have an account?" : "Artıq üzvsünüz?",
+    signIn:        language === "tr" ? "Giriş Yapın" : language === "en" ? "Sign In" : "Daxil olun",
+    shortPw:       language === "tr" ? "Şifre en az 6 karakter olmalıdır." : language === "en" ? "Password must be at least 6 characters." : "Şifrə ən az 6 simvol olmalıdır.",
+    alreadyReg:    language === "tr" ? "Bu email zaten kayıtlı. Giriş yapın." : language === "en" ? "This email is already registered. Please sign in." : "Bu email artıq qeydiyyatdadır. Giriş edin.",
+    genericErr:    language === "tr" ? "Bir hata oluştu. Lütfen tekrar deneyin." : language === "en" ? "An error occurred. Please try again." : "Xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
+    successTitle:  language === "tr" ? "Kayıt tamamlandı!" : language === "en" ? "Registration complete!" : "Qeydiyyat tamamlandı!",
+    successDesc:   language === "tr" ? "Email adresinize onay linki gönderildi.\nLütfen emailinizi kontrol edin." : language === "en" ? "A confirmation link has been sent to your email.\nPlease check your inbox." : "Emailinizə təsdiq linki göndərildi.\nZəhmət olmasa emailinizi yoxlayın.",
+    signInBtn:     language === "tr" ? "Giriş Yap" : language === "en" ? "Sign In" : "Daxil Ol",
+  };
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     if (password.length < 6) {
-      setError("Şifrə ən az 6 simvol olmalıdır.");
+      setError(t.shortPw);
       return;
     }
     setLoading(true);
@@ -43,9 +65,9 @@ function SignupForm() {
     if (error) {
       setLoading(false);
       if (error.message.includes("already registered")) {
-        setError("Bu email artıq qeydiyyatdadır. Giriş edin.");
+        setError(t.alreadyReg);
       } else {
-        setError("Xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.");
+        setError(t.genericErr);
       }
       return;
     }
@@ -63,7 +85,7 @@ function SignupForm() {
           }),
         });
       } catch {
-        // CRM sync xətası qeydiyyatı bloklamasın
+        // CRM sync error should not block registration
       }
     }
 
@@ -90,9 +112,9 @@ function SignupForm() {
         }}>
           <Image src="/logo.png" alt="Natoure" width={52} height={52}
             style={{ borderRadius: "50%", border: "3px solid rgba(255,255,255,0.3)", marginBottom: 12, objectFit: "cover" }} />
-          <h1 style={{ color: "white", fontWeight: 800, fontSize: 22, margin: "0 0 4px" }}>Natoure-yə Qoşulun</h1>
+          <h1 style={{ color: "white", fontWeight: 800, fontSize: 22, margin: "0 0 4px" }}>{t.title}</h1>
           <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, margin: 0 }}>
-            Xüsusi təkliflər və endirimlər üçün qeydiyyatdan keçin
+            {t.subtitle}
           </p>
         </div>
 
@@ -110,11 +132,10 @@ function SignupForm() {
                 </svg>
               </div>
               <h2 style={{ fontWeight: 700, fontSize: 20, color: "#0f172a", margin: "0 0 10px" }}>
-                Qeydiyyat tamamlandı!
+                {t.successTitle}
               </h2>
-              <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7, margin: "0 0 24px" }}>
-                Emailinizə təsdiq linki göndərildi.<br />
-                Zəhmət olmasa emailinizi yoxlayın.
+              <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7, margin: "0 0 24px", whiteSpace: "pre-line" }}>
+                {t.successDesc}
               </p>
               <Link href={loginHref} style={{
                 display: "block", padding: "13px", borderRadius: 14,
@@ -122,18 +143,18 @@ function SignupForm() {
                 color: "white", fontWeight: 700, textDecoration: "none",
                 textAlign: "center", fontSize: 15,
               }}>
-                Daxil Ol
+                {t.signInBtn}
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                  Ad Soyad
+                  {t.nameLabel}
                 </label>
                 <input
                   type="text" value={name} onChange={e => setName(e.target.value)}
-                  placeholder="Nurlan Əfəndiyev"
+                  placeholder={t.namePH}
                   required
                   style={{
                     width: "100%", padding: "11px 14px", borderRadius: 10,
@@ -148,7 +169,7 @@ function SignupForm() {
 
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                  Email
+                  {t.emailLabel}
                 </label>
                 <input
                   type="email" value={email} onChange={e => setEmail(e.target.value)}
@@ -167,11 +188,11 @@ function SignupForm() {
 
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                  Şifrə
+                  {t.pwLabel}
                 </label>
                 <input
                   type="password" value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="Ən az 6 simvol"
+                  placeholder={t.pwPH}
                   required
                   style={{
                     width: "100%", padding: "11px 14px", borderRadius: 10,
@@ -202,13 +223,13 @@ function SignupForm() {
                 boxShadow: loading ? "none" : "0 8px 25px rgba(2,132,199,0.35)",
                 transition: "all 0.2s",
               }}>
-                {loading ? "Gözləyin..." : "Qeydiyyatdan Keç"}
+                {loading ? t.loadingBtn : t.submitBtn}
               </button>
 
               <p style={{ textAlign: "center", fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>
-                Artıq üzvsünüz?{" "}
+                {t.alreadyMember}{" "}
                 <Link href={loginHref} style={{ color: "#0284c7", fontWeight: 600, textDecoration: "none" }}>
-                  Daxil olun
+                  {t.signIn}
                 </Link>
               </p>
             </form>
