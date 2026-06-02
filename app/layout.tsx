@@ -12,41 +12,41 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.natourefly.com"),
   title: {
-    default: "Natoure — Bakıdan Dünyaya Premium Turlar",
+    default: "Natoure — Premium Tours to the World",
     template: "%s | Natoure",
   },
   description:
-    "Natoure — Azərbaycanın etibarlı turizm şirkəti. Türkiyə, Dubai, Misir, Avropa turları. Uçuş + otel + transfer — tam xidmət. WhatsApp-da pulsuz məsləhət.",
+    "Natoure — Trusted premium travel agency. Tours to Turkey, Dubai, Egypt, Europe. Flight + hotel + transfer — full service. Free consultation on WhatsApp.",
   keywords: [
-    "tur", "turizm", "Bakı", "Azərbaycan",
-    "Türkiyə turu", "İstanbul turu", "Dubai turu",
-    "Misir turu", "Avropa turu", "ucuz turlar",
-    "all inclusive tur", "natoure", "flynatoure",
+    "tour", "tourism", "Baku", "Azerbaijan",
+    "Turkey tour", "Istanbul tour", "Dubai tour",
+    "Egypt tour", "Europe tour", "cheap tours",
+    "all inclusive tour", "natoure", "flynatoure",
   ],
   authors: [{ name: "Natoure", url: "https://www.natourefly.com" }],
   creator: "Natoure",
   publisher: "Natoure",
   category: "travel",
   openGraph: {
-    title: "Natoure — Bakıdan Dünyaya Premium Turlar",
-    description: "Türkiyə, Dubai, Misir, Avropa turları. Uçuş + otel + transfer. Bakıdan. Pulsuz məsləhət.",
+    title: "Natoure — Premium Tours to the World",
+    description: "Tours to Turkey, Dubai, Egypt, Europe. Flight + hotel + transfer. Free consultation on WhatsApp.",
     url: "https://www.natourefly.com",
     siteName: "Natoure",
-    locale: "az_AZ",
+    locale: "en_US",
     type: "website",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Natoure — Bakıdan Dünyaya Turlar",
+        alt: "Natoure — Premium Tours to the World",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Natoure — Bakıdan Dünyaya Premium Turlar",
-    description: "Türkiyə, Dubai, Misir, Avropa turları. Pulsuz məsləhət.",
+    title: "Natoure — Premium Tours to the World",
+    description: "Tours to Turkey, Dubai, Egypt, Europe. Free consultation.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -69,12 +69,12 @@ const jsonLd = {
   name: "Natoure",
   url: "https://www.natourefly.com",
   logo: "https://www.natourefly.com/logo.png",
-  description: "Azərbaycanın etibarlı turizm şirkəti. Türkiyə, Dubai, Misir, Avropa turları.",
+  description: "Trusted premium travel agency. Tours to Turkey, Dubai, Egypt, Europe.",
   telephone: "+994517769632",
   email: "info@natourefly.com",
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Bakı",
+    addressLocality: "Baku",
     addressCountry: "AZ",
   },
   openingHoursSpecification: {
@@ -92,7 +92,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="az" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
       <head>
         <script
           type="application/ld+json"

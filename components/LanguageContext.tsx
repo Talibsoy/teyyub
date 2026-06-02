@@ -13,7 +13,7 @@ interface LanguageContextProps {
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Locale>("az");
+  const [language, setLanguageState] = useState<Locale>("en");
 
   useEffect(() => {
     // Helper to get cookies client-side safely
@@ -43,11 +43,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // 3. Auto-detect browser language
     const browserLang = navigator.language.toLowerCase();
-    let detectedLocale: Locale = "az";
+    let detectedLocale: Locale = "en";
     if (browserLang.startsWith("tr")) {
       detectedLocale = "tr";
-    } else if (browserLang.startsWith("en")) {
-      detectedLocale = "en";
+    } else if (browserLang.startsWith("az")) {
+      detectedLocale = "az";
     }
 
     setLanguageState(detectedLocale);
@@ -66,7 +66,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Helper function to resolve dynamic interpolation values (e.g. {city}, {seats})
   const t = (key: keyof TranslationDictionary, variables?: Record<string, string>): string => {
-    let text = dict[key] || DICTIONARIES["az"][key] || "";
+    let text = dict[key] || DICTIONARIES["en"][key] || "";
     if (variables) {
       Object.entries(variables).forEach(([k, v]) => {
         text = text.replace(new RegExp(`{${k}}`, "g"), v);
