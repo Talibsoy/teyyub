@@ -1,624 +1,1010 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import {
+  Sparkles, X, Check, AlertTriangle, Plane, Hotel, Car, Info,
+  Calendar, MapPin, Users, CreditCard, ArrowRight, Lock, Map, RefreshCw
+} from "lucide-react";
+import { applyNatoureMarkup } from "@/lib/markup";
 
-/* ─── Types ─────────────────────────────────────────── */
-type Screen = "landing" | "quiz" | "loading" | "dashboard";
-type AKey = "luxury_curator" | "budget_optimizer" | "deep_relaxer" | "silent_explorer" | "efficiency_seeker";
-
-interface Arch {
-  key: AKey;
-  label: string;
-  emoji: string;
-  color: string;        // tailwind gradient
-  tagline: string;
-  tips: string[];
+/* ─── Interfaces ───────────────────────────────────── */
+interface FlightOffer {
+  id: string;
+  airline: string;
+  logoText: string;
+  departure: string;
+  arrival: string;
+  duration: string;
+  type: string;
+  rawPrice: number;
 }
 
-interface Q {
-  id: number;
-  q: string;
-  options: { label: string; value: string; img: string }[];
-}
-
-interface Hotel {
-  id: number;
+interface HotelOffer {
+  id: string;
   name: string;
-  dest: string;
-  country: string;
   stars: number;
-  price: number;
-  img: string;
-  tags: string[];
-  scores: Record<AKey, number>; // 0-100 match
+  rating: number;
+  rawPricePerNight: number;
+  image: string;
+  location: string;
 }
 
-interface Msg { role: "user" | "bot"; text: string }
+interface CarOffer {
+  id: string;
+  name: string;
+  category: string;
+  rawPricePerDay: number;
+  image: string;
+}
 
-/* ─── Data ───────────────────────────────────────────── */
-const ARCHETYPES: Record<AKey, Arch> = {
-  luxury_curator: {
-    key: "luxury_curator", label: "Lüks Zövq Sahibi", emoji: "💎",
-    color: "from-amber-500 to-yellow-400",
-    tagline: "Siz ən yaxşısını layiqsiniz — komfort və estetika hər şeydən önəmlidir.",
-    tips: ["5* otellər filtrini açın", "All-inclusive paketlərə baxın", "Özel transfer əlavə edin"],
-  },
-  budget_optimizer: {
-    key: "budget_optimizer", label: "Ağıllı Büdcə Ustası", emoji: "🎯",
-    color: "from-emerald-500 to-teal-400",
-    tagline: "Hər manatın dəyərini bilirsiz — ən sərfəli paketləri sizin üçün seçdik.",
-    tips: ["Erkən rezervasiya endirimlərinə baxın", "Şərik otaq seçimini düşünün", "Off-season tarixi seçin"],
-  },
-  deep_relaxer: {
-    key: "deep_relaxer", label: "Dərin Rahatlanma Axtaran", emoji: "🌿",
-    color: "from-sky-500 to-cyan-400",
-    tagline: "Qayğılardan uzaqlaşmaq üçün ən sakit məkanları sizin üçün seçdik.",
-    tips: ["SPA & Wellness otellərə baxın", "Sahil bungalovlarını kəşf edin", "Minimal aktiviti paketlər"],
-  },
-  silent_explorer: {
-    key: "silent_explorer", label: "Səssiz Kəşfçi", emoji: "🗺️",
-    color: "from-violet-500 to-purple-400",
-    tagline: "İzdihamdan uzaq, autentik yerləri sevən bir ruhsunuz.",
-    tips: ["Gizli məkan turlarına baxın", "Kiçik butik otellər seçin", "Yerli rehberli turları kəşf edin"],
-  },
-  efficiency_seeker: {
-    key: "efficiency_seeker", label: "Effektiv Planlayıcı", emoji: "⚡",
-    color: "from-rose-500 to-pink-400",
-    tagline: "Vaxtınızın hər saniyəsi dəyərlidir — hər şey öncədən planlanmış olsun.",
-    tips: ["Uçuş+otel kombo paketlərə baxın", "Şəhər kartları ilə vaxt qazanın", "Sürətli checkin otellər"],
-  },
-};
+interface Msg {
+  role: "user" | "bot";
+  text: string;
+  timestamp: Date;
+}
 
-const QUESTIONS: Q[] = [
-  {
-    id: 1, q: "Arzuladığınız mənzərə hansıdır?",
-    options: [
-      { label: "Mavi okean", value: "ocean", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80" },
-      { label: "Dağ zirvəsi", value: "mountain", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80" },
-      { label: "Şəhər ışıqları", value: "city", img: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80" },
-      { label: "Kənd sakitliyi", value: "countryside", img: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=400&q=80" },
-    ],
-  },
-  {
-    id: 2, q: "Gündəlik büdcəniz nə qədərdir?",
-    options: [
-      { label: "100–200 AZN", value: "budget", img: "https://images.unsplash.com/photo-1580048915913-4f8f5cb481c4?w=400&q=80" },
-      { label: "200–400 AZN", value: "mid", img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=80" },
-      { label: "400–700 AZN", value: "premium", img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&q=80" },
-      { label: "700+ AZN", value: "luxury", img: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&q=80" },
-    ],
-  },
-  {
-    id: 3, q: "Kimlərlə səyahət edirsiniz?",
-    options: [
-      { label: "Tənha", value: "solo", img: "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=400&q=80" },
-      { label: "Sevgili ilə", value: "couple", img: "https://images.unsplash.com/photo-1502503719153-330ec2bfea5c?w=400&q=80" },
-      { label: "Ailə", value: "family", img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400&q=80" },
-      { label: "Dostlar qrupu", value: "group", img: "https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=400&q=80" },
-    ],
-  },
-  {
-    id: 4, q: "Ən çox nə etməyi sevərdiniz?",
-    options: [
-      { label: "Plajda uzanmaq", value: "beach", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80" },
-      { label: "Mədəniyyət & tarix", value: "culture", img: "https://images.unsplash.com/photo-1555993539-1732b0258235?w=400&q=80" },
-      { label: "Macəra & idman", value: "adventure", img: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&q=80" },
-      { label: "Yeməkxana & ləzzət", value: "food", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80" },
-    ],
-  },
+/* ─── Mock Data ─────────────────────────────────────── */
+const MOCK_FLIGHTS: FlightOffer[] = [
+  { id: "fl_1", airline: "Delta Air Lines", logoText: "DL", departure: "16:00 NYC", arrival: "19:15 SFO", duration: "6h 15m", type: "Birbaşa (Direct)", rawPrice: 340 },
+  { id: "fl_2", airline: "United Airlines", logoText: "UA", departure: "08:30 NYC", arrival: "14:10 SFO", duration: "8h 40m", type: "1 Dayanacaq (1 Stop)", rawPrice: 380 },
+  { id: "fl_3", airline: "JetBlue Airways", logoText: "B6", departure: "19:30 NYC", arrival: "22:50 SFO", duration: "6h 20m", type: "Birbaşa (Direct)", rawPrice: 310 },
 ];
 
-const HOTELS: Hotel[] = [
-  {
-    id: 1, name: "Rixos Premium Dubrovnik", dest: "Dubrovnik", country: "Xorvatiya",
-    stars: 5, price: 890, tags: ["All-Inclusive", "Sahil", "5★"],
-    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80",
-    scores: { luxury_curator: 96, budget_optimizer: 30, deep_relaxer: 82, silent_explorer: 55, efficiency_seeker: 70 },
-  },
-  {
-    id: 2, name: "Anantara Maldives", dest: "Malediv", country: "Malediv adaları",
-    stars: 5, price: 1450, tags: ["Su Bungalov", "SPA", "5★"],
-    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80",
-    scores: { luxury_curator: 99, budget_optimizer: 10, deep_relaxer: 95, silent_explorer: 88, efficiency_seeker: 40 },
-  },
-  {
-    id: 3, name: "ibis Styles Barcelona", dest: "Barselona", country: "İspaniya",
-    stars: 3, price: 180, tags: ["Şəhər", "Mərkəz", "3★"],
-    img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80",
-    scores: { luxury_curator: 30, budget_optimizer: 90, deep_relaxer: 40, silent_explorer: 55, efficiency_seeker: 88 },
-  },
-  {
-    id: 4, name: "Reethi Faru Resort", dest: "Raa Atoll", country: "Malediv adaları",
-    stars: 5, price: 980, tags: ["Mərcan", "Dalğıc", "5★"],
-    img: "https://images.unsplash.com/photo-1551582045-6ec9c11d8697?w=600&q=80",
-    scores: { luxury_curator: 88, budget_optimizer: 25, deep_relaxer: 92, silent_explorer: 98, efficiency_seeker: 35 },
-  },
-  {
-    id: 5, name: "Aloft Bangkok Sukhumvit 11", dest: "Banqkok", country: "Tailand",
-    stars: 4, price: 220, tags: ["Şəhər", "Rooftop", "4★"],
-    img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80",
-    scores: { luxury_curator: 55, budget_optimizer: 82, deep_relaxer: 45, silent_explorer: 60, efficiency_seeker: 95 },
-  },
-  {
-    id: 6, name: "Capri Palace Jumeirah", dest: "Kapri", country: "İtaliya",
-    stars: 5, price: 1200, tags: ["Ada", "Dəniz", "5★"],
-    img: "https://images.unsplash.com/photo-1499678329028-101435549a4e?w=600&q=80",
-    scores: { luxury_curator: 93, budget_optimizer: 15, deep_relaxer: 88, silent_explorer: 92, efficiency_seeker: 50 },
-  },
+const MOCK_HOTELS: HotelOffer[] = [
+  { id: "ht_1", name: "Stanford Court San Francisco", stars: 4, rating: 8.2, rawPricePerNight: 130, location: "Nob Hill, San Francisco", image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80" },
+  { id: "ht_2", name: "Hotel Riu Plaza Fisherman's Wharf", stars: 4, rating: 8.6, rawPricePerNight: 150, location: "Fisherman's Wharf, San Francisco", image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80" },
+  { id: "ht_3", name: "Argonaut Hotel San Francisco", stars: 4, rating: 8.9, rawPricePerNight: 180, location: "Maritime National Park, San Francisco", image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&q=80" },
 ];
 
-/* ─── Archetype logic ────────────────────────────────── */
-function determineArchetype(answers: string[]): AKey {
-  const counts: Record<AKey, number> = {
-    luxury_curator: 0, budget_optimizer: 0, deep_relaxer: 0,
-    silent_explorer: 0, efficiency_seeker: 0,
+const MOCK_CARS: CarOffer[] = [
+  { id: "cr_1", name: "Toyota Corolla və ya oxşar", category: "Ekonom (Economy)", rawPricePerDay: 45, image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&q=80" },
+  { id: "cr_2", name: "Jeep Grand Cherokee və ya oxşar", category: "SUV (Premium)", rawPricePerDay: 80, image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&q=80" },
+  { id: "cr_3", name: "Ford Mustang Convertible", category: "Kabriolet (Lüks)", rawPricePerDay: 110, image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=400&q=80" },
+];
+
+const UPGRADE_ALTERNATIVES: HotelOffer[] = [
+  { id: "up_1", name: "St. Regis San Francisco", stars: 5, rating: 9.4, rawPricePerNight: 350, location: "SoMa, San Francisco", image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&q=80" },
+  { id: "up_2", name: "Four Seasons Hotel San Francisco", stars: 5, rating: 9.2, rawPricePerNight: 330, location: "Union Square, San Francisco", image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=600&q=80" },
+];
+
+export default function PrototypePage() {
+  // Screens: 'chat' | 'itinerary' | 'wizard' | 'orchestration' | 'upgrade' | 'final'
+  const [screen, setScreen] = useState<"chat" | "itinerary" | "wizard" | "orchestration" | "upgrade" | "final">("chat");
+  const [prompt, setPrompt] = useState("New Yorkdan San Franciscoya getmək istəyirik, 16 iyulda, iki nəfərik. Büdcəmiz 2500 dollardı. 4* otel, reytinqi 7+ olsun. 1 həftə qalacağıq. San Fransiskoda rent a car da istəyirik.");
+  const [messages, setMessages] = useState<Msg[]>([
+    { role: "bot", text: "Salam! Natoure smart bələdçinizəm. Səyahət xəyalınızı qeyd edin, planı hazırlayım.", timestamp: new Date() }
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [parsedParams, setParsedParams] = useState({
+    origin: "NYC",
+    destination: "SFO",
+    departure_date: "16 İyul 2026",
+    duration_days: 7,
+    travelers_count: 2,
+    budget: 2500,
+    hotel_stars: 4,
+    hotel_rating: 7
+  });
+
+  // Wizard steps: 'flight' | 'hotel' | 'car' | 'checkout'
+  const [wizardStep, setWizardStep] = useState<"flight" | "hotel" | "car" | "checkout">("flight");
+  
+  // Selections
+  const [selectedFlight, setSelectedFlight] = useState<FlightOffer | null>(null);
+  const [selectedHotel, setSelectedHotel] = useState<HotelOffer | null>(null);
+  const [selectedCar, setSelectedCar] = useState<CarOffer | null>(null);
+  const [alternativeHotel, setAlternativeHotel] = useState<HotelOffer | null>(null);
+
+  // Search trigger states
+  const [searchingFlights, setSearchingFlights] = useState(false);
+  const [flightsList, setFlightsList] = useState<FlightOffer[]>([]);
+  const [searchingHotels, setSearchingHotels] = useState(false);
+  const [hotelsList, setHotelsList] = useState<HotelOffer[]>([]);
+  const [searchingCars, setSearchingCars] = useState(false);
+  const [carsList, setCarsList] = useState<CarOffer[]>([]);
+
+  // Passport inputs
+  const [passenger1, setPassenger1] = useState({ firstName: "", lastName: "", passport: "", dob: "", expiry: "" });
+  const [passenger2, setPassenger2] = useState({ firstName: "", lastName: "", passport: "", dob: "", expiry: "" });
+
+  // Orchestrator simulation states
+  const [orchStep, setOrchStep] = useState(0); // 0: Payment verified, 1: Flight PNR booked, 2: Hotel booking failed
+  const [orchProgress, setOrchProgress] = useState(0);
+
+  // Chat concierge
+  const [chatOpen, setChatOpen] = useState(false);
+  const [conciergeMsgs, setConciergeMsgs] = useState<Msg[]>([
+    { role: "bot", text: "Salam! Natoure Lüks Konsyerj xidmətinə xoş gəlmisiniz. Səyahət planınız haqqında suallarınızı cavablandırmağa hazıram.", timestamp: new Date() }
+  ]);
+  const [conciergeInput, setConciergeInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const totalNights = parsedParams.duration_days;
+  const markupFlightPrice = selectedFlight ? applyNatoureMarkup(selectedFlight.rawPrice) * parsedParams.travelers_count : 0;
+  const markupHotelPrice = selectedHotel ? applyNatoureMarkup(selectedHotel.rawPricePerNight) * totalNights : 0;
+  const markupCarPrice = selectedCar ? applyNatoureMarkup(selectedCar.rawPricePerDay) * totalNights : 0;
+  const totalInvoicePrice = markupFlightPrice + markupHotelPrice + markupCarPrice;
+
+  // Handles AI prompt submit
+  const handlePromptSubmit = () => {
+    if (!prompt.trim()) return;
+    const userMsg: Msg = { role: "user", text: prompt, timestamp: new Date() };
+    setMessages(prev => [...prev, userMsg]);
+    setIsTyping(true);
+
+    setTimeout(() => {
+      setIsTyping(false);
+      const botMsg: Msg = {
+        role: "bot",
+        text: "Səyahət tələbləriniz analiz edildi. New York (NYC) ➔ San Francisco (SFO) marşrutu üzrə 16 iyul tarixli 7 günlük planınız hazırdır! Sol tərəfdən marşrut detallarına baxıb, sağ tərəfdən axtarışa başlaya bilərsiniz.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMsg]);
+      setScreen("itinerary");
+    }, 1800);
   };
-  for (const a of answers) {
-    if (["luxury", "premium"].includes(a)) counts.luxury_curator += 2;
-    if (["budget", "mid"].includes(a)) counts.budget_optimizer += 2;
-    if (["ocean", "beach", "countryside"].includes(a)) counts.deep_relaxer += 2;
-    if (["mountain", "culture"].includes(a)) counts.silent_explorer += 2;
-    if (["city", "food"].includes(a)) counts.efficiency_seeker += 2;
-    if (a === "solo") counts.silent_explorer += 1;
-    if (a === "couple") counts.deep_relaxer += 1;
-    if (a === "family") counts.efficiency_seeker += 1;
-    if (a === "group") counts.budget_optimizer += 1;
-    if (a === "adventure") counts.silent_explorer += 1;
-  }
-  return (Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]) as AKey;
-}
 
-/* ─── Chat bot replies ───────────────────────────────── */
-function chatReply(text: string, arch: AKey | null): string {
-  const t = text.toLowerCase();
-  if (t.includes("dubay") || t.includes("dubai")) {
-    return "Dubai haqqında: Rixos Premium Dubai 5★, şəxsi sahil, all-inclusive, nəfər başına 650 AZN/gecə. Rezervasiya üçün WhatsApp-a yazmağınız kifayətdir.";
-  }
-  if (t.includes("maldiv") || t.includes("maldives")) {
-    return "Malediv paketi üçün Anantara Resort üzərindən su üstündə bungalov təklif edirəm. 7 gecə, cütlük üçün 2.900 AZN-dən başlayır.";
-  }
-  if (t.includes("ucuz") || t.includes("büdcə") || t.includes("qiymət")) {
-    return "Büdcəyə uyğun variantlarımız: Barselona ibis Styles (180 AZN/gecə), Bangkok Aloft (220 AZN/gecə). Hansı tarixlərə baxım?";
-  }
-  if (t.includes("uçuş") || t.includes("bilet")) {
-    return "Bakı–İstanbul: 180 AZN (birbaşa, AZAL), Bakı–Dubai: 220 AZN (birbaşa). Dönüş biletini də axtarım?";
-  }
-  if (t.includes("viza") || t.includes("sənəd")) {
-    return "Türkiyə, BAƏ, Malediv — vizasız. İtaliya, İspaniya üçün Şengen viza lazımdır (7-10 iş günü). Kömək edim?";
-  }
-  if (arch === "luxury_curator") {
-    return "Lüks zövqünüzə uyğun tövsiyə: Kapri Jumeirah 5★ — ada mənzərəli suit, özel qayk turu daxil. Qiymət: 1.200 AZN/gecə.";
-  }
-  if (arch === "budget_optimizer") {
-    return "Büdcə dostu seçim: Barselona 7 gecə + uçuş = 1.450 AZN. Erkən rezervasiyada 15% endirim tətbiq edilir.";
-  }
-  return "Mənə daha ətraflı məlumat verin — istiqamət, tarix, nəfər sayı — ən uyğun paketi sizin üçün seçim! ✈️";
-}
+  // Search functions
+  const searchFlights = () => {
+    setSearchingFlights(true);
+    setTimeout(() => {
+      setFlightsList(MOCK_FLIGHTS);
+      setSearchingFlights(false);
+    }, 1200);
+  };
 
-/* ─── Sub-components ─────────────────────────────────── */
-function GlowOrbs() {
+  const searchHotels = () => {
+    setSearchingHotels(true);
+    setTimeout(() => {
+      setHotelsList(MOCK_HOTELS);
+      setSearchingHotels(false);
+    }, 1200);
+  };
+
+  const searchCars = () => {
+    setSearchingCars(true);
+    setTimeout(() => {
+      setCarsList(MOCK_CARS);
+      setSearchingCars(false);
+    }, 1200);
+  };
+
+  // Saga orchestrator simulator trigger
+  const runOrchestrator = () => {
+    setScreen("orchestration");
+    setOrchStep(0);
+    setOrchProgress(15);
+
+    // Payment validation complete
+    setTimeout(() => {
+      setOrchStep(1);
+      setOrchProgress(50);
+      
+      // Flight booking PNR complete
+      setTimeout(() => {
+        setOrchStep(2);
+        setOrchProgress(85);
+
+        // Hotel room sold out trigger → Fallback alert UI
+        setTimeout(() => {
+          setScreen("upgrade");
+        }, 1500);
+      }, 2000);
+    }, 1500);
+  };
+
+  // Confirms the luxury upgraded hotel option
+  const confirmUpgrade = () => {
+    if (!alternativeHotel) return;
+    setScreen("final");
+  };
+
+  // Concierge bot conversation
+  const sendConciergeMsg = () => {
+    if (!conciergeInput.trim()) return;
+    const userMsg: Msg = { role: "user", text: conciergeInput, timestamp: new Date() };
+    setConciergeMsgs(prev => [...prev, userMsg]);
+    setConciergeInput("");
+
+    setTimeout(() => {
+      let reply = "Planlaşdırma ilə bağlı hər hansı sualınız olduqda kömək etməyə şadam. Biz bütün PNR və voucher məlumatlarını hazır saxlayırıq.";
+      const text = conciergeInput.toLowerCase();
+      if (text.includes("hotel") || text.includes("otel")) {
+        reply = "Seçdiyiniz otel dəyişikliyi 100% pulsuzdur. Natoure zəmanəti ilə St. Regis 5* kateqoriya artımı həyata keçirilmişdir. Heç bir əlavə öhdəlik daşımırsınız.";
+      } else if (text.includes("bilet") || text.includes("uçuş")) {
+        reply = "Uçuş biletləriniz Delta Air Lines ilə rəsmi şəkildə bağlandı. PNR kodunuz aktivdir.";
+      } else if (text.includes("rent") || text.includes("maşın")) {
+        reply = "SFO hava limanında SUV (Jeep) icarəniz səyahət sənədlərinizə əlavə edilib.";
+      }
+      
+      setConciergeMsgs(prev => [...prev, { role: "bot", text: reply, timestamp: new Date() }]);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conciergeMsgs, chatOpen]);
+
   return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
-      <div className="blob absolute top-[-8rem] left-[-6rem] w-96 h-96 rounded-full bg-sky-400/20 blur-3xl" />
-      <div className="blob blob-delay absolute bottom-[10%] right-[-4rem] w-80 h-80 rounded-full bg-violet-400/20 blur-3xl" />
-      <div className="blob blob-delay2 absolute top-[40%] left-[40%] w-64 h-64 rounded-full bg-indigo-400/15 blur-3xl" />
-    </div>
-  );
-}
-
-function Stars({ n }: { n: number }) {
-  return (
-    <span className="text-amber-400 text-sm">
-      {"★".repeat(n)}{"☆".repeat(5 - n)}
-    </span>
-  );
-}
-
-/* ─── Pages ──────────────────────────────────────────── */
-function LandingPage({ onStart }: { onStart: () => void }) {
-  return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800">
+    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 font-sans antialiased relative pb-12">
       {/* Navbar */}
-      <nav className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm">
-        <span className="font-bold text-xl bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-          Natoure
-        </span>
-        <button
-          onClick={onStart}
-          className="px-5 py-2 rounded-full bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-semibold shadow hover:opacity-90 transition"
-        >
-          Başla
-        </button>
+      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-r from-sky-600 to-indigo-600">
+            <span className="text-white text-sm font-bold">N</span>
+          </div>
+          <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent notranslate" translate="no">
+            Natoure
+          </span>
+        </div>
+        <div className="flex items-center gap-6 text-sm font-medium text-slate-500">
+          <span>Turlar</span>
+          <span>Otellər</span>
+          <span>Haqqımızda</span>
+          <span className="text-[#0284c7] font-semibold">İnteraktiv Prototip v2</span>
+        </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative flex flex-col items-center text-center px-4 pt-20 pb-16">
-        <GlowOrbs />
-        <span className="inline-block mb-4 px-4 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold tracking-wide uppercase">
-          AI ilə Səyahət Planlaması
-        </span>
-        <h1 className="fade-in-up text-4xl sm:text-5xl font-extrabold leading-tight max-w-2xl">
-          Növbəti Səyahətinizi{" "}
-          <span className="bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-            AI Planlasın
-          </span>
-        </h1>
-        <p className="fade-in-up mt-4 text-slate-500 max-w-md text-lg">
-          4 sual — sonra sizin üçün fərdi otel siyahısı, qiymətlər və AI səyahət köməkçisi.
-        </p>
-        <button
-          onClick={onStart}
-          className="fade-in-up mt-8 px-10 py-4 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-lg shadow-xl hover:shadow-sky-300 hover:scale-105 transition-all duration-200"
-        >
-          Profil Yaradın — Pulsuz ✨
-        </button>
-        <p className="mt-3 text-xs text-slate-400">Qeydiyyat lazım deyil • 60 saniyə çəkir</p>
-      </section>
-
-      {/* Bento grid */}
-      <section className="px-4 pb-20 max-w-5xl mx-auto">
-        <h2 className="text-center text-2xl font-bold text-slate-700 mb-8">Populyar Məkanlar</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 auto-rows-[180px]">
-          {[
-            { name: "Dubai", img: "https://images.unsplash.com/photo-1582672751291-7a18be9e2fe3?w=600&q=80", big: true },
-            { name: "Malediv", img: "https://images.unsplash.com/photo-1499396010447-c75e58d61c2b?w=600&q=80", big: false },
-            { name: "Barselona", img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80", big: false },
-            { name: "Antalya", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80", big: false },
-            { name: "Tokio", img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80", big: false },
-            { name: "Kapri", img: "https://images.unsplash.com/photo-1499678329028-101435549a4e?w=600&q=80", big: false },
-          ].map((d, i) => (
-            <div
-              key={d.name}
-              className={`relative rounded-2xl overflow-hidden cursor-pointer group ${i === 0 ? "row-span-2" : ""}`}
-              onClick={onStart}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={d.img} alt={d.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
-              <span className="absolute bottom-3 left-3 text-white font-bold text-sm">{d.name}</span>
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-6 pt-8">
+        
+        {/* Screen 1: AI Prompt Input */}
+        {screen === "chat" && (
+          <div className="max-w-2xl mx-auto mt-12 bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={20} className="text-[#0284c7]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0284c7]">AI Səyahət Müşaviri</span>
             </div>
-          ))}
-        </div>
-      </section>
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-2 leading-tight">
+              Səyahət istəyinizi sərbəst şəkildə qeyd edin
+            </h2>
+            <p className="text-sm text-slate-500 mb-6">
+              AI planlayıcı marşrutu quracaq və axtarış parametrlərini avtomatik müəyyən edəcək.
+            </p>
 
-      {/* How it works */}
-      <section className="px-4 pb-20 max-w-4xl mx-auto">
-        <h2 className="text-center text-2xl font-bold text-slate-700 mb-10">Necə İşləyir?</h2>
-        <div className="grid sm:grid-cols-3 gap-6">
-          {[
-            { n: "01", icon: "🧠", t: "Profil Sualları", d: "4 qısa sual ilə səyahət tipinizi müəyyən edirik." },
-            { n: "02", icon: "⚡", t: "AI Analiz", d: "Süni intellekt ən uyğun otel və paketləri seçir." },
-            { n: "03", icon: "✈️", t: "Rezervasiya", d: "Bir klikdə WhatsApp üzərindən rezervasiya edin." },
-          ].map(s => (
-            <div key={s.n} className="bg-white/70 backdrop-blur rounded-2xl p-6 border border-slate-100 shadow-sm text-center">
-              <div className="text-4xl mb-3">{s.icon}</div>
-              <div className="text-xs text-sky-600 font-bold mb-1">{s.n}</div>
-              <div className="font-bold text-slate-700 mb-2">{s.t}</div>
-              <div className="text-sm text-slate-500">{s.d}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
+            <textarea
+              className="w-full h-32 p-4 text-sm bg-[#f8fafc] border border-slate-200 rounded-2xl focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 resize-none"
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              placeholder="Məsələn: Gələn ay yoldaşımla İtaliyaya 5 günlük lüks səyahət..."
+            />
 
-function QuizPage({
-  step,
-  answers,
-  onAnswer,
-}: {
-  step: number;
-  answers: string[];
-  onAnswer: (v: string) => void;
-}) {
-  const q = QUESTIONS[step];
-  const progress = ((step) / QUESTIONS.length) * 100;
-  return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center px-4 pt-12 pb-20">
-      {/* Progress */}
-      <div className="w-full max-w-xl mb-8">
-        <div className="flex justify-between text-xs text-slate-400 mb-2">
-          <span>Sual {step + 1} / {QUESTIONS.length}</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Question */}
-      <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 text-center mb-8 max-w-lg">
-        {q.q}
-      </h2>
-
-      {/* Options */}
-      <div className="grid grid-cols-2 gap-4 w-full max-w-xl">
-        {q.options.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => onAnswer(opt.value)}
-            className="group relative rounded-2xl overflow-hidden h-36 border-2 border-transparent hover:border-sky-400 transition-all duration-200 shadow-sm hover:shadow-sky-200 hover:scale-[1.02]"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={opt.img} alt={opt.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10" />
-            <span className="absolute bottom-3 left-0 right-0 text-center text-white font-semibold text-sm px-2">
-              {opt.label}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LoadingPage() {
-  const steps = ["Profiliniz analiz edilir...", "Uyğun otellər axtarılır...", "Fərdi siyahı hazırlanır..."];
-  const [idx, setIdx] = useState(0);
-
-  useEffect(() => {
-    const t1 = setTimeout(() => setIdx(1), 1200);
-    const t2 = setTimeout(() => setIdx(2), 2500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center gap-8 px-4">
-      {/* Spinner */}
-      <div className="relative w-24 h-24">
-        <div className="absolute inset-0 rounded-full border-4 border-sky-100" />
-        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-sky-500 spin-slow" />
-        <div className="absolute inset-2 rounded-full border-4 border-transparent border-b-indigo-400 spin-slow" style={{ animationDirection: "reverse" }} />
-        <span className="absolute inset-0 flex items-center justify-center text-2xl">✈️</span>
-      </div>
-
-      {/* Steps */}
-      <div className="flex flex-col items-center gap-3">
-        {steps.map((s, i) => (
-          <div key={s} className={`flex items-center gap-3 transition-all duration-500 ${i <= idx ? "opacity-100" : "opacity-20"}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${i < idx ? "bg-sky-500 text-white" : i === idx ? "bg-indigo-500 text-white ping2" : "bg-slate-200 text-slate-400"}`}>
-              {i < idx ? "✓" : i + 1}
-            </span>
-            <span className={`text-sm font-medium ${i <= idx ? "text-slate-700" : "text-slate-400"}`}>{s}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Dashboard({ archKey, hotels }: { archKey: AKey; hotels: Hotel[] }) {
-  const arch = ARCHETYPES[archKey];
-  const [chatOpen, setChatOpen] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "bot", text: `Salam! Mən sizin AI səyahət köməkçinizəm. ${arch.label} profili üçün ən yaxşı seçimlər hazırdır. Nə soruşmaq istərdiniz?` },
-  ]);
-  const [input, setInput] = useState("");
-  const [activeTab, setActiveTab] = useState<"hotels" | "tips">("hotels");
-  const chatEnd = useRef<HTMLDivElement>(null);
-
-  const sortedHotels = [...hotels].sort((a, b) => b.scores[archKey] - a.scores[archKey]);
-
-  function sendMsg() {
-    const t = input.trim();
-    if (!t) return;
-    const reply = chatReply(t, archKey);
-    setMsgs(prev => [...prev, { role: "user", text: t }, { role: "bot", text: reply }]);
-    setInput("");
-  }
-
-  useEffect(() => {
-    chatEnd.current?.scrollIntoView({ behavior: "smooth" });
-  }, [msgs]);
-
-  return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-      {/* Top bar */}
-      <div className={`bg-gradient-to-r ${arch.color} px-6 py-4 text-white`}>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <span className="text-4xl">{arch.emoji}</span>
-          <div className="flex-1">
-            <div className="font-bold text-xl">{arch.label}</div>
-            <div className="text-sm opacity-90">{arch.tagline}</div>
-          </div>
-          <button
-            onClick={() => setChatOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur text-sm font-semibold transition"
-          >
-            <span>💬</span> AI Köməkçi
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto flex px-4 gap-6">
-          {[
-            { id: "hotels" as const, label: "🏨 Otellər" },
-            { id: "tips" as const, label: "💡 Şəxsi Tövsiyələr" },
-          ].map(tab => (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-3 text-sm font-semibold border-b-2 transition ${activeTab === tab.id ? "border-sky-500 text-sky-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+              onClick={handlePromptSubmit}
+              disabled={isTyping}
+              className="mt-4 w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-sm shadow-md hover:shadow-sky-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {tab.label}
+              {isTyping ? (
+                <>
+                  <RefreshCw className="animate-spin" size={16} />
+                  Plan Analiz Edilir...
+                </>
+              ) : (
+                <>
+                  AI ilə Planı Qur <ArrowRight size={16} />
+                </>
+              )}
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
-        {activeTab === "hotels" && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {sortedHotels.map(h => {
-              const score = h.scores[archKey];
-              return (
-                <div key={h.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="relative h-44">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={h.img} alt={h.name} className="w-full h-full object-cover" />
-                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-full text-xs font-bold text-sky-700">
-                      {score}% uyğun
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="font-bold text-slate-800 text-sm leading-snug">{h.name}</h3>
-                    </div>
-                    <div className="text-xs text-slate-500 mb-2">{h.dest}, {h.country}</div>
-                    <Stars n={h.stars} />
-                    <div className="flex flex-wrap gap-1 mt-2 mb-3">
-                      {h.tags.map(t => (
-                        <span key={t} className="text-[10px] px-2 py-0.5 bg-sky-50 text-sky-700 rounded-full">{t}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-sm">{h.price} AZN <span className="text-xs text-slate-400 font-normal">/ gecə</span></span>
-                      <a
-                        href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "994517769632"}?text=Salam, ${encodeURIComponent(h.name)} haqqında məlumat almaq istəyirəm`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs font-semibold hover:opacity-90 transition"
-                      >
-                        Rezervasiya
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
 
-        {activeTab === "tips" && (
-          <div className="max-w-xl mx-auto">
-            <h2 className="text-xl font-bold text-slate-800 mb-6">
-              {arch.emoji} {arch.label} üçün Tövsiyələr
-            </h2>
-            <div className="flex flex-col gap-4">
-              {arch.tips.map((tip, i) => (
-                <div key={i} className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                  <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${arch.color} text-white flex items-center justify-center text-sm font-bold flex-shrink-0`}>
-                    {i + 1}
+        {/* Screen 2: Itinerary & Wizard Split View */}
+        {(screen === "itinerary" || screen === "wizard") && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
+            
+            {/* Left: AI Generated Itinerary */}
+            <div className="lg:col-span-5 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm self-start">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles size={16} className="text-[#0284c7]" />
+                <h3 className="font-bold text-slate-800 text-sm">AI Səyahət Planı: {parsedParams.destination}</h3>
+              </div>
+
+              {/* Parsed JSON panel */}
+              <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Çıxarılan Axtarış Parametrləri (JSON)</h4>
+                <div className="grid grid-cols-2 gap-2.5 text-xs text-slate-600">
+                  <div>📍 Haradan: <span className="font-semibold text-slate-800">{parsedParams.origin}</span></div>
+                  <div>🏁 Haraya: <span className="font-semibold text-slate-800">{parsedParams.destination}</span></div>
+                  <div>📅 Tarix: <span className="font-semibold text-slate-800">{parsedParams.departure_date}</span></div>
+                  <div>🕒 Müddət: <span className="font-semibold text-slate-800">{parsedParams.duration_days} Gün</span></div>
+                  <div>👥 Nəfər: <span className="font-semibold text-slate-800">{parsedParams.travelers_count} nəfər</span></div>
+                  <div>💰 Maks. Büdcə: <span className="font-semibold text-sky-700">${parsedParams.budget}</span></div>
+                  <div>⭐ Otel: <span className="font-semibold text-slate-800">{parsedParams.hotel_stars}★ (Reytinq {parsedParams.hotel_rating}+)</span></div>
+                  <div>🚗 Rent-a-car: <span className="font-semibold text-emerald-600">Tələb olunur</span></div>
+                </div>
+              </div>
+
+              {/* Day-by-Day view */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Gündəlik Səyahət Marşrutu</h4>
+                
+                {[
+                  { day: "Gün 1", t: "SFO Uçuşu & Yerləşmə", d: "Union Square ətrafındakı otelə check-in. Axşam Fisherman's Wharf sahilində şam yeməyi." },
+                  { day: "Gün 2", t: "Golden Gate Bridge turu", d: "Səhər zərif velosiped turu ilə Golden Gate körpüsünü keçib Sausalito butik kəndinə gediş." },
+                  { day: "Gün 3", t: "Alcatraz Adası Kəşfi", d: "Tarixi Alcatraz həbsxanasına ekskursiya. Dönüşdə Pier 39 dəniz şirləri ilə tanışlıq." },
+                  { day: "Gün 4", t: "Napa Valley Şərab Turu", d: "Rent-a-car ilə möhtəşəm Napa vadisinə səyahət, üzüm bağları və premium qastronomiya." },
+                  { day: "Gün 5", t: "Mədəniyyət & Alış-veriş", d: "Union Square butikləri, zərif Chinatown məhəlləsində mədəni gəzinti." },
+                  { day: "Gün 6", t: "Golden Gate Parkı", d: "De Young muzeyi və Yapon Çay Bağında dincəlmə. Sakit lüks atmosferində gün batımı." },
+                  { day: "Gün 7", t: "Check-out & Geri Dönüş", d: "Oteldən ayrılma, icarə maşınının təhvil verilməsi və NYC-yə axşam uçuşu." },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex gap-3 border-l-2 border-slate-100 pl-4 relative">
+                    <div className="absolute w-2.5 h-2.5 rounded-full bg-sky-500 left-[-6px] top-1" />
+                    <div>
+                      <div className="text-xs font-bold text-[#0284c7]">{item.day} — {item.t}</div>
+                      <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">{item.day === "Gün 1" || item.day === "Gün 7" ? item.d : `${item.d}`}</div>
+                    </div>
                   </div>
-                  <p className="text-slate-700 text-sm leading-relaxed">{tip}</p>
+                ))}
+              </div>
+
+              {screen === "itinerary" && (
+                <button
+                  onClick={() => setScreen("wizard")}
+                  className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-sm shadow-md hover:scale-[1.01] transition-all"
+                >
+                  Planı Təsdiqlə və Axtarışa Başla
+                </button>
+              )}
+            </div>
+
+            {/* Right: Interactive Booking Wizard */}
+            <div className="lg:col-span-7 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm self-start">
+              
+              {/* Wizard Steps indicator */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                {[
+                  { step: "flight", label: "1. Uçuşlar" },
+                  { step: "hotel", label: "2. Otel" },
+                  { step: "car", label: "3. Avtomobil" },
+                  { step: "checkout", label: "4. Checkout" }
+                ].map(s => (
+                  <div
+                    key={s.step}
+                    className={`text-xs font-bold transition-colors ${
+                      wizardStep === s.step ? "text-[#0284c7]" : "text-slate-300"
+                    }`}
+                  >
+                    {s.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* Step 1: Flights Search & Results */}
+              {wizardStep === "flight" && (
+                <div>
+                  <h3 className="font-extrabold text-lg text-slate-900 mb-4">Aviabilet seçimi</h3>
+                  
+                  {/* Flight Search Widget Card */}
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
+                    <div className="text-xs text-slate-500">
+                      <div>Uçuş: <span className="font-bold text-slate-700">{parsedParams.origin} ➔ {parsedParams.destination}</span></div>
+                      <div>Tarix: <span className="font-bold text-slate-700">{parsedParams.departure_date}</span></div>
+                      <div>Sərnişin: <span className="font-bold text-slate-700">{parsedParams.travelers_count} Nəfər</span></div>
+                    </div>
+                    <button
+                      onClick={searchFlights}
+                      className="px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition"
+                    >
+                      Biletləri Axtar
+                    </button>
+                  </div>
+
+                  {searchingFlights && (
+                    <div className="py-8 text-center flex flex-col items-center gap-3">
+                      <RefreshCw className="animate-spin text-[#0284c7]" size={28} />
+                      <span className="text-xs text-slate-500 font-medium">Duffel API üzərindən real bilet qiymətləri çəkilir...</span>
+                    </div>
+                  )}
+
+                  {!searchingFlights && flightsList.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-[#0284c7] font-semibold mb-2">💡 Bütün qiymətlərə 10% Natoure servis haqqı əlavə edilmişdir:</p>
+                      {flightsList.map(fl => {
+                        const finalPrice = applyNatoureMarkup(fl.rawPrice) * parsedParams.travelers_count;
+                        return (
+                          <div
+                            key={fl.id}
+                            className={`p-4 border rounded-2xl flex items-center justify-between transition-all ${
+                              selectedFlight?.id === fl.id ? "border-[#0284c7] bg-sky-50/20" : "border-slate-100 hover:border-slate-200"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-extrabold text-slate-700">
+                                {fl.logoText}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-slate-800 text-sm">{fl.airline}</h4>
+                                <p className="text-xs text-slate-400 mt-0.5">{fl.departure} • {fl.duration} • {fl.type}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-extrabold text-slate-950">${finalPrice}</div>
+                              <span className="text-[10px] text-slate-400 font-normal">Cəmi ({parsedParams.travelers_count} nəfər)</span>
+                              <button
+                                onClick={() => setSelectedFlight(fl)}
+                                className={`block mt-2 px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+                                  selectedFlight?.id === fl.id ? "bg-[#0284c7] text-white" : "bg-[#f1f5f9] text-slate-700 hover:bg-slate-200"
+                                }`}
+                              >
+                                {selectedFlight?.id === fl.id ? "Seçildi" : "Seç"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {selectedFlight && (
+                        <button
+                          onClick={() => setWizardStep("hotel")}
+                          className="mt-6 w-full py-3 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition"
+                        >
+                          Otellər Mərhələsinə Keç
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 2: Hotels Search & Results */}
+              {wizardStep === "hotel" && (
+                <div>
+                  <h3 className="font-extrabold text-lg text-slate-900 mb-4">Otellərin siyahısı</h3>
+
+                  {/* Hotel Search Widget Card */}
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
+                    <div className="text-xs text-slate-500">
+                      <div>Məkan: <span className="font-bold text-slate-700">{parsedParams.destination}</span></div>
+                      <div>Qonaqlama: <span className="font-bold text-slate-700">{parsedParams.duration_days} Gecə ({parsedParams.travelers_count} nəfər)</span></div>
+                      <div>Filtr: <span className="font-bold text-sky-700">{parsedParams.hotel_stars}★, Reytinq {parsedParams.hotel_rating}+</span></div>
+                    </div>
+                    <button
+                      onClick={searchHotels}
+                      className="px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition"
+                    >
+                      Otelləri Axtar
+                    </button>
+                  </div>
+
+                  {searchingHotels && (
+                    <div className="py-8 text-center flex flex-col items-center gap-3">
+                      <RefreshCw className="animate-spin text-[#0284c7]" size={28} />
+                      <span className="text-xs text-slate-500 font-medium">RateHawk API üzərindən doluluq və otaq qiymətləri yoxlanılır...</span>
+                    </div>
+                  )}
+
+                  {!searchingHotels && hotelsList.length > 0 && (
+                    <div className="space-y-4">
+                      <p className="text-xs text-[#0284c7] font-semibold mb-1">💡 Bütün qiymətlərə 10% Natoure servis haqqı əlavə edilmişdir:</p>
+                      {hotelsList.map(ht => {
+                        const nightPrice = applyNatoureMarkup(ht.rawPricePerNight);
+                        const totalHotelCost = nightPrice * totalNights;
+                        return (
+                          <div
+                            key={ht.id}
+                            className={`border rounded-2xl overflow-hidden flex flex-col sm:flex-row transition-all ${
+                              selectedHotel?.id === ht.id ? "border-[#0284c7] bg-sky-50/10" : "border-slate-100 hover:border-slate-200"
+                            }`}
+                          >
+                            <div className="relative w-full sm:w-1/3 h-32 sm:h-auto">
+                              <img src={ht.image} alt={ht.name} className="w-full h-full object-cover" />
+                              <div className="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-[#0284c7]">
+                                ⭐ {ht.rating} Reytinq
+                              </div>
+                            </div>
+                            <div className="p-4 flex-1 flex flex-col justify-between">
+                              <div>
+                                <span className="text-[10px] text-amber-500 font-bold">{"★".repeat(ht.stars)}</span>
+                                <h4 className="font-bold text-slate-800 text-sm leading-tight mt-0.5">{ht.name}</h4>
+                                <p className="text-xs text-slate-400 mt-1">{ht.location}</p>
+                              </div>
+                              <div className="flex items-end justify-between mt-4 border-t border-slate-50 pt-2">
+                                <div>
+                                  <span className="text-xs font-extrabold text-slate-900">${nightPrice}</span>
+                                  <span className="text-[10px] text-slate-400 font-normal"> / gecə</span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-[10px] text-slate-400 font-semibold">Cəmi ({totalNights} gecə): ${totalHotelCost}</div>
+                                  <button
+                                    onClick={() => setSelectedHotel(ht)}
+                                    className={`mt-1.5 px-4 py-1 text-xs font-bold rounded-lg transition ${
+                                      selectedHotel?.id === ht.id ? "bg-[#0284c7] text-white" : "bg-[#f1f5f9] text-slate-700 hover:bg-slate-200"
+                                    }`}
+                                  >
+                                    {selectedHotel?.id === ht.id ? "Seçildi" : "Seç"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {selectedHotel && (
+                        <button
+                          onClick={() => setWizardStep("car")}
+                          className="mt-6 w-full py-3 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition"
+                        >
+                          Avtomobil İcarəsinə Keç
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 3: Car Rental Search & Results */}
+              {wizardStep === "car" && (
+                <div>
+                  <h3 className="font-extrabold text-lg text-slate-900 mb-4">Avtomobil icarəsi (Rent-a-car)</h3>
+
+                  {/* Car Search Widget Card */}
+                  <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
+                    <div className="text-xs text-slate-500">
+                      <div>Məkan: <span className="font-bold text-slate-700">{parsedParams.destination} Hava Limanı (SFO)</span></div>
+                      <div>Tarixlər: <span className="font-bold text-slate-700">{parsedParams.departure_date}-dən ({totalNights} gün)</span></div>
+                    </div>
+                    <button
+                      onClick={searchCars}
+                      className="px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition"
+                    >
+                      Avtomobilləri Axtar
+                    </button>
+                  </div>
+
+                  {searchingCars && (
+                    <div className="py-8 text-center flex flex-col items-center gap-3">
+                      <RefreshCw className="animate-spin text-[#0284c7]" size={28} />
+                      <span className="text-xs text-slate-500 font-medium">Maşın tədarükçüləri üzrə qiymətlər çəkilir...</span>
+                    </div>
+                  )}
+
+                  {!searchingCars && carsList.length > 0 && (
+                    <div className="space-y-4">
+                      <p className="text-xs text-[#0284c7] font-semibold mb-1">💡 Bütün qiymətlərə 10% Natoure servis haqqı əlavə edilmişdir:</p>
+                      {carsList.map(cr => {
+                        const dayPrice = applyNatoureMarkup(cr.rawPricePerDay);
+                        const totalCarCost = dayPrice * totalNights;
+                        return (
+                          <div
+                            key={cr.id}
+                            className={`border rounded-2xl overflow-hidden flex flex-col sm:flex-row transition-all ${
+                              selectedCar?.id === cr.id ? "border-[#0284c7] bg-sky-50/10" : "border-slate-100 hover:border-slate-200"
+                            }`}
+                          >
+                            <div className="relative w-full sm:w-1/3 h-28 sm:h-auto bg-[#f8fafc]">
+                              <img src={cr.image} alt={cr.name} className="w-full h-full object-contain p-2" />
+                            </div>
+                            <div className="p-4 flex-1 flex flex-col justify-between">
+                              <div>
+                                <span className="text-[10px] px-2 py-0.5 bg-slate-100 rounded text-slate-500 font-semibold">{cr.category}</span>
+                                <h4 className="font-bold text-slate-800 text-sm mt-1">{cr.name}</h4>
+                              </div>
+                              <div className="flex items-end justify-between mt-4 pt-2">
+                                <div>
+                                  <span className="text-xs font-extrabold text-slate-900">${dayPrice}</span>
+                                  <span className="text-[10px] text-slate-400 font-normal"> / gün</span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-[10px] text-slate-400 font-semibold">Cəmi ({totalNights} gün): ${totalCarCost}</div>
+                                  <button
+                                    onClick={() => setSelectedCar(cr)}
+                                    className={`mt-1.5 px-4 py-1 text-xs font-bold rounded-lg transition ${
+                                      selectedCar?.id === cr.id ? "bg-[#0284c7] text-white" : "bg-[#f1f5f9] text-slate-700 hover:bg-slate-200"
+                                    }`}
+                                  >
+                                    {selectedCar?.id === cr.id ? "Seçildi" : "Seç"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {selectedCar && (
+                        <button
+                          onClick={() => setWizardStep("checkout")}
+                          className="mt-6 w-full py-3 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition"
+                        >
+                          Checkout Mərhələsinə Keç
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 4: Checkout & Passport Form */}
+              {wizardStep === "checkout" && (
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                  
+                  {/* Passenger Form */}
+                  <div className="md:col-span-7 space-y-5">
+                    <h3 className="font-extrabold text-base text-slate-900 border-b pb-2">Sərnişin və Pasport Məlumatları</h3>
+                    
+                    {/* Passenger 1 */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-[#0284c7] uppercase tracking-wider">Sərnişin 1 (Əsas Sürücü)</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text" placeholder="Ad (First Name)"
+                          className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                          value={passenger1.firstName}
+                          onChange={e => setPassenger1({...passenger1, firstName: e.target.value})}
+                        />
+                        <input
+                          type="text" placeholder="Soyad (Last Name)"
+                          className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                          value={passenger1.lastName}
+                          onChange={e => setPassenger1({...passenger1, lastName: e.target.value})}
+                        />
+                      </div>
+                      <input
+                        type="text" placeholder="Pasport Nömrəsi"
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                        value={passenger1.passport}
+                        onChange={e => setPassenger1({...passenger1, passport: e.target.value})}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text" placeholder="Doğum Tarixi (DD.MM.YYYY)"
+                          className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                          value={passenger1.dob}
+                          onChange={e => setPassenger1({...passenger1, dob: e.target.value})}
+                        />
+                        <input
+                          type="text" placeholder="Pasport Bitmə Tarixi"
+                          className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                          value={passenger1.expiry}
+                          onChange={e => setPassenger1({...passenger1, expiry: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Passenger 2 */}
+                    <div className="space-y-3 pt-3 border-t">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sərnişin 2</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text" placeholder="Ad (First Name)"
+                          className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                          value={passenger2.firstName}
+                          onChange={e => setPassenger2({...passenger2, firstName: e.target.value})}
+                        />
+                        <input
+                          type="text" placeholder="Soyad (Last Name)"
+                          className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                          value={passenger2.lastName}
+                          onChange={e => setPassenger2({...passenger2, lastName: e.target.value})}
+                        />
+                      </div>
+                      <input
+                        type="text" placeholder="Pasport Nömrəsi"
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]"
+                        value={passenger2.passport}
+                        onChange={e => setPassenger2({...passenger2, passport: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Payment Invoice & Summary */}
+                  <div className="md:col-span-5 space-y-4">
+                    <h3 className="font-extrabold text-base text-slate-900 border-b pb-2">Sifariş xülasəsi</h3>
+                    <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 space-y-3 text-xs">
+                      
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>✈️ Aviabilet (2 nəfər):</span>
+                        <span className="font-semibold text-slate-800">${markupFlightPrice}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>🏨 Otel ({totalNights} gecə):</span>
+                        <span className="font-semibold text-slate-800">${markupHotelPrice}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>🚗 İcarə maşın ({totalNights} gün):</span>
+                        <span className="font-semibold text-slate-800">${markupCarPrice}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-slate-500 border-b border-dashed pb-2">
+                        <span>⚙️ Natoure Servis haqqı:</span>
+                        <span className="text-emerald-600 font-bold">Daxildir ($0.00)</span>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-1 font-bold text-sm">
+                        <span className="text-slate-800">Yekun Ödəniş:</span>
+                        <span className="text-[#0284c7] font-extrabold">${totalInvoicePrice}</span>
+                      </div>
+                    </div>
+
+                    {/* Stripe mock inputs */}
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kredit Kartı Məlumatları</h4>
+                      <div className="relative">
+                        <input
+                          type="text" placeholder="Card Number" defaultValue="4242 4242 4242 4242"
+                          className="w-full border border-slate-200 rounded-xl p-2.5 pl-9 text-xs bg-[#f8fafc]"
+                        />
+                        <CreditCard size={14} className="absolute left-3 top-3.5 text-slate-400" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="text" placeholder="MM/YY" defaultValue="12/29" className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]" />
+                        <input type="text" placeholder="CVC" defaultValue="123" className="border border-slate-200 rounded-xl p-2.5 text-xs bg-[#f8fafc]" />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={runOrchestrator}
+                      className="w-full py-3.5 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-xs rounded-xl shadow-lg hover:shadow-sky-200 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Lock size={12} /> Ödəniş et və Səyahəti Bron et
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
+
+        {/* Screen 3: Auto-Booking Orchestration Simulator */}
+        {screen === "orchestration" && (
+          <div className="max-w-xl mx-auto mt-16 bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
+            <h2 className="text-xl font-extrabold text-slate-900 text-center mb-6">Rezervasiya prosesi avtomatlaşdırılır...</h2>
+            
+            {/* Custom progress bar */}
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-8">
+              <div
+                className="h-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-all duration-500"
+                style={{ width: `${orchProgress}%` }}
+              />
+            </div>
+
+            {/* Step list logs */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">✓</div>
+                <span className="text-xs text-slate-700 font-semibold">Ödəniş təsdiqləndi. Balans capture olundu: ${totalInvoicePrice}.00</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {orchStep >= 1 ? (
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">✓</div>
+                ) : (
+                  <RefreshCw className="animate-spin text-sky-500" size={16} />
+                )}
+                <span className="text-xs text-slate-700 font-semibold">
+                  1. Aviabiletlər bron edilir (Duffel API)... {orchStep >= 1 ? "Uğurlu! (PNR: PNR-X52B)" : "Gözlənilir"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {orchStep >= 2 ? (
+                  <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs">!</div>
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-300 flex items-center justify-center text-xs">2</div>
+                )}
+                <span className={`text-xs font-semibold ${orchStep >= 2 ? "text-amber-600" : "text-slate-400"}`}>
+                  2. Otel otağı bron edilir (RateHawk API)... {orchStep >= 2 ? "Failed! Otaq anlıq olaraq tükəndi." : "Gözlənilir"}
+                </span>
+              </div>
+
+              {orchStep >= 2 && (
+                <div className="flex items-center gap-3 transition-opacity">
+                  <RefreshCw className="animate-spin text-indigo-500" size={16} />
+                  <span className="text-xs text-indigo-600 font-bold">
+                    3. Ağıllı Kompensasiya (Fallback) mexanizmi başladılır...
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Screen 4: VIP Curator Dashboard (Upgrade Alert & Option Selection) */}
+        {screen === "upgrade" && (
+          <div className="max-w-3xl mx-auto mt-8 bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+            {/* Header style */}
+            <div className="bg-[#FAF9F6] border-b border-slate-100 p-6 sm:p-8">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold uppercase tracking-wider mb-3">
+                💎 Zərif Yenilənmə (Complimentary Upgrade)
+              </div>
+              <h2 className="text-2xl font-extrabold text-slate-900 leading-tight">
+                Oteldə Otaq Kateqoriyası Artımı Həyata Keçirilir
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2.5">
+                Hörmətli müştərimiz, seçdiyiniz oteldəki Stanford Court otağı son saniyədə satıldığı üçün, Natoure kuratorları və arxa plan sistemi sizin üçün eyni rayonda daha lüks 5* otellərdə pulsuz kateqoriyalı otaq artımı (upgrade) hazırlayıb. Heç bir əlavə öhdəlik daşımırsınız:
+              </p>
+            </div>
+
+            {/* List of premium upgrades */}
+            <div className="p-6 sm:p-8 space-y-4">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Təklif Olunan Alternativlər:</h3>
+              
+              {UPGRADE_ALTERNATIVES.map(up => (
+                <div
+                  key={up.id}
+                  className={`border rounded-2xl overflow-hidden flex flex-col sm:flex-row transition-all ${
+                    alternativeHotel?.id === up.id ? "border-[#0284c7] bg-sky-50/10 shadow-sm" : "border-slate-100 hover:border-slate-200"
+                  }`}
+                >
+                  <div className="relative w-full sm:w-1/3 h-32 sm:h-auto">
+                    <img src={up.image} alt={up.name} className="w-full h-full object-cover" />
+                    <div className="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-emerald-700">
+                      ⭐ {up.rating} Reytinq
+                    </div>
+                  </div>
+                  
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-amber-500 font-bold">{"★".repeat(up.stars)}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Upgrade</span>
+                      </div>
+                      <h4 className="font-bold text-slate-800 text-sm leading-tight mt-0.5">{up.name}</h4>
+                      <p className="text-xs text-slate-400 mt-1">{up.location}</p>
+                    </div>
+
+                    <div className="flex items-end justify-between mt-4 border-t border-slate-50 pt-3">
+                      <div>
+                        <span className="text-[10px] text-slate-400 line-through">${applyNatoureMarkup(up.rawPricePerNight)}</span>
+                        <span className="text-xs font-extrabold text-slate-900 ml-1.5">${applyNatoureMarkup(selectedHotel?.rawPricePerNight || 0)}</span>
+                        <span className="text-[10px] text-slate-400 font-normal"> / gecə</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] text-emerald-600 font-bold">Qiymət fərqi: $0.00</div>
+                        <button
+                          onClick={() => setAlternativeHotel(up)}
+                          className={`mt-1.5 px-4 py-1 text-xs font-bold rounded-lg transition ${
+                            alternativeHotel?.id === up.id ? "bg-[#0284c7] text-white" : "bg-[#f1f5f9] text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          {alternativeHotel?.id === up.id ? "Seçildi" : "Bu Oteli Seç"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
-            </div>
 
-            {/* Re-quiz CTA */}
-            <div className="mt-8 p-5 bg-gradient-to-br from-sky-50 to-indigo-50 rounded-2xl border border-sky-100 text-center">
-              <p className="text-sm text-slate-600 mb-3">Profili yenidən müəyyənləşdirmək istəyirsiniz?</p>
-              <a href="/prototype" className="inline-block px-5 py-2 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-sm font-semibold hover:opacity-90 transition">
-                Testi Yenidən Başlat
-              </a>
+              {alternativeHotel && (
+                <button
+                  onClick={confirmUpgrade}
+                  className="mt-6 w-full py-3.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition"
+                >
+                  Alternativi Təsdiqlə və Bronu Bitir
+                </button>
+              )}
             </div>
           </div>
         )}
-      </div>
 
-      {/* Chat overlay */}
-      {chatOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-end p-4 sm:p-8">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setChatOpen(false)} />
-          <div className="relative z-10 w-full max-w-sm flex flex-col bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden h-[520px]">
-            {/* Header */}
-            <div className={`bg-gradient-to-r ${arch.color} px-4 py-3 flex items-center gap-3`}>
-              <span className="text-2xl">{arch.emoji}</span>
-              <div className="flex-1">
-                <div className="text-white font-bold text-sm">AI Köməkçi</div>
-                <div className="text-white/80 text-xs">Natoure · Online</div>
+        {/* Screen 5: Final Completed Screen */}
+        {screen === "final" && (
+          <div className="max-w-xl mx-auto mt-8 bg-white border border-slate-100 rounded-3xl p-8 shadow-sm text-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+              <Check className="text-emerald-600" size={24} />
+            </div>
+            
+            <h2 className="text-xl font-extrabold text-slate-900 mb-1">Rezervasiya uğurla tamamlandı!</h2>
+            <p className="text-xs text-slate-400 mb-6">Sifariş Kodu: #NT-948102-SFO</p>
+
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-5 text-left space-y-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">✓</div>
+                <div>
+                  <div className="text-xs font-bold text-slate-800">Aviabiletlər (Delta Air Lines)</div>
+                  <div className="text-[10px] text-slate-500">PNR Kodu: <span className="font-semibold text-slate-700">PNR-X52B</span></div>
+                </div>
               </div>
-              <button onClick={() => setChatOpen(false)} className="text-white/80 hover:text-white text-xl leading-none">×</button>
+
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">✓</div>
+                <div>
+                  <div className="text-xs font-bold text-slate-800">Otel: {alternativeHotel?.name}</div>
+                  <div className="text-[10px] text-slate-500">RateHawk Təsdiq Kodu: <span className="font-semibold text-slate-700">RH-829104A</span> <span className="text-emerald-600 font-bold ml-1">(5* Upgrade)</span></div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">✓</div>
+                <div>
+                  <div className="text-xs font-bold text-slate-800">Avtomobil icarəsi (SUV Jeep Grand Cherokee)</div>
+                  <div className="text-[10px] text-slate-500">Vauçer Kodu: <span className="font-semibold text-slate-700">CAR-92041B</span></div>
+                </div>
+              </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-              {msgs.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${m.role === "user" ? "bg-gradient-to-r from-sky-500 to-indigo-500 text-white rounded-br-sm" : "bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm"}`}>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+              Bütün biletlər və voucher sənədləriniz PDF formatında sizin qeydiyyat e-poçt ünvanınıza göndərildi.
+            </p>
+
+            <button
+              onClick={() => {
+                setScreen("chat");
+                setSelectedFlight(null);
+                setSelectedHotel(null);
+                setSelectedCar(null);
+                setAlternativeHotel(null);
+                setWizardStep("flight");
+              }}
+              className="w-full py-3 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition"
+            >
+              Yeni Səyahət Planla
+            </button>
+          </div>
+        )}
+
+      </main>
+
+      {/* Floating AI Concierge Chat Box */}
+      <div className="fixed bottom-6 right-6 z-50">
+        
+        {/* Toggle button */}
+        {!chatOpen ? (
+          <button
+            onClick={() => setChatOpen(true)}
+            className="w-12 h-12 rounded-full bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-xl hover:scale-105 transition flex items-center justify-center"
+          >
+            💬
+          </button>
+        ) : (
+          <div className="w-80 h-[450px] bg-white border border-slate-100 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            {/* Chat header */}
+            <div className="bg-gradient-to-r from-sky-600 to-indigo-600 p-4 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <div>
+                  <h4 className="text-xs font-bold">Natoure Lüks Konsyerj</h4>
+                  <p className="text-[10px] text-white/80">Online AI köməkçi</p>
+                </div>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="text-white hover:text-slate-200">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Chat messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {conciergeMsgs.map((m, idx) => (
+                <div key={idx} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
+                      m.role === "user"
+                        ? "bg-slate-900 text-white rounded-tr-none"
+                        : "bg-[#f8fafc] border border-slate-100 text-slate-700 rounded-tl-none"
+                    }`}
+                  >
                     {m.text}
                   </div>
                 </div>
               ))}
-              <div ref={chatEnd} />
+              <div ref={chatEndRef} />
             </div>
 
-            {/* Input */}
+            {/* Chat input */}
             <div className="p-3 border-t border-slate-100 flex gap-2">
               <input
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && sendMsg()}
-                placeholder="Sual yazın..."
-                className="flex-1 text-sm px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-sky-400 bg-white"
+                type="text"
+                value={conciergeInput}
+                onChange={e => setConciergeInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && sendConciergeMsg()}
+                placeholder="Konsyerjə yazın..."
+                className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 bg-[#f8fafc]"
               />
               <button
-                onClick={sendMsg}
-                className={`px-4 py-2 rounded-xl bg-gradient-to-r ${arch.color} text-white text-sm font-semibold hover:opacity-90 transition`}
+                onClick={sendConciergeMsg}
+                className="px-3 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition"
               >
-                ↑
+                Göndər
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  );
-}
-
-/* ─── Main ───────────────────────────────────────────── */
-export default function PrototypePage() {
-  const [screen, setScreen] = useState<Screen>("landing");
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [archKey, setArchKey] = useState<AKey | null>(null);
-
-  function handleAnswer(v: string) {
-    const newAnswers = [...answers, v];
-    setAnswers(newAnswers);
-    if (step < QUESTIONS.length - 1) {
-      setStep(s => s + 1);
-    } else {
-      // All answered → loading
-      setScreen("loading");
-      const key = determineArchetype(newAnswers);
-      setArchKey(key);
-      setTimeout(() => setScreen("dashboard"), 3800);
-    }
-  }
-
-  return (
-    <>
-      <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0,0) scale(1); }
-          33% { transform: translate(30px,-20px) scale(1.05); }
-          66% { transform: translate(-15px,15px) scale(0.97); }
-        }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spinSlow {
-          to { transform: rotate(360deg); }
-        }
-        .blob { animation: blob 7s ease-in-out infinite; }
-        .blob-delay { animation-delay: 2s; }
-        .blob-delay2 { animation-delay: 4s; }
-        .fade-in-up { animation: fadeInUp 0.6s ease both; }
-        .spin-slow { animation: spinSlow 2s linear infinite; }
-      `}</style>
-
-      {screen === "landing" && <LandingPage onStart={() => setScreen("quiz")} />}
-      {screen === "quiz" && <QuizPage step={step} answers={answers} onAnswer={handleAnswer} />}
-      {screen === "loading" && <LoadingPage />}
-      {screen === "dashboard" && archKey && <Dashboard archKey={archKey} hotels={HOTELS} />}
-    </>
   );
 }
