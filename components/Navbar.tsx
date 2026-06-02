@@ -68,7 +68,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 no-underline">
           <Image src="/logo.png" alt="Natoure" width={38} height={38} className="object-contain" />
-          <span style={{
+          <span className="notranslate" translate="no" style={{
             fontWeight: 700, fontSize: 20,
             background: "linear-gradient(135deg, #0284c7, #4f46e5)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",

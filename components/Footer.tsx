@@ -16,7 +16,7 @@ export default function Footer() {
                 style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)" }}>
                 <span className="text-white text-sm font-bold">N</span>
               </div>
-              <span className="font-bold text-lg bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="font-bold text-lg bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent notranslate" translate="no">
                 Natoure
               </span>
             </div>
@@ -115,11 +115,11 @@ export default function Footer() {
 
         <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-2 border-t border-slate-100 text-xs text-slate-400">
           <span>
-            {language === "az"
-              ? `© ${new Date().getFullYear()} Natoure. Bütün hüquqlar qorunur.`
+            © {new Date().getFullYear()} <span className="notranslate" translate="no">Natoure</span>. {language === "az"
+              ? "Bütün hüquqlar qorunur."
               : language === "tr"
-              ? `© ${new Date().getFullYear()} Natoure. Tüm hakları saklıdır.`
-              : `© ${new Date().getFullYear()} Natoure. All rights reserved.`}
+              ? "Tüm hakları saklıdır."
+              : "All rights reserved."}
           </span>
           <div className="flex items-center gap-4">
             <Link href="/privacy-policy"
