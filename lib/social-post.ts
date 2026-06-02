@@ -1,6 +1,6 @@
 const PAGE_ACCESS_TOKEN = process.env.FB_PAGE_TOKEN          || "";
 const PAGE_ID           = process.env.META_PAGE_ID           || "393640733828497";
-const IG_USER_ID        = process.env.META_IG_USER_ID        || "";
+const IG_USER_ID        = process.env.META_IG_USER_ID        || process.env.IG_USER_ID || "";
 const BOT_TOKEN         = process.env.TELEGRAM_BOT_TOKEN     || "";
 const CHANNEL_ID        = process.env.TELEGRAM_CHANNEL_ID    || process.env.TELEGRAM_CHAT_ID || "";
 const APP_URL           = process.env.NEXT_PUBLIC_APP_URL    || "https://www.natourefly.com";
