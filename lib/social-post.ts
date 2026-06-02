@@ -18,18 +18,18 @@ export interface TourPostData {
 
 function buildCaption(tour: TourPostData): string {
   const dateStr = tour.start_date
-    ? `📅 ${new Date(tour.start_date).toLocaleDateString("az-AZ", { day: "numeric", month: "long", year: "numeric" })}`
+    ? `📅 ${new Date(tour.start_date).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}`
     : "";
   const link = `${APP_URL}/turlar/${tour.id}`;
 
   return [
     `✈️ *${tour.name}*`,
     `📍 ${tour.destination}`,
-    `💰 ${tour.price_azn} ₼`,
+    `💰 ${tour.price_azn} AZN`,
     dateStr,
     tour.description ? `\n${tour.description}` : "",
     `\n🔗 ${link}`,
-    "\n#natourefly #tur #səyahət #Azərbaycan",
+    "\n#natourefly #travel #tourism #azerbaijan",
   ]
     .filter(Boolean)
     .join("\n");

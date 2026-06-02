@@ -5,25 +5,25 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const DESTINATIONS = [
-  { country: "Türkiyə", emoji: "🇹🇷", query: "Turkey travel Istanbul Antalya" },
-  { country: "Dubay", emoji: "🇦🇪", query: "Dubai travel UAE skyline" },
-  { country: "Misir", emoji: "🇪🇬", query: "Egypt pyramids travel Cairo" },
-  { country: "Maldiv adaları", emoji: "🇲🇻", query: "Maldives island travel ocean" },
-  { country: "İtaliya", emoji: "🇮🇹", query: "Italy Rome Venice travel" },
-  { country: "Yunanıstan", emoji: "🇬🇷", query: "Greece Santorini travel" },
-  { country: "Tailand", emoji: "🇹🇭", query: "Thailand Bangkok travel" },
-  { country: "İspaniya", emoji: "🇪🇸", query: "Spain Barcelona travel" },
-  { country: "Fransa", emoji: "🇫🇷", query: "France Paris Eiffel Tower travel" },
-  { country: "Marokko", emoji: "🇲🇦", query: "Morocco Marrakech travel" },
+  { country: "Turkey", emoji: "🇹🇷", query: "Turkey travel Istanbul Antalya" },
+  { country: "Dubai", emoji: "🇦🇪", query: "Dubai travel UAE skyline" },
+  { country: "Egypt", emoji: "🇪🇬", query: "Egypt pyramids travel Cairo" },
+  { country: "Maldives", emoji: "🇲🇻", query: "Maldives island travel ocean" },
+  { country: "Italy", emoji: "🇮🇹", query: "Italy Rome Venice travel" },
+  { country: "Greece", emoji: "🇬🇷", query: "Greece Santorini travel" },
+  { country: "Thailand", emoji: "🇹🇭", query: "Thailand Bangkok travel" },
+  { country: "Spain", emoji: "🇪🇸", query: "Spain Barcelona travel" },
+  { country: "France", emoji: "🇫🇷", query: "France Paris Eiffel Tower travel" },
+  { country: "Morocco", emoji: "🇲🇦", query: "Morocco Marrakech travel" },
   { country: "Bali", emoji: "🇮🇩", query: "Bali Indonesia travel temple" },
-  { country: "Portuqaliya", emoji: "🇵🇹", query: "Portugal Lisbon travel" },
-  { country: "Çexiya", emoji: "🇨🇿", query: "Czech Republic Prague travel" },
-  { country: "Avstriya", emoji: "🇦🇹", query: "Austria Vienna travel" },
-  { country: "İsveçrə", emoji: "🇨🇭", query: "Switzerland Alps travel" },
-  { country: "Sinqapur", emoji: "🇸🇬", query: "Singapore city travel" },
-  { country: "Yaponiya", emoji: "🇯🇵", query: "Japan Tokyo travel cherry blossom" },
-  { country: "Səudiyyə Ərəbistanı", emoji: "🇸🇦", query: "Saudi Arabia Riyadh travel" },
-  { country: "Qətər", emoji: "🇶🇦", query: "Qatar Doha travel skyline" },
+  { country: "Portugal", emoji: "🇵🇹", query: "Portugal Lisbon travel" },
+  { country: "Czech Republic", emoji: "🇨🇿", query: "Czech Republic Prague travel" },
+  { country: "Austria", emoji: "🇦🇹", query: "Austria Vienna travel" },
+  { country: "Switzerland", emoji: "🇨🇭", query: "Switzerland Alps travel" },
+  { country: "Singapore", emoji: "🇸🇬", query: "Singapore city travel" },
+  { country: "Japan", emoji: "🇯🇵", query: "Japan Tokyo travel cherry blossom" },
+  { country: "Saudi Arabia", emoji: "🇸🇦", query: "Saudi Arabia Riyadh travel" },
+  { country: "Qatar", emoji: "🇶🇦", query: "Qatar Doha travel skyline" },
 ];
 
 export async function GET(req: NextRequest) {
@@ -67,21 +67,21 @@ export async function GET(req: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `${dest.country} haqqında turizm məlumatı yaz. Format:
+          content: `Write engaging travel tourism information about ${dest.country}. Format:
 
-BAŞLIQ: (cəlbedici, 8-12 söz)
-MƏZMUN: (3-4 abzas, hər biri 2-3 cümlə. Görməli yerlər, mətbəx, ən yaxşı mövsüm, praktik məlumatlar. Azərbaycanlı turist perspektivindən. Natoure.az vasitəsilə getmək tövsiyəsi ilə bitir.)
+TITLE: (engaging, 8-12 words)
+CONTENT: (3-4 paragraphs, 2-3 sentences each. Must cover highlights, local cuisine, best travel season, and practical tips. End with a recommendation to travel with NatoureFly via natourefly.com.)
 
-Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
+Only write in English. Use emojis.`,
         },
       ],
     });
 
     const raw = msg.content[0].type === "text" ? msg.content[0].text : "";
-    const titleMatch = raw.match(/BAŞLIQ:\s*(.+)/);
-    const contentMatch = raw.match(/MƏZMUN:\s*([\s\S]+)/);
+    const titleMatch = raw.match(/TITLE:\s*(.+)/i);
+    const contentMatch = raw.match(/CONTENT:\s*([\s\S]+)/i);
 
-    const title = (titleMatch?.[1]?.trim() || `${dest.country} — Turizm Məlumatı`)
+    const title = (titleMatch?.[1]?.trim() || `${dest.country} — Travel Guide`)
       .replace(/\*\*/g, "").trim();
     const content = (contentMatch?.[1]?.trim() || raw)
       .replace(/\*\*/g, "").replace(/\*/g, "").trim();
@@ -138,7 +138,7 @@ Yalnız Azərbaycan dilində yaz. Emoji istifadə et.`,
       image_url,
     });
 
-    const caption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com`;
+    const caption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com\n\n#natourefly #travel #tourism #azerbaijan`;
 
     // ── Instagram-a paylaş ──────────────────────────────────────────────────
     let ig_post_id: string | null = null;
