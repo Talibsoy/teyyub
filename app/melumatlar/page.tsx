@@ -22,16 +22,18 @@ export default function MelumatlarPage() {
   const { language } = useLanguage();
 
   useEffect(() => {
+    setLoading(true);
     getSupabase()
       .from("travel_posts")
       .select("*")
+      .eq("language", language)
       .order("created_at", { ascending: false })
       .limit(30)
       .then(({ data }) => {
         setPosts(data || []);
         setLoading(false);
       });
-  }, []);
+  }, [language]);
 
   const t = {
     tag:       language === "tr" ? "Seyahat Dünyası" : language === "en" ? "Travel World" : "Səyahət Dünyası",

@@ -60,31 +60,61 @@ export async function GET(req: NextRequest) {
       ? available[Math.floor(Math.random() * available.length)]
       : DESTINATIONS[Math.floor(Math.random() * DESTINATIONS.length)];
 
-    // Claude ilə məlumat yaz
-    const msg = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1200,
-      messages: [
-        {
-          role: "user",
-          content: `Write engaging travel tourism information about ${dest.country}. Format:
+    // 3 dildə məlumat yaz (AZ, EN, TR)
+    const LANG_PROMPTS = [
+      {
+        code: "az",
+        instruction: "Yalnız Azərbaycan dilində yaz. Rəsmi Azərbaycan dili istifadə et.",
+        fallback: `${dest.country} — Səyahət Bələdçisi`,
+      },
+      {
+        code: "en",
+        instruction: "Only write in English.",
+        fallback: `${dest.country} — Travel Guide`,
+      },
+      {
+        code: "tr",
+        instruction: "Yalnızca Türkçe yaz. Resmi Türkçe kullan.",
+        fallback: `${dest.country} — Seyahat Rehberi`,
+      },
+    ];
+
+    const langResults: { code: string; title: string; content: string }[] = [];
+
+    for (const lang of LANG_PROMPTS) {
+      try {
+        const msg = await client.messages.create({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1200,
+          messages: [
+            {
+              role: "user",
+              content: `Write engaging travel tourism information about ${dest.country}. Format:
 
 TITLE: (engaging, 8-12 words)
 CONTENT: (3-4 paragraphs, 2-3 sentences each. Must cover highlights, local cuisine, best travel season, and practical tips. End with a recommendation to travel with NatoureFly via natourefly.com.)
 
-Only write in English. Use emojis.`,
-        },
-      ],
-    });
+${lang.instruction} Use emojis.`,
+            },
+          ],
+        });
+        const raw = msg.content[0].type === "text" ? msg.content[0].text : "";
+        const titleMatch = raw.match(/TITLE:\s*(.+)/i);
+        const contentMatch = raw.match(/CONTENT:\s*([\s\S]+)/i);
+        langResults.push({
+          code: lang.code,
+          title: (titleMatch?.[1]?.trim() || lang.fallback).replace(/\*\*/g, "").trim(),
+          content: (contentMatch?.[1]?.trim() || raw).replace(/\*\*/g, "").replace(/\*/g, "").trim(),
+        });
+      } catch (e) {
+        console.error(`[Cron] ${lang.code} yazma xətası:`, e);
+      }
+    }
 
-    const raw = msg.content[0].type === "text" ? msg.content[0].text : "";
-    const titleMatch = raw.match(/TITLE:\s*(.+)/i);
-    const contentMatch = raw.match(/CONTENT:\s*([\s\S]+)/i);
-
-    const title = (titleMatch?.[1]?.trim() || `${dest.country} — Travel Guide`)
-      .replace(/\*\*/g, "").trim();
-    const content = (contentMatch?.[1]?.trim() || raw)
-      .replace(/\*\*/g, "").replace(/\*/g, "").trim();
+    // EN nəticəni caption üçün saxla
+    const enResult = langResults.find(r => r.code === "en") || langResults[0];
+    const title   = enResult?.title   || `${dest.country} — Travel Guide`;
+    const content = enResult?.content || "";
 
     // Unsplash-dan şəkil tap
     let image_url: string | null = null;
@@ -129,14 +159,18 @@ Only write in English. Use emojis.`,
       image_url = null;
     }
 
-    await db.from("travel_posts").insert({
-      country: dest.country,
-      emoji: dest.emoji,
-      title,
-      content,
-      image_query: `${dest.country} travel tourism`,
-      image_url,
-    });
+    // Hər dil üçün ayrıca sıra daxil et
+    for (const lr of langResults) {
+      await db.from("travel_posts").insert({
+        country: dest.country,
+        emoji: dest.emoji,
+        title: lr.title,
+        content: lr.content,
+        language: lr.code,
+        image_query: `${dest.country} travel tourism`,
+        image_url,
+      });
+    }
 
     const caption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com\n\n#natourefly #travel #tourism #azerbaijan`;
 
