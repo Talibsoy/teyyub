@@ -73,10 +73,34 @@ const UPGRADE_ALTERNATIVES: HotelOffer[] = [
 
 export default function HomePage() {
   const { t, language } = useLanguage();
-  
+
+  const ui = {
+    aiLabel:     language === "tr" ? "AI Seyahat Danışmanı"   : language === "en" ? "AI Travel Advisor"         : "AI Səyahət Müşaviri",
+    aiTitle:     language === "tr" ? "Seyahat planınızı girin" : language === "en" ? "Enter your travel plan"    : "Səyahət planınızı daxil edin",
+    aiDesc:      language === "tr"
+      ? "Yapay zeka isteğinizi gerçek zamanlı filtrelere bölerek adım adım arama paneli açacak."
+      : language === "en"
+      ? "AI will break your request into real-time filters and open a step-by-step search panel."
+      : "Süni intellekt istəyinizi real-time filtrlərə böləcək və zərif addım-addım axtarış paneli açacaq.",
+    aiPlaceholder: language === "tr"
+      ? "Örn: 16 Temmuz'da New York'tan San Francisco'ya, 2 kişi, $2500 bütçe, 4 yıldızlı otel ve araç kiralama."
+      : language === "en"
+      ? "E.g. We want to fly from New York to San Francisco on July 16th, 2 people, $2500 budget, 4-star hotel and rental car."
+      : "Məsələn: 16 iyulda New Yorkdan San Franciscoya getmək istəyirik, 2 nəfər, $2500 büdcə, 4 ulduz otel və rent a car.",
+    aiButton:    language === "tr" ? "Plan Oluştur & Aramaya Başla" : language === "en" ? "Build Plan & Start Search"  : "Planı Hazırla & Axtarışa Başla",
+    aiAnalyzing: language === "tr" ? "Plan Analiz Ediliyor..."      : language === "en" ? "Analyzing Plan..."           : "Plan Analiz Edilir...",
+    aiPlanLabel: language === "tr" ? "AI Seyahat Planı"             : language === "en" ? "AI Travel Plan"              : "AI Səyahət Planı",
+  };
+
   // Screens: 'landing' | 'itinerary' | 'wizard' | 'orchestration' | 'upgrade' | 'final'
   const [screen, setScreen] = useState<"landing" | "itinerary" | "wizard" | "orchestration" | "upgrade" | "final">("landing");
-  const [prompt, setPrompt] = useState("New Yorkdan San Franciscoya getmək istəyirik, 16 iyulda, iki nəfərik. Büdcəmiz 2500 dollardı. 4* otel, reytinqi 7+ olsun. 1 həftə qalacağıq. San Fransiskoda rent a car da istəyirik.");
+  const [prompt, setPrompt] = useState(
+    language === "tr"
+      ? "New York'tan San Francisco'ya 16 Temmuz'da gitmek istiyoruz, 2 kişi. Bütçemiz 2500 dolar. 4 yıldızlı otel, puan 7+. 1 hafta kalacağız. Araç kiralama da istiyoruz."
+      : language === "en"
+      ? "We want to fly from New York to San Francisco on July 16th, 2 people. Budget $2500. 4-star hotel, rating 7+. Staying 1 week. We also want a rental car in San Francisco."
+      : "New Yorkdan San Franciscoya getmək istəyirik, 16 iyulda, iki nəfərik. Büdcəmiz 2500 dollardı. 4* otel, reytinqi 7+ olsun. 1 həftə qalacağıq. San Fransiskoda rent a car da istəyirik."
+  );
   const [messages, setMessages] = useState<Msg[]>([
     { role: "bot", text: "Salam! Natoure smart bələdçinizəm. Səyahət xəyalınızı qeyd edin, planı hazırlayım.", timestamp: new Date() }
   ]);
@@ -258,20 +282,20 @@ export default function HomePage() {
               <div className="max-w-2xl mx-auto bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 shadow-2xl">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles size={20} className="text-[#0284c7]" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#0284c7]">AI Səyahət Müşaviri</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#0284c7]">{ui.aiLabel}</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2 leading-tight">
-                  Səyahət planınızı daxil edin
+                  {ui.aiTitle}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mb-6">
-                  Süni intellekt istəyinizi real-time filtrlərə böləcək və zərif addım-addım axtarış paneli açacaq.
+                  {ui.aiDesc}
                 </p>
 
                 <textarea
                   className="w-full h-28 p-4 text-xs sm:text-sm bg-[#f8fafc] border border-slate-200 rounded-2xl focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 resize-none font-semibold text-slate-800"
                   value={prompt}
                   onChange={e => setPrompt(e.target.value)}
-                  placeholder="Məsələn: 16 iyulda New Yorkdan San Franciscoya getmək istəyirik, 2 nəfər, $2500 büdcə, 4 ulduz otel və rent a car."
+                  placeholder={ui.aiPlaceholder}
                 />
 
                 <button
@@ -282,11 +306,11 @@ export default function HomePage() {
                   {isTyping ? (
                     <>
                       <RefreshCw className="animate-spin" size={16} />
-                      Plan Analiz Edilir...
+                      {ui.aiAnalyzing}
                     </>
                   ) : (
                     <>
-                      Planı Hazırla & Axtarışa Başla <ArrowRight size={16} />
+                      {ui.aiButton} <ArrowRight size={16} />
                     </>
                   )}
                 </button>
@@ -301,7 +325,7 @@ export default function HomePage() {
                 <div className="lg:col-span-5 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm self-start">
                   <div className="flex items-center gap-2 mb-4">
                     <Sparkles size={16} className="text-[#0284c7]" />
-                    <h3 className="font-bold text-slate-800 text-sm">AI Səyahət Planı: {parsedParams.destination}</h3>
+                    <h3 className="font-bold text-slate-800 text-sm">{ui.aiPlanLabel}: {parsedParams.destination}</h3>
                   </div>
 
                   <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6">
