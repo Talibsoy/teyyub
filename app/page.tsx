@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import {
-  Sparkles, X, Check, AlertTriangle, Plane, Hotel, Car, Info,
-  Calendar, MapPin, Users, CreditCard, ArrowRight, Lock, Map, RefreshCw,
-  Brain, Zap, Shield, TrendingUp, Compass, Bed
+  Sparkles, Check, Plane,
+  Calendar, ArrowRight, Lock, RefreshCw,
+  Brain, Zap, Shield, TrendingUp,
 } from "lucide-react";
 import { applyNatoureMarkup } from "@/lib/markup";
 import { useLanguage } from "@/components/LanguageContext";
@@ -117,13 +117,6 @@ export default function HomePage() {
   const [orchStep, setOrchStep] = useState(0); // 0: Payment verified, 1: Flight PNR booked, 2: Hotel booking failed
   const [orchProgress, setOrchProgress] = useState(0);
 
-  // Chat concierge
-  const [chatOpen, setChatOpen] = useState(false);
-  const [conciergeMsgs, setConciergeMsgs] = useState<Msg[]>([
-    { role: "bot", text: "Salam! Natoure Lüks Konsyerj xidmətinə xoş gəlmisiniz. Səyahət planınız haqqında suallarınızı cavablandırmağa hazıram.", timestamp: new Date() }
-  ]);
-  const [conciergeInput, setConciergeInput] = useState("");
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const totalNights = parsedParams.duration_days;
   const markupFlightPrice = selectedFlight ? applyNatoureMarkup(selectedFlight.rawPrice) * parsedParams.travelers_count : 0;
@@ -205,31 +198,6 @@ export default function HomePage() {
     setScreen("final");
   };
 
-  // Concierge bot conversation
-  const sendConciergeMsg = () => {
-    if (!conciergeInput.trim()) return;
-    const userMsg: Msg = { role: "user", text: conciergeInput, timestamp: new Date() };
-    setConciergeMsgs(prev => [...prev, userMsg]);
-    setConciergeInput("");
-
-    setTimeout(() => {
-      let reply = "Planlaşdırma ilə bağlı hər hansı sualınız olduqda kömək etməyə şadam. Biz bütün PNR və voucher məlumatlarını hazır saxlayırıq.";
-      const text = conciergeInput.toLowerCase();
-      if (text.includes("hotel") || text.includes("otel")) {
-        reply = "Seçdiyiniz otel dəyişikliyi 100% pulsuzdur. Natoure zəmanəti ilə St. Regis 5* kateqoriya artımı həyata keçirilmişdir. Heç bir əlavə öhdəlik daşımırsınız.";
-      } else if (text.includes("bilet") || text.includes("uçuş")) {
-        reply = "Uçuş biletləriniz Delta Air Lines ilə rəsmi şəkildə bağlandı. PNR kodunuz aktivdir.";
-      } else if (text.includes("rent") || text.includes("maşın")) {
-        reply = "SFO hava limanında SUV (Jeep) icarəniz səyahət sənədlərinizə əlavə edilib.";
-      }
-      
-      setConciergeMsgs(prev => [...prev, { role: "bot", text: reply, timestamp: new Date() }]);
-    }, 1000);
-  };
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conciergeMsgs, chatOpen]);
 
   return (
     <>
@@ -1002,67 +970,6 @@ export default function HomePage() {
       </section>
 
       <NewsletterSection />
-
-      {/* Floating AI Concierge Chat Box */}
-      <div className="fixed bottom-6 right-6 z-50">
-        {!chatOpen ? (
-          <button
-            onClick={() => setChatOpen(true)}
-            className="w-12 h-12 rounded-full bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-xl hover:scale-105 transition flex items-center justify-center font-bold"
-          >
-            💬
-          </button>
-        ) : (
-          <div className="w-80 h-[450px] bg-white border border-slate-100 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-            <div className="bg-gradient-to-r from-sky-600 to-indigo-600 p-4 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <div>
-                  <h4 className="text-xs font-bold">Natoure Lüks Konsyerj</h4>
-                  <p className="text-[10px] text-white/80 font-medium">Online AI Köməkçi</p>
-                </div>
-              </div>
-              <button onClick={() => setChatOpen(false)} className="text-white hover:text-slate-200">
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {conciergeMsgs.map((m, idx) => (
-                <div key={idx} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
-                      m.role === "user"
-                        ? "bg-slate-900 text-white rounded-tr-none"
-                        : "bg-[#f8fafc] border border-slate-100 text-slate-700 rounded-tl-none"
-                    }`}
-                  >
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            <div className="p-3 border-t border-slate-100 flex gap-2">
-              <input
-                type="text"
-                value={conciergeInput}
-                onChange={e => setConciergeInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && sendConciergeMsg()}
-                placeholder="Konsyerjə yazın..."
-                className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-500 bg-[#f8fafc]"
-              />
-              <button
-                onClick={sendConciergeMsg}
-                className="px-3 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition"
-              >
-                Göndər
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
     </>
   );
 }

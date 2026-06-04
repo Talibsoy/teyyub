@@ -433,7 +433,7 @@ export default function AIChatPanel() {
         onClick={() => setOpen(o => !o)}
         aria-label="AI Bələdçi"
         style={{
-          position: "fixed", bottom: 24, left: 24, zIndex: 49,
+          position: "fixed", bottom: 24, right: 24, zIndex: 49,
           width: 56, height: 56, borderRadius: "50%",
           background: "linear-gradient(135deg,#0284c7,#4f46e5)",
           border: "none", cursor: "pointer", padding: 0,
@@ -471,7 +471,7 @@ export default function AIChatPanel() {
       {/* Panel */}
       {open && (
         <div style={{
-          position: "fixed", bottom: 92, left: 24, zIndex: 49,
+          position: "fixed", bottom: 92, right: 24, zIndex: 49,
           width: "min(380px, calc(100vw - 32px))",
           background: "white", borderRadius: 20,
           boxShadow: "0 20px 60px rgba(0,0,0,0.18)",

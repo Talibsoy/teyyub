@@ -15,9 +15,9 @@ export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
 
   const languages = [
-    { code: "az" as Locale, label: "AZ", flag: "🇦🇿" },
-    { code: "en" as Locale, label: "EN", flag: "🇬🇧" },
-    { code: "tr" as Locale, label: "TR", flag: "🇹🇷" },
+    { code: "az" as Locale, label: "AZ", flagCode: "az" },
+    { code: "en" as Locale, label: "EN", flagCode: "gb" },
+    { code: "tr" as Locale, label: "TR", flagCode: "tr" },
   ];
 
   const currentLang = languages.find(l => l.code === language) || languages[0];
@@ -134,7 +134,8 @@ export default function Navbar() {
               onClick={() => setLangDropdownOpen(!langDropdownOpen)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/80 bg-white/50 hover:bg-slate-100/80 transition-all font-bold text-xs text-slate-600 focus:outline-none"
             >
-              <span>{currentLang.flag}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`https://flagcdn.com/16x12/${currentLang.flagCode}.png`} width={16} height={12} alt={currentLang.label} className="rounded-[2px]" />
               <span>{currentLang.label}</span>
               <span className="text-[9px] text-slate-400">▼</span>
             </button>
@@ -151,7 +152,8 @@ export default function Navbar() {
                       }}
                       className={`flex items-center gap-2 px-4 py-2 text-xs font-bold hover:bg-slate-50 transition-all w-full text-left ${language === l.code ? "text-sky-600 bg-sky-50/50" : "text-slate-600"}`}
                     >
-                      <span>{l.flag}</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`https://flagcdn.com/16x12/${l.flagCode}.png`} width={16} height={12} alt={l.label} className="rounded-[2px]" />
                       <span>{l.label}</span>
                     </button>
                   ))}
@@ -170,7 +172,8 @@ export default function Navbar() {
                 onClick={() => setLanguage(l.code)}
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border transition-all ${language === l.code ? "border-sky-500 bg-sky-50" : "border-slate-200 bg-white"}`}
               >
-                {l.flag}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`https://flagcdn.com/16x12/${l.flagCode}.png`} width={16} height={12} alt={l.label} className="rounded-[2px]" />
               </button>
             ))}
           </div>
