@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import AIChatPanel from "./AIChatPanel";
 import ErrorBoundary from "./ErrorBoundary";
+import ServicesTicker from "./ServicesTicker";
 
 const BARE_ROUTES = ["/prototype"];
 
@@ -19,6 +20,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
+      <ServicesTicker />
       <main className="flex-1">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>

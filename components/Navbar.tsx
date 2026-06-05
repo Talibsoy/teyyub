@@ -136,7 +136,7 @@ export default function Navbar() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={`https://flagcdn.com/16x12/${currentLang.flagCode}.png`} width={16} height={12} alt={currentLang.label} className="rounded-[2px]" />
-              <span>{currentLang.label}</span>
+              <span translate="no">{currentLang.label}</span>
               <span className="text-[9px] text-slate-400">▼</span>
             </button>
             {langDropdownOpen && (
@@ -154,7 +154,7 @@ export default function Navbar() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`https://flagcdn.com/16x12/${l.flagCode}.png`} width={16} height={12} alt={l.label} className="rounded-[2px]" />
-                      <span>{l.label}</span>
+                      <span translate="no">{l.label}</span>
                     </button>
                   ))}
                 </div>
