@@ -43,11 +43,15 @@ async function checkRateLimit(userId: string): Promise<{ allowed: boolean; remai
 }
 
 export async function POST(req: NextRequest) {
+  // Auth opsionaldır — giriş etmiş istifadəçi öz ID-si ilə,
+  // qonaq isə IP ünvanı ilə rate-limit olur
   const auth = await requireAuth(req);
-  if (isAuthError(auth)) return auth;
+  const rateLimitId = isAuthError(auth)
+    ? `guest:${req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown"}`
+    : auth.userId;
 
   // Rate limit yoxlaması
-  const rl = await checkRateLimit(auth.userId);
+  const rl = await checkRateLimit(rateLimitId);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: `Çox sorğu göndərdiniz. ${rl.resetSec} saniyə sonra yenidən cəhd edin.` },
