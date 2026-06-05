@@ -10,14 +10,15 @@ import { applyNatoureMarkup } from "@/lib/markup";
 import { useLanguage } from "@/components/LanguageContext";
 import NewsletterSection from "@/components/NewsletterSection";
 import ReviewsSection from "@/components/ReviewsSection";
+import { getSupabase } from "@/lib/supabase";
 
 /* ─── Interfaces ───────────────────────────────────── */
 interface FlightOffer {
   id: string;
   airline: string;
-  logoText: string;
+  logoText?: string;
   departure: string;
-  arrival: string;
+  arrival?: string;
   duration: string;
   type: string;
   rawPrice: number;
@@ -31,6 +32,11 @@ interface HotelOffer {
   rawPricePerNight: number;
   image: string;
   location: string;
+  roomType?: string;
+  meal?: string;
+  bookHash?: string;
+  photos?: string[];
+  facilities?: string[];
 }
 
 interface CarOffer {
@@ -118,18 +124,24 @@ export default function HomePage() {
 
   // Wizard steps: 'flight' | 'hotel' | 'car' | 'checkout'
   const [wizardStep, setWizardStep] = useState<"flight" | "hotel" | "car" | "checkout">("flight");
-  
+
+  // Round-trip / One-way
+  const [tripType, setTripType] = useState<"oneway" | "roundtrip">("oneway");
+
   // Selections
   const [selectedFlight, setSelectedFlight] = useState<FlightOffer | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<HotelOffer | null>(null);
   const [selectedCar, setSelectedCar] = useState<CarOffer | null>(null);
   const [alternativeHotel, setAlternativeHotel] = useState<HotelOffer | null>(null);
+  const [hotelDrawer, setHotelDrawer] = useState<HotelOffer | null>(null);
 
   // Search trigger states
   const [searchingFlights, setSearchingFlights] = useState(false);
   const [flightsList, setFlightsList] = useState<FlightOffer[]>([]);
+  const [flightError, setFlightError] = useState<string | null>(null);
   const [searchingHotels, setSearchingHotels] = useState(false);
   const [hotelsList, setHotelsList] = useState<HotelOffer[]>([]);
+  const [hotelError, setHotelError] = useState<string | null>(null);
   const [searchingCars, setSearchingCars] = useState(false);
   const [carsList, setCarsList] = useState<CarOffer[]>([]);
 
@@ -168,20 +180,103 @@ export default function HomePage() {
   };
 
   // Search functions
-  const searchFlights = () => {
+  const searchFlights = async () => {
     setSearchingFlights(true);
-    setTimeout(() => {
+    setFlightError(null);
+    setFlightsList([]);
+    try {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const dateStr = parsedParams.departure_date.includes("İyul")
+        ? `2026-07-${parsedParams.departure_date.split(" ")[0].padStart(2, "0")}`
+        : parsedParams.departure_date;
+
+      const res = await fetch("/api/flights/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          origin: parsedParams.origin,
+          destination: parsedParams.destination,
+          date: dateStr,
+          passengers: parsedParams.travelers_count,
+          ...(tripType === "roundtrip" ? { return_date: dateStr } : {}),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const offers: FlightOffer[] = (data.offers || []).map((o: any) => ({
+          id: o.offer_id,
+          airline: o.airline,
+          departure: o.depart_time || o.departure,
+          duration: o.duration,
+          type: o.stops === 0 ? "Birbaşa" : `${o.stops} dayanacaq`,
+          rawPrice: o.price_raw || o.price_usd,
+        }));
+        setFlightsList(offers.length > 0 ? offers : MOCK_FLIGHTS);
+      } else {
+        // Auth yoxdur və ya xəta — MOCK ilə davam et
+        setFlightsList(MOCK_FLIGHTS);
+      }
+    } catch {
       setFlightsList(MOCK_FLIGHTS);
+    } finally {
       setSearchingFlights(false);
-    }, 1200);
+    }
   };
 
-  const searchHotels = () => {
+  const searchHotels = async () => {
     setSearchingHotels(true);
-    setTimeout(() => {
+    setHotelError(null);
+    setHotelsList([]);
+    try {
+      const checkin = "2026-07-16";
+      const checkoutDate = new Date("2026-07-16");
+      checkoutDate.setDate(checkoutDate.getDate() + parsedParams.duration_days);
+      const checkout = checkoutDate.toISOString().split("T")[0];
+
+      const res = await fetch("/api/hotels/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: parsedParams.destination,
+          checkin,
+          checkout,
+          adults: parsedParams.travelers_count,
+          stars: parsedParams.hotel_stars,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const hotels: HotelOffer[] = (data.hotels || []).map((h: any) => ({
+          id: h.id || h.hotel_id,
+          name: h.name || h.hotel_name,
+          location: h.address || h.destination,
+          image: h.image_url || (h.photos?.[0]) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
+          stars: h.stars,
+          rating: h.rating,
+          rawPricePerNight: h.price_original || h.price_marked_up || h.price_usd,
+          roomType: h.room_type,
+          meal: h.meal,
+          bookHash: h.book_hash,
+          photos: h.photos || [],
+          facilities: h.included_services || [],
+        }));
+        setHotelsList(hotels.length > 0 ? hotels : MOCK_HOTELS);
+      } else {
+        setHotelsList(MOCK_HOTELS);
+      }
+    } catch {
       setHotelsList(MOCK_HOTELS);
+    } finally {
       setSearchingHotels(false);
-    }, 1200);
+    }
   };
 
   const searchCars = () => {
@@ -400,17 +495,40 @@ export default function HomePage() {
                   {wizardStep === "flight" && (
                     <div>
                       <h3 className="font-extrabold text-base text-slate-900 mb-4">Uçuş biletini seçin</h3>
+
+                      {/* One-way / Round-trip toggle */}
+                      <div className="flex gap-2 mb-4">
+                        {(["oneway", "roundtrip"] as const).map(type => (
+                          <button
+                            key={type}
+                            onClick={() => { setTripType(type); setFlightsList([]); }}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                              tripType === type
+                                ? "bg-slate-900 text-white border-slate-900"
+                                : "border-slate-200 text-slate-500 hover:border-slate-400"
+                            }`}
+                          >
+                            {type === "oneway"
+                              ? (language === "en" ? "One-way" : language === "tr" ? "Tek yön" : "Bir tərəfli")
+                              : (language === "en" ? "Round-trip" : language === "tr" ? "Gidiş-dönüş" : "Gediş-dönüş")}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-500 space-y-0.5">
                           <div>Marşrut: <span className="font-bold text-slate-700">{parsedParams.origin} ➔ {parsedParams.destination}</span></div>
                           <div>Tarix: <span className="font-bold text-slate-700">{parsedParams.departure_date}</span></div>
+                          {tripType === "roundtrip" && (
+                            <div className="text-[#0284c7] font-semibold">↩ Gediş-dönüş bilet axtarılacaq</div>
+                          )}
                           <div>Sərnişin: <span className="font-bold text-slate-700">{parsedParams.travelers_count} nəfər</span></div>
                         </div>
                         <button
                           onClick={searchFlights}
                           className="px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition"
                         >
-                          Biletləri Göstər
+                          {language === "en" ? "Search Flights" : language === "tr" ? "Uçuş Ara" : "Biletləri Axtar"}
                         </button>
                       </div>
 
@@ -520,16 +638,24 @@ export default function HomePage() {
                                       <span className="text-xs font-extrabold text-slate-900">${nightPrice}</span>
                                       <span className="text-[10px] text-slate-400 font-normal"> / gecə</span>
                                     </div>
-                                    <div className="text-right">
-                                      <div className="text-[10px] text-slate-400 font-semibold">Cəmi: ${totalHotelCost}</div>
+                                    <div className="flex items-center gap-2">
                                       <button
-                                        onClick={() => setSelectedHotel(ht)}
-                                        className={`mt-1 px-4 py-1 text-xs font-bold rounded-lg transition ${
-                                          selectedHotel?.id === ht.id ? "bg-[#0284c7] text-white" : "bg-[#f1f5f9] text-slate-700 hover:bg-slate-200"
-                                        }`}
+                                        onClick={() => setHotelDrawer(ht)}
+                                        className="px-3 py-1 text-[10px] font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
                                       >
-                                        {selectedHotel?.id === ht.id ? "Seçildi" : "Seç"}
+                                        {language === "en" ? "Rooms" : language === "tr" ? "Odalar" : "Otaqlar"}
                                       </button>
+                                      <div className="text-right">
+                                        <div className="text-[10px] text-slate-400 font-semibold">Cəmi: ${totalHotelCost}</div>
+                                        <button
+                                          onClick={() => setSelectedHotel(ht)}
+                                          className={`mt-1 px-4 py-1 text-xs font-bold rounded-lg transition ${
+                                            selectedHotel?.id === ht.id ? "bg-[#0284c7] text-white" : "bg-[#f1f5f9] text-slate-700 hover:bg-slate-200"
+                                          }`}
+                                        >
+                                          {selectedHotel?.id === ht.id ? "Seçildi" : "Seç"}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -994,6 +1120,104 @@ export default function HomePage() {
       </section>
 
       <NewsletterSection />
+
+      {/* Hotel Detail Drawer */}
+      {hotelDrawer && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={() => setHotelDrawer(null)} />
+          <div className="w-full max-w-md bg-white shadow-2xl flex flex-col overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white z-10">
+              <div>
+                <p className="text-xs text-slate-400 font-medium">{hotelDrawer.stars}★ — {hotelDrawer.location}</p>
+                <h2 className="text-sm font-bold text-slate-900 mt-0.5">{hotelDrawer.name}</h2>
+              </div>
+              <button onClick={() => setHotelDrawer(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+            </div>
+
+            {/* Photo */}
+            <div className="w-full h-48 bg-slate-100 overflow-hidden shrink-0">
+              <img src={hotelDrawer.image} alt={hotelDrawer.name} className="w-full h-full object-cover" />
+            </div>
+
+            {/* Rating */}
+            <div className="flex items-center gap-3 px-5 py-4 border-b">
+              <div className="bg-[#0284c7] text-white text-sm font-bold px-2.5 py-1 rounded-lg">{hotelDrawer.rating}</div>
+              <div>
+                <p className="text-xs font-bold text-slate-700">
+                  {(hotelDrawer.rating || 0) >= 9 ? "Əla" : (hotelDrawer.rating || 0) >= 8 ? "Çox yaxşı" : "Yaxşı"}
+                </p>
+                <p className="text-[10px] text-slate-400">Qiymətləndirmə</p>
+              </div>
+            </div>
+
+            {/* Facilities */}
+            {hotelDrawer.facilities && hotelDrawer.facilities.length > 0 && (
+              <div className="px-5 py-4 border-b">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Xidmətlər</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {hotelDrawer.facilities.slice(0, 8).map((f: string, i: number) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-full text-slate-600">{f}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Room options */}
+            <div className="px-5 py-4 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Otaq Seçimi</p>
+              <div className="space-y-3">
+                {[
+                  {
+                    name: hotelDrawer.roomType || "Standart Otaq",
+                    meal: hotelDrawer.meal === "breakfast_included" ? "Səhər yeməyi daxildir" : "Yemək daxil deyil",
+                    mealColor: hotelDrawer.meal === "breakfast_included" ? "text-emerald-600" : "text-slate-400",
+                    cancel: "Ödənişsiz ləğv",
+                    price: applyNatoureMarkup(hotelDrawer.rawPricePerNight),
+                  },
+                  {
+                    name: "Deluxe Otaq",
+                    meal: "Səhər yeməyi daxildir",
+                    mealColor: "text-emerald-600",
+                    cancel: "Ödənişsiz ləğv",
+                    price: applyNatoureMarkup(hotelDrawer.rawPricePerNight * 1.2),
+                  },
+                  {
+                    name: "Suite",
+                    meal: "Tam pansion daxildir",
+                    mealColor: "text-emerald-600",
+                    cancel: "Ödənişli ləğv",
+                    price: applyNatoureMarkup(hotelDrawer.rawPricePerNight * 1.6),
+                  },
+                ].map((room, i) => (
+                  <div key={i} className="border border-slate-100 rounded-2xl p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-slate-800">{room.name}</p>
+                        <p className={`text-[10px] mt-0.5 ${room.mealColor}`}>🍳 {room.meal}</p>
+                        <p className="text-[10px] text-emerald-500 mt-0.5">✓ {room.cancel}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-extrabold text-slate-900">${room.price}</p>
+                        <p className="text-[9px] text-slate-400">/ gecə</p>
+                        <button
+                          onClick={() => {
+                            setSelectedHotel({ ...hotelDrawer, roomType: room.name, meal: room.meal, rawPricePerNight: hotelDrawer.rawPricePerNight * (i === 0 ? 1 : i === 1 ? 1.2 : 1.6) });
+                            setHotelDrawer(null);
+                          }}
+                          className="mt-1.5 px-3 py-1 bg-slate-900 text-white text-[10px] font-bold rounded-lg hover:bg-slate-700 transition"
+                        >
+                          Seç
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
