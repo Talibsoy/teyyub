@@ -333,10 +333,10 @@ export default function OtellerPage() {
             <div style={{ width: 44, height: 44, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0284c7", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
             <p style={{ color: "#64748b", fontSize: 15 }}>
               {language === "az"
-                ? "Booking.com-dan otellər yüklənir..."
+                ? "Otellər axtarılır..."
                 : language === "tr"
-                ? "Booking.com'dan oteller yükleniyor..."
-                : "Loading hotels from Booking.com..."}
+                ? "Oteller aranıyor..."
+                : "Searching hotels..."}
             </p>
           </div>
         )}
