@@ -5,8 +5,32 @@ import type { HotelOffer } from "@/lib/hotels";
 import { useLanguage } from "@/components/LanguageContext";
 
 const DESTINATIONS = [
-  "Antalya", "Dubai", "Istanbul", "Bali", "Paris",
-  "Barcelona", "Rome", "Maldives", "Bangkok", "Cairo",
+  // 🇺🇸 Amerika
+  "New York", "Los Angeles", "Miami", "Las Vegas", "Chicago",
+  "San Francisco", "Orlando", "Boston", "Washington DC", "Seattle",
+  "Houston", "Atlanta", "Denver", "Honolulu", "New Orleans",
+  "Nashville", "Austin", "Phoenix", "San Diego", "Dallas",
+  "Portland", "Salt Lake City", "Tampa", "Charlotte", "Minneapolis",
+  // 🇨🇦 Kanada
+  "Toronto", "Vancouver", "Montreal", "Calgary",
+  // 🇲🇽 Meksika & Karib
+  "Cancun", "Mexico City", "Playa del Carmen", "Punta Cana", "Havana",
+  // 🌍 Avropa
+  "Paris", "London", "Rome", "Barcelona", "Amsterdam",
+  "Madrid", "Berlin", "Prague", "Vienna", "Lisbon",
+  "Athens", "Budapest", "Zurich", "Milan", "Florence",
+  "Brussels", "Copenhagen", "Stockholm", "Oslo", "Helsinki",
+  "Warsaw", "Krakow", "Dubrovnik", "Split", "Porto",
+  // 🌏 Asiya
+  "Dubai", "Istanbul", "Bangkok", "Bali", "Tokyo",
+  "Singapore", "Hong Kong", "Seoul", "Kuala Lumpur", "Phuket",
+  "Maldives", "Doha", "Abu Dhabi", "Riyadh", "Muscat",
+  "Colombo", "Ho Chi Minh City", "Hanoi", "Osaka", "Kyoto",
+  // 🌍 Afrika & Orta Şərq
+  "Cairo", "Marrakech", "Cape Town", "Nairobi", "Zanzibar",
+  "Sharm El Sheikh", "Hurghada", "Casablanca", "Tunis", "Accra",
+  // 🌏 Okeaniya
+  "Sydney", "Melbourne", "Auckland", "Fiji",
 ];
 
 function todayPlus(days: number) {
@@ -221,7 +245,7 @@ export default function OtellerPage() {
                 <input list="dest-list" value={destination}
                   onChange={e => setDestination(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && search()}
-                  placeholder="Antalya, Dubai, Istanbul..."
+                  placeholder="New York, Dubai, Paris..."
                   style={{ ...inp, fontSize: 15 }}
                   onFocus={e => (e.currentTarget.style.borderColor = "#0284c7")}
                   onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")} />
