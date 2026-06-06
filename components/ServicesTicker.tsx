@@ -1,21 +1,7 @@
 "use client";
 
 import { useLanguage } from "./LanguageContext";
-
-const SERVICES = [
-  { icon: "✈️", az: "Aviabilet",           en: "Flights",             tr: "Uçuş Bileti" },
-  { icon: "🏨", az: "Otellər",             en: "Hotels",              tr: "Oteller" },
-  { icon: "🚗", az: "Rent a Car",           en: "Car Rental",          tr: "Araç Kiralama" },
-  { icon: "🛳️", az: "Kruiz Turları",        en: "Cruise Tours",        tr: "Kruvaziyer Turları" },
-  { icon: "🚂", az: "Qatar Biletləri",      en: "Train Tickets",       tr: "Tren Biletleri" },
-  { icon: "🏝️", az: "Paket Turlar",         en: "Package Tours",       tr: "Paket Turlar" },
-  { icon: "🗺️", az: "Xüsusi Planlaşdırma", en: "Custom Planning",     tr: "Özel Planlama" },
-  { icon: "💼", az: "Biznes Səyahəti",      en: "Business Travel",     tr: "İş Seyahati" },
-  { icon: "🎯", az: "Fərdi Turlar",         en: "Private Tours",       tr: "Özel Turlar" },
-  { icon: "🌍", az: "Dünya Üzrə",           en: "Worldwide",           tr: "Dünya Geneli" },
-  { icon: "💳", az: "Epoint ödəniş",        en: "Epoint Payment",      tr: "Epoint Ödeme" },
-  { icon: "📞", az: "24/7 Dəstək",          en: "24/7 Support",        tr: "7/24 Destek" },
-];
+import { SERVICES, serviceHref, serviceIsExternal } from "@/lib/services";
 
 export default function ServicesTicker() {
   const { language } = useLanguage();
@@ -68,30 +54,39 @@ export default function ServicesTicker() {
       `}</style>
 
       <div className="ticker-track">
-        {items.map((s, i) => (
-          <div
-            key={i}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "0 28px",
-              height: "100%",
-              whiteSpace: "nowrap",
-              fontSize: 12,
-              fontWeight: 600,
-              color: "rgba(255,255,255,0.75)",
-              letterSpacing: "0.02em",
-            }}
-          >
-            <span style={{ fontSize: 14 }}>{s.icon}</span>
-            <span translate="no">
-              {language === "en" ? s.en : language === "tr" ? s.tr : s.az}
-            </span>
-            {/* Ayırıcı nöqtə */}
-            <span style={{ color: "rgba(14,165,233,0.5)", marginLeft: 8 }}>•</span>
-          </div>
-        ))}
+        {items.map((s, i) => {
+          const external = serviceIsExternal(s);
+          return (
+            <a
+              key={i}
+              href={serviceHref(s, language)}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noopener noreferrer" : undefined}
+              aria-label={s.label[language]}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "0 28px",
+                height: "100%",
+                whiteSpace: "nowrap",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.75)",
+                letterSpacing: "0.02em",
+                textDecoration: "none",
+                transition: "color .2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+            >
+              <span style={{ fontSize: 14 }}>{s.icon}</span>
+              <span translate="no">{s.label[language]}</span>
+              {/* Ayırıcı nöqtə */}
+              <span style={{ color: "rgba(14,165,233,0.5)", marginLeft: 8 }}>•</span>
+            </a>
+          );
+        })}
       </div>
     </div>
   );

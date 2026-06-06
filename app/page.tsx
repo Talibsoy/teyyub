@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Sparkles, Check, Plane,
   Calendar, ArrowRight, Lock, RefreshCw,
   Brain, Zap, Shield, TrendingUp,
 } from "lucide-react";
 import { applyNatoureMarkup } from "@/lib/markup";
+import { SERVICES, serviceHref, serviceIsExternal } from "@/lib/services";
 import { useLanguage } from "@/components/LanguageContext";
 import NewsletterSection from "@/components/NewsletterSection";
 import ReviewsSection from "@/components/ReviewsSection";
@@ -89,10 +91,10 @@ export default function HomePage() {
       ? "AI will break your request into real-time filters and open a step-by-step search panel."
       : "Süni intellekt istəyinizi real-time filtrlərə böləcək və zərif addım-addım axtarış paneli açacaq.",
     aiPlaceholder: language === "tr"
-      ? "Örn: 16 Temmuz'da New York'tan San Francisco'ya, 2 kişi, $2500 bütçe, 4 yıldızlı otel ve araç kiralama."
+      ? "New York'tan San Francisco'ya 16 Temmuz'da gitmek istiyoruz, 2 kişi. Bütçemiz 2500 dolar. 4 yıldızlı otel, puan 7+. 1 hafta kalacağız. Araç kiralama da istiyoruz."
       : language === "en"
-      ? "E.g. We want to fly from New York to San Francisco on July 16th, 2 people, $2500 budget, 4-star hotel and rental car."
-      : "Məsələn: 16 iyulda New Yorkdan San Franciscoya getmək istəyirik, 2 nəfər, $2500 büdcə, 4 ulduz otel və rent a car.",
+      ? "We want to fly from New York to San Francisco on July 16th, 2 people. Budget $2500. 4-star hotel, rating 7+. Staying 1 week. We also want a rental car in San Francisco."
+      : "New Yorkdan San Franciscoya getmək istəyirik, 16 iyulda, iki nəfərik. Büdcəmiz 2500 dollardı. 4* otel, reytinqi 7+ olsun. 1 həftə qalacağıq. San Fransiskoda rent a car da istəyirik.",
     aiButton:    language === "tr" ? "Plan Oluştur & Aramaya Başla" : language === "en" ? "Build Plan & Start Search"  : "Planı Hazırla & Axtarışa Başla",
     aiAnalyzing: language === "tr" ? "Plan Analiz Ediliyor..."      : language === "en" ? "Analyzing Plan..."           : "Plan Analiz Edilir...",
     aiPlanLabel: language === "tr" ? "AI Seyahat Planı"             : language === "en" ? "AI Travel Plan"              : "AI Səyahət Planı",
@@ -100,13 +102,7 @@ export default function HomePage() {
 
   // Screens: 'landing' | 'itinerary' | 'wizard' | 'orchestration' | 'upgrade' | 'final'
   const [screen, setScreen] = useState<"landing" | "itinerary" | "wizard" | "orchestration" | "upgrade" | "final">("landing");
-  const [prompt, setPrompt] = useState(
-    language === "tr"
-      ? "New York'tan San Francisco'ya 16 Temmuz'da gitmek istiyoruz, 2 kişi. Bütçemiz 2500 dolar. 4 yıldızlı otel, puan 7+. 1 hafta kalacağız. Araç kiralama da istiyoruz."
-      : language === "en"
-      ? "We want to fly from New York to San Francisco on July 16th, 2 people. Budget $2500. 4-star hotel, rating 7+. Staying 1 week. We also want a rental car in San Francisco."
-      : "New Yorkdan San Franciscoya getmək istəyirik, 16 iyulda, iki nəfərik. Büdcəmiz 2500 dollardı. 4* otel, reytinqi 7+ olsun. 1 həftə qalacağıq. San Fransiskoda rent a car da istəyirik."
-  );
+  const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Msg[]>([
     { role: "bot", text: "Salam! Natoure smart bələdçinizəm. Səyahət xəyalınızı qeyd edin, planı hazırlayım.", timestamp: new Date() }
   ]);
@@ -162,8 +158,9 @@ export default function HomePage() {
 
   // Handles AI prompt submit
   const handlePromptSubmit = () => {
-    if (!prompt.trim()) return;
-    const userMsg: Msg = { role: "user", text: prompt, timestamp: new Date() };
+    // Boş qalsa, göstərilən nümunə (placeholder) mətnini istifadə et
+    const effectivePrompt = prompt.trim() || ui.aiPlaceholder;
+    const userMsg: Msg = { role: "user", text: effectivePrompt, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
@@ -341,7 +338,7 @@ export default function HomePage() {
       `}</style>
 
       {/* ── HERO & AI INTERACTIVE SECTION ──────────────── */}
-      <section className="relative min-h-[70vh] flex flex-col items-center justify-center px-6 py-14 text-center overflow-hidden bg-[#f8fafc]">
+      <section id="planner" className="relative min-h-[70vh] flex flex-col items-center justify-center px-6 py-14 text-center overflow-hidden bg-[#f8fafc] scroll-mt-24">
         
         {/* Glow background orbs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden -z-10">
@@ -387,7 +384,7 @@ export default function HomePage() {
                 </p>
 
                 <textarea
-                  className="w-full h-28 p-4 text-xs sm:text-sm bg-[#f8fafc] border border-slate-200 rounded-2xl focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 resize-none font-semibold text-slate-800"
+                  className="w-full h-28 p-4 text-xs sm:text-sm bg-[#f8fafc] border border-slate-200 rounded-2xl focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 resize-none font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400"
                   value={prompt}
                   onChange={e => setPrompt(e.target.value)}
                   placeholder={ui.aiPlaceholder}
@@ -1067,8 +1064,52 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Our Services */}
       <section className="px-4 py-14 bg-[#f8fafc]">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">
+            {language === "az" ? "Xidmətlərimiz" : language === "tr" ? "Hizmetlerimiz" : "Our Services"}
+          </p>
+          <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-3">
+            {language === "az" ? "Bütün Səyahət Xidmətləri" : language === "tr" ? "Tüm Seyahat Hizmetleri" : "All Travel Services"}
+          </h2>
+          <p className="text-center text-slate-500 text-sm mb-12 max-w-xl mx-auto leading-relaxed">
+            {language === "az"
+              ? "İstədiyiniz xidməti seçin — onlayn rezerv edin və ya birbaşa WhatsApp-da bizimlə əlaqə saxlayın."
+              : language === "tr"
+              ? "İstediğiniz hizmeti seçin — çevrimiçi rezervasyon yapın veya doğrudan WhatsApp'tan bize ulaşın."
+              : "Pick the service you need — book online or reach us directly on WhatsApp."}
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {SERVICES.filter(s => s.featured).map(s => {
+              const external = serviceIsExternal(s);
+              const cta = external
+                ? (language === "az" ? "WhatsApp-da soruş" : language === "tr" ? "WhatsApp'tan sor" : "Ask on WhatsApp")
+                : (language === "az" ? "Bax" : language === "tr" ? "İncele" : "Explore");
+              const cls = "group bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 text-left no-underline flex flex-col";
+              const inner = (
+                <>
+                  <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-2xl mb-3 group-hover:bg-sky-100 transition-colors">
+                    <span translate="no">{s.icon}</span>
+                  </div>
+                  <h3 className="font-bold text-slate-800 text-sm mb-2">{s.label[language]}</h3>
+                  <span className="mt-auto text-[11px] font-bold text-sky-600 inline-flex items-center gap-1">
+                    {cta} <ArrowRight size={12} />
+                  </span>
+                </>
+              );
+              return external ? (
+                <a key={s.key} href={serviceHref(s, language)} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+              ) : (
+                <Link key={s.key} href={serviceHref(s, language)} className={cls}>{inner}</Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="px-4 py-14 bg-white">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">
             {language === "az" ? "Niyə Natoure?" : language === "tr" ? "Neden Natoure?" : "Why Natoure?"}
