@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchFlights }             from "@/lib/duffel";
-import { searchHotels }              from "@/lib/hotels";
+import { searchHotels, TRACKED_DESTINATIONS } from "@/lib/ratehawk";
 import { getSupabaseAdmin }          from "@/lib/supabase";
 import type { FlightOffer }          from "@/lib/duffel";
-import type { HotelOffer }           from "@/lib/hotels";
+import type { HotelOffer }           from "@/lib/ratehawk";
 
 export const maxDuration = 90;
 
@@ -85,13 +85,24 @@ const ALL_DESTINATIONS: DestConfig[] = [
 
 // Hər gün ilin günündən asılı olaraq 6 unikal destination seç (fırlanma)
 function getDestinations(today: Date): DestConfig[] {
+  const isSandbox = process.env.RATEHAWK_SANDBOX === "true";
+  let pool = ALL_DESTINATIONS;
+  if (isSandbox) {
+    pool = ALL_DESTINATIONS.filter(dest =>
+      TRACKED_DESTINATIONS.some(
+        tg => tg.name.toLowerCase().includes(dest.slug.toLowerCase()) || dest.slug.toLowerCase().includes(tg.name.toLowerCase()) ||
+              (dest.slug === "sharm" && tg.name.includes("Şarm"))
+      )
+    );
+  }
   const dayOfYear = Math.floor(
     (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
   );
-  const total = ALL_DESTINATIONS.length;
+  const total = pool.length;
   const picked: DestConfig[] = [];
-  for (let i = 0; i < 6; i++) {
-    picked.push(ALL_DESTINATIONS[(dayOfYear + i * 7) % total]);
+  const count = Math.min(6, total);
+  for (let i = 0; i < count; i++) {
+    picked.push(pool[(dayOfYear + i * 7) % total]);
   }
   return picked;
 }
@@ -101,7 +112,7 @@ function buildDescription(dest: DestConfig, flight: FlightOffer, hotel: HotelOff
   return (
     `${dest.labelAz} istiqamətinə ${dest.nights} gecəlik tur paketi. ` +
     `Uçuş: ${flight.airline} (${stops}, gediş-dönüş, 2 nəfər). ` +
-    `Otel: ${hotel.name}${hotel.stars ? ` (${hotel.stars}★)` : ""}. ` +
+    `Otel: ${hotel.hotel_name}${hotel.stars ? ` (${hotel.stars}★)` : ""}. ` +
     `Qiymətə uçuş və ${dest.nights} gecəlik otel daxildir.`
   );
 }
@@ -162,9 +173,20 @@ export async function GET(req: NextRequest) {
       const checkin  = fmt(departDate);
       const checkout = fmt(addDays(departDate, dest.nights));
 
+      const destGroup = TRACKED_DESTINATIONS.find(
+        (tg) => tg.name.toLowerCase().includes(dest.slug.toLowerCase()) || dest.slug.toLowerCase().includes(tg.name.toLowerCase()) ||
+                (dest.slug === "sharm" && tg.name.includes("Şarm"))
+      );
+
+      if (!destGroup) {
+        console.warn(`[generate-tours] ${dest.slug}: otel üçün RateHawk destGroup tapılmadı`);
+        results.push({ destination: dest.slug, status: "skipped", reason: "no_ratehawk_dest_group" });
+        return;
+      }
+
       const [flightRes, hotelRes] = await Promise.allSettled([
         searchFlights({ origin: "GYD", destination: dest.iata, date: checkin, return_date: checkout, passengers: 2 }),
-        searchHotels({ destination: dest.hotelQuery, checkin, checkout, adults: 2, rooms: 1, stars: dest.stars }),
+        searchHotels(destGroup, checkin, checkout, [{ adults: 2, children: [] }]),
       ]);
 
       if (flightRes.status === "rejected" || !flightRes.value.length) {
@@ -184,7 +206,9 @@ export async function GET(req: NextRequest) {
       const flight       = flightRes.value[0];
       const hotel        = hotelRes.value[0];
       const PAX          = 2; // cron hər zaman 2 nəfər üçün axtarır
-      const totalAzn     = Math.ceil(flight.price_azn + hotel.price_marked_up);
+      // RateHawk price_usd is converted to AZN using 1.70 rate
+      const hotelAzn     = Math.ceil(hotel.price_usd * 1.70);
+      const totalAzn     = Math.ceil(flight.price_azn + hotelAzn);
       const priceAzn     = Math.ceil(totalAzn / PAX); // nəfər başına
       const monthLbl  = `${AZ_MONTHS[departDate.getMonth()]} ${departDate.getFullYear()}`;
       const tourName  = `${dest.labelAz} Turu — ${dest.nights} gecə / ${monthLbl}`;
@@ -202,7 +226,7 @@ export async function GET(req: NextRequest) {
           end_date:       checkout,
           max_seats:      10,
           booked_seats:   0,
-          hotel:          hotel.name,
+          hotel:          hotel.hotel_name,
           description:    desc,
           image_url:      imageUrl,
           is_active:      true,
