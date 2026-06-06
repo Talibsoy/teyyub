@@ -15,36 +15,54 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Booking finish — bron yarat (payment_type client-dən qəbul edilmir)
+    const partner_order_id = body.partner_order_id || `natoure_${Date.now()}`;
+
+    // 1. Booking finish — bron yarat
     const finishResult = await bookingFinish({
       book_hash,
       phone,
       email,
       comment,
       guests,
-      payment_type: "deposit",  // həmişə deposit — client manipulyasiyası mümkün deyil
+      payment_type: "deposit",
+      partner_order_id,
     });
 
-    // Finish xətaları: booking_form_expired, rate_not_found → yenidən axtarış lazımdır
+    let statusResult;
+    let orderIds: string[] = [];
+
+    // If finish failed but error is recoverable (5xx, timeout, unknown), we poll /finish/status/
     if (!finishResult.ok) {
-      const fatal = ["booking_form_expired", "rate_not_found", "return_path_required"];
-      const isFatal = fatal.includes(finishResult.error || "");
-      return NextResponse.json(
-        { error: finishResult.error, retry_search: isFatal },
-        { status: isFatal ? 409 : 422 }
-      );
+      const recoverable = ["server_error", "timeout", "unknown"];
+      const isRecoverable = recoverable.includes(finishResult.error || "");
+
+      if (isRecoverable) {
+        statusResult = await pollBookingStatus(undefined, partner_order_id);
+        if (statusResult.order_id) {
+          orderIds = [statusResult.order_id];
+        }
+      } else {
+        // Fatal errors: booking_form_expired, rate_not_found, return_path_required
+        const fatal = ["booking_form_expired", "rate_not_found", "return_path_required"];
+        const isFatal = fatal.includes(finishResult.error || "");
+        return NextResponse.json(
+          { error: finishResult.error, retry_search: isFatal },
+          { status: isFatal ? 409 : 422 }
+        );
+      }
+    } else {
+      orderIds = finishResult.order_ids || [];
+      statusResult = await pollBookingStatus(orderIds.length > 0 ? orderIds : undefined, partner_order_id);
+      if (statusResult.order_id) {
+        orderIds = [statusResult.order_id];
+      }
     }
 
-    const orderIds = finishResult.order_ids!;
-
-    // 2. Status polling — "processing" bitənə qədər gözlə (max 60s)
-    const statusResult = await pollBookingStatus(orderIds);
-
     // 3. Supabase-ə yaz
-    const primaryOrderId = orderIds[0];
+    const primaryOrderId = orderIds[0] || partner_order_id;
     await supabase.from("bookings").insert([{
       booking_number: primaryOrderId,
-      status:         statusResult.status === "ok" ? "confirmed" : "failed",
+      status:         statusResult.ok ? "confirmed" : "failed",
       notes:          JSON.stringify({ order_ids: orderIds, etg_status: statusResult.status }),
       total_price:    body.price || 0,
       currency:       body.currency || "USD",
@@ -57,11 +75,12 @@ export async function POST(req: NextRequest) {
         book_limit: "Bu oteldə limit dolub. Başqa otel seçin.",
         timeout:    "Rezervasiya vaxtında tamamlanmadı. Yenidən cəhd edin.",
         unknown:    "Naməlum xəta. Dəstəklə əlaqə saxlayın.",
+        server_error: "Server xətası baş verdi. Dəstəklə əlaqə saxlayın.",
       };
       return NextResponse.json(
         {
-          error:    statusResult.status,
-          message:  userMessage[statusResult.status || ""] || "Rezervasiya uğursuz oldu.",
+          error:    statusResult.status || statusResult.error || "failed",
+          message:  userMessage[statusResult.status || ""] || userMessage[statusResult.error || ""] || "Rezervasiya uğursuz oldu.",
           order_ids: orderIds,
         },
         { status: 422 }

@@ -39,7 +39,13 @@ function todayPlus(days: number) {
   return d.toISOString().split("T")[0];
 }
 
-function HotelCard({ hotel, language }: { hotel: HotelOffer; language: string }) {
+function HotelCard({ hotel, language, adults, children, childAges }: {
+  hotel: HotelOffer;
+  language: string;
+  adults: number;
+  children: number;
+  childAges: number[];
+}) {
   const perNight = Math.ceil(hotel.price_marked_up / hotel.nights);
   const starsStr = hotel.stars ? "⭐".repeat(Math.min(hotel.stars, 5)) : "";
 
@@ -48,6 +54,8 @@ function HotelCard({ hotel, language }: { hotel: HotelOffer; language: string })
     : language === "tr"
     ? `Merhaba! "${hotel.name}" oteli ile ilgileniyorum.\nBölge: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıkış: ${hotel.checkout} (${hotel.nights} gece)\nFiyat: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasyon yaptırmak istiyorum.`
     : `Hello! I'm interested in the "${hotel.name}" hotel.\nLocation: ${hotel.destination}\nCheck-in: ${hotel.checkin} | Check-out: ${hotel.checkout} (${hotel.nights} nights)\nPrice: ${hotel.price_marked_up.toLocaleString()} AZN\nI would like to make a booking.`;
+
+  const bookingUrl = `/booking/prebook?hotel_id=${hotel.id}&checkin=${hotel.checkin}&checkout=${hotel.checkout}&hash=${encodeURIComponent(hotel.book_hash || "")}&hotel_name=${encodeURIComponent(hotel.name)}&price=${hotel.price_marked_up}&room=${encodeURIComponent(hotel.room_type || "")}&meal=${encodeURIComponent(hotel.meal || "")}&adults=${adults}&children=${children}&child_ages=${childAges.join(",")}`;
 
   return (
     <div style={{
@@ -133,7 +141,13 @@ function HotelCard({ hotel, language }: { hotel: HotelOffer; language: string })
         </div>
       </div>
 
-      <div style={{ padding: "0 16px 16px" }}>
+      <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {hotel.book_hash && (
+          <a href={bookingUrl}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", borderRadius: 12, padding: "12px", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(2,132,199,0.3)", textAlign: "center" }}>
+            Onlayn Rezervasiya Et
+          </a>
+        )}
         <a href={`https://wa.me/994517769632?text=${encodeURIComponent(waMsg)}`}
           target="_blank" rel="noopener noreferrer"
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#25D366", color: "white", borderRadius: 12, padding: "12px", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(37,211,102,0.3)" }}>
@@ -153,6 +167,9 @@ export default function OtellerPage() {
   const [checkin,  setCheckin]  = useState(todayPlus(14));
   const [checkout, setCheckout] = useState(todayPlus(21));
   const [adults,   setAdults]   = useState(2);
+  const [children, setChildren] = useState(0);
+  const [childAges, setChildAges] = useState<number[]>([]);
+  const [residency, setResidency] = useState("az");
   const [stars,    setStars]    = useState(0);
   const [hotels,   setHotels]   = useState<HotelOffer[]>([]);
   const [loading,  setLoading]  = useState(false);
@@ -170,6 +187,11 @@ export default function OtellerPage() {
     (new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000
   ));
 
+  function handleChildCountChange(count: number) {
+    setChildren(count);
+    setChildAges(Array.from({ length: count }, (_, i) => childAges[i] ?? 12));
+  }
+
   async function search() {
     if (!destination.trim()) {
       setError(language === "az" ? "Zəhmət olmasa məkan daxil edin" : language === "tr" ? "Lütfen bir bölge girin" : "Please enter a destination");
@@ -184,7 +206,16 @@ export default function OtellerPage() {
       const res = await fetch("/api/hotels/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination, checkin, checkout, adults, rooms: 1, stars: stars || undefined }),
+        body: JSON.stringify({
+          destination,
+          checkin,
+          checkout,
+          adults,
+          childAges,
+          residency,
+          rooms: 1,
+          stars: stars || undefined
+        }),
       });
       const data = await res.json();
       setHotels(data.hotels || []);
@@ -285,7 +316,52 @@ export default function OtellerPage() {
                     style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#475569" }}>+</button>
                 </div>
               </div>
+
+              <div>
+                <label style={lbl}>👶 {language === "az" ? "Uşaq" : language === "tr" ? "Çocuk" : "Children"}</label>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0" }}>
+                  <button onClick={() => handleChildCountChange(Math.max(0, children - 1))}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#475569" }}>−</button>
+                  <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{children}</span>
+                  <button onClick={() => handleChildCountChange(Math.min(6, children + 1))}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#475569" }}>+</button>
+                </div>
+              </div>
+
+              <div>
+                <label style={lbl}>🛂 {language === "az" ? "Vətəndaşlıq" : language === "tr" ? "Vatandaşlık" : "Residency"}</label>
+                <select value={residency} onChange={e => setResidency(e.target.value)} style={inp}>
+                  <option value="az">Azərbaycan (AZ)</option>
+                  <option value="mc">Monako (MC)</option>
+                  <option value="tr">Türkiyə (TR)</option>
+                  <option value="ae">BƏƏ (AE)</option>
+                  <option value="us">ABŞ (US)</option>
+                  <option value="gb">Böyük Britaniya (GB)</option>
+                </select>
+              </div>
             </div>
+
+            {children > 0 && (
+              <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "14px 18px", marginTop: 0, marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 12 }}>
+                <div style={{ width: "100%", fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
+                  {language === "az" ? "Uşaqların yaşları" : language === "tr" ? "Çocukların yaşları" : "Children ages"}
+                </div>
+                {childAges.map((age, i) => (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600 }}>{language === "az" ? `${i+1}-ci uşaq` : language === "tr" ? `${i+1}. çocuk` : `Child ${i+1}`}</span>
+                    <select value={age} onChange={e => {
+                      const ages = [...childAges];
+                      ages[i] = parseInt(e.target.value, 10);
+                      setChildAges(ages);
+                    }} style={{ ...inp, width: 90, padding: "6px 8px" }}>
+                      {Array.from({ length: 18 }, (_, y) => y).map(y => (
+                        <option key={y} value={y}>{y} {language === "az" ? "yaş" : language === "tr" ? "yaş" : "y.o."}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Sıra 2 */}
             <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
@@ -355,7 +431,7 @@ export default function OtellerPage() {
               · {destination} · {language === "az" ? `${nights} gecə` : language === "tr" ? `${nights} gece` : `${nights} nights`} · {language === "az" ? `${adults} nəfər` : language === "tr" ? `${adults} kişi` : `${adults} guests`}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
-              {hotels.map(h => <HotelCard key={h.id} hotel={h} language={language} />)}
+              {hotels.map(h => <HotelCard key={h.id} hotel={h} language={language} adults={adults} children={children} childAges={childAges} />)}
             </div>
           </>
         )}

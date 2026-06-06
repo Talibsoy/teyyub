@@ -234,9 +234,11 @@ function parseHotels(
     const rate = hotel.rates?.[0];
     if (!rate) continue;
 
-    const totalPrice = Array.isArray(rate.daily_prices)
-      ? rate.daily_prices.reduce((sum: number, p: string) => sum + parseFloat(p || "0"), 0)
-      : parseFloat(rate.payment_options?.payment_types?.[0]?.amount || "0");
+    const payType = rate.payment_options?.payment_types?.[0];
+    let totalPrice = parseFloat(payType?.show_amount || payType?.amount || "0");
+    if (totalPrice <= 0 && Array.isArray(rate.daily_prices)) {
+      totalPrice = rate.daily_prices.reduce((sum: number, p: string) => sum + parseFloat(p || "0"), 0);
+    }
 
     if (totalPrice <= 0) continue;
 
@@ -253,16 +255,43 @@ function parseHotels(
     ];
     const parsed = parseAmenities(amenityCodes);
 
-    // Meal plan insan dilinə
+    // Meal plan insan dilinə - 26 standard ETG meal types mapping
     const mealMap: Record<string, string> = {
-      all_inclusive: "Hər şey daxil (All Inclusive)",
-      breakfast:     "Səhər yeməyi daxil",
-      half_board:    "Yarım pansion (Səhər + Axşam yeməyi)",
-      full_board:    "Tam pansion (3 öğün)",
-      room_only:     "Yalnız otaq",
-      no_meal:       "Yemək daxil deyil",
+      "all-inclusive": "Hər şey daxil (All Inclusive)",
+      "american-breakfast": "Amerika səhər yeməyi",
+      "asian-breakfast": "Asiya səhər yeməyi",
+      "breakfast": "Səhər yeməyi daxil",
+      "breakfast-buffet": "Açıq büfe səhər yeməyi",
+      "breakfast-for-1": "1 nəfərlik səhər yeməyi",
+      "breakfast-for-2": "2 nəfərlik səhər yeməyi",
+      "chinese-breakfast": "Çin səhər yeməyi",
+      "continental-breakfast": "Kontinental səhər yeməyi",
+      "dinner": "Axşam yeməyi daxil",
+      "english-breakfast": "İngilis səhər yeməyi",
+      "full-board": "Tam pansion (3 öğün)",
+      "half-board": "Yarım pansion (Səhər + Axşam yeməyi)",
+      "half-board-dinner": "Yarım pansion (Axşam yeməyi ilə)",
+      "half-board-lunch": "Yarım pansion (Nahar ilə)",
+      "irish-breakfast": "İrlandiya səhər yeməyi",
+      "israeli-breakfast": "İsrail səhər yeməyi",
+      "japanese-breakfast": "Yapon səhər yeməyi",
+      "lunch": "Nahar yeməyi daxil",
+      "nomeal": "Yemək daxil deyil",
+      "scandinavian-breakfast": "Skandinaviya səhər yeməyi",
+      "scottish-breakfast": "Şotlandiya səhər yeməyi",
+      "soft-all-inclusive": "Yüngül hər şey daxil (Soft All Inclusive)",
+      "some-meal": "Bəzi yeməklər daxil",
+      "super-all-inclusive": "Super hər şey daxil (Super All Inclusive)",
+      "ultra-all-inclusive": "Ultra hər şey daxil (Ultra All Inclusive)",
+      // support underscore formats too
+      "all_inclusive": "Hər şey daxil (All Inclusive)",
+      "half_board": "Yarım pansion (Səhər + Axşam yeməyi)",
+      "full_board": "Tam pansion (3 öğün)",
+      "room_only": "Yalnız otaq",
+      "no_meal": "Yemək daxil deyil",
     };
-    const mealLabel = mealMap[rate.meal || ""] || rate.meal || "Məlumat yoxdur";
+    const normalizedMeal = (rate.meal || "").toLowerCase().replace(/_/g, "-");
+    const mealLabel = mealMap[normalizedMeal] || mealMap[rate.meal || ""] || rate.meal || "Məlumat yoxdur";
 
     // Yeməkdən asılı əlavə "daxil" xidmətlər
     const mealIncluded: string[] = [];
@@ -382,7 +411,7 @@ export interface SearchGuest {
   children: number[];   // uşaqların yaşları, məs: [3, 10]
 }
 
-// Otel ID-ləri ilə axtarış: /search/serp/hotels/
+// Otel ID-ləri ilə axtarış: /search/serp/hotels/ (supports chunking up to 100 hids)
 export async function searchHotels(
   destination: DestinationGroup,
   checkin: string,
@@ -391,23 +420,33 @@ export async function searchHotels(
   residency = "az"
 ): Promise<HotelOffer[]> {
   try {
-    const res = await ratehawkPost("/search/serp/hotels/", {
-      checkin,
-      checkout,
-      residency,
-      language: "en",
-      currency: "USD",
-      guests,
-      hids: destination.hids,
-    });
-
-    if (res.status !== "ok") {
-      console.error(`RateHawk (${destination.name}): status=${res.status}`, res.error || "");
-      return [];
+    const hids = destination.hids;
+    const CHUNK_SIZE = 100;
+    const chunks: number[][] = [];
+    for (let i = 0; i < hids.length; i += CHUNK_SIZE) {
+      chunks.push(hids.slice(i, i + CHUNK_SIZE));
     }
 
-    const hotels: RatehawkHotel[] = res.data?.hotels || [];
-    return parseHotels(hotels, destination.name, checkin, checkout);
+    let allOffers: HotelOffer[] = [];
+    for (const chunk of chunks) {
+      const res = await ratehawkPost("/search/serp/hotels/", {
+        checkin,
+        checkout,
+        residency,
+        language: "en",
+        currency: "USD",
+        guests,
+        hids: chunk,
+      });
+
+      if (res.status === "ok" && res.data?.hotels) {
+        const parsed = parseHotels(res.data.hotels, destination.name, checkin, checkout);
+        allOffers = allOffers.concat(parsed);
+      } else if (res.status !== "ok") {
+        console.error(`RateHawk (${destination.name}) chunk error: status=${res.status}`, res.error || "");
+      }
+    }
+    return allOffers;
   } catch (err) {
     const e = err as NodeJS.ErrnoException;
     console.error(`RateHawk searchHotels (${destination.name}):`, {
@@ -463,7 +502,7 @@ interface RatehawkRate {
   amenities_data?: string[];
   book_hash?: string;
   payment_options?: {
-    payment_types?: { amount?: string }[];
+    payment_types?: { amount?: string; show_amount?: string }[];
   };
 }
 
@@ -497,3 +536,66 @@ interface RatehawkHotelInfo {
   longitude?: number;
   amenity_groups?: RatehawkAmenityGroup[];
 }
+
+export async function searchHotelsForAI(params: {
+  destination: string;
+  checkin: string;
+  checkout: string;
+  guests?: number;
+}): Promise<string> {
+  const query = params.destination.toLowerCase().trim();
+  const destGroup = TRACKED_DESTINATIONS.find((d) => {
+    const name = d.name.toLowerCase();
+    return (
+      name.includes(query) ||
+      query.includes(name) ||
+      (query.includes("sharm") && name.includes("şarm")) ||
+      (query.includes("hurghada") && name.includes("hurgada"))
+    );
+  });
+
+  if (!destGroup) {
+    return `Sandbox rejimində yalnız İstanbul, Dubai, Antalya, Şarm əş-Şeyx və Hurgada üçün otel axtarmaq mümkündür. Zəhmət olmasa bu şəhərlərdən birini daxil edin.`;
+  }
+
+  try {
+    const guests = [{ adults: params.guests || 2, children: [] }];
+    const offers = await searchHotels(destGroup, params.checkin, params.checkout, guests);
+
+    if (!offers.length) {
+      return `${destGroup.name} üçün ${params.checkin} – ${params.checkout} tarixlərinə otel tapılmadı.`;
+    }
+
+    const nights = Math.max(1, Math.ceil(
+      (new Date(params.checkout).getTime() - new Date(params.checkin).getTime()) / 86400000
+    ));
+
+    const byHotel: Record<string, HotelOffer[]> = {};
+    for (const h of offers) {
+      if (!byHotel[h.hotel_name]) byHotel[h.hotel_name] = [];
+      byHotel[h.hotel_name].push(h);
+    }
+
+    const lines = Object.entries(byHotel).map(([hotelName, variants]) => {
+      const stars = "★".repeat(variants[0].stars);
+      const addressStr = variants[0].address ? ` (${variants[0].address})` : "";
+      const variantLines = variants.map(v => {
+        const aznPrice = Math.ceil(v.price_usd * 1.70);
+        const aznPerNight = Math.ceil(aznPrice / nights);
+        return `  - Otaq: ${v.room_type} | Qidalanma: ${v.meal} | Gecəlik: ${aznPerNight} AZN (Cəmi ${nights} gecə: ${aznPrice} AZN) | [HASH:${v.book_hash || "Yox"}]`;
+      }).join("\n");
+      return `${hotelName} ${stars}${addressStr}\n${variantLines}`;
+    });
+
+    return [
+      `${destGroup.name} — ${params.checkin} – ${params.checkout} (${nights} gecə, ${params.guests || 2} nəfər):`,
+      "",
+      lines.join("\n\n"),
+      "",
+      "Bütün qiymətlərə xidmət haqqı daxildir. Sifariş üçün müştəriyə variant seçdirin.",
+    ].join("\n");
+  } catch (e) {
+    return `Otel sistemi hazırda cavab vermir. Zəhmət olmasa bir az sonra yenidən cəhd edin.`;
+  }
+}
+

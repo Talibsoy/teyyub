@@ -25,6 +25,9 @@ export interface HotelOffer {
   booking_url:     string;
   address:         string;
   facilities:      string[];
+  book_hash?:      string | null;
+  meal?:           string;
+  room_type?:      string;
 }
 
 async function rapidGet(path: string, params: Record<string, string>) {

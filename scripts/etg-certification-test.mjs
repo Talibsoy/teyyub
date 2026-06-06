@@ -7,6 +7,11 @@
  */
 
 import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // .env.local + .env.vercel-dən env yüklə
 const loadEnv = (path) => {
@@ -20,8 +25,8 @@ const loadEnv = (path) => {
     }
   } catch {}
 };
-loadEnv("C:/Users/lenovo/projects/flynatoure/.env.local");
-loadEnv("C:/Users/lenovo/projects/flynatoure/.env.vercel");
+loadEnv(join(__dirname, "../.env.local"));
+loadEnv(join(__dirname, "../.env.vercel"));
 
 const BASE = "https://api-sandbox.worldota.net/api/b2b/v3";
 const AUTH = Buffer.from(`${process.env.RATEHAWK_API_KEY}:${process.env.RATEHAWK_SECRET}`).toString("base64");
@@ -41,12 +46,47 @@ async function etgPost(endpoint, body) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-async function pollStatus(orderIds, maxAttempts = 12) {
+async function pollStatus(partnerOrderId, maxAttempts = 40) {
   for (let i = 0; i < maxAttempts; i++) {
-    const r = await etgPost("/hotel/order/booking/finish/status/", { order_ids: orderIds });
-    const status = r.data?.orders?.[0]?.status;
+    const r = await etgPost("/hotel/order/booking/finish/status/", { partner_order_id: partnerOrderId });
+    let status = r.status; // "ok", "processing", "error", "3ds"
     console.log(`   poll ${i+1}: ${status}`);
-    if (status !== "processing") return { status, order_id: r.data?.orders?.[0]?.order_id };
+
+    if (status === "ok") {
+      // Fetch actual order_id from order/info (omit partner_order_ids to avoid mock server validation bugs)
+      let order_id = undefined;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          if (attempt > 0) await sleep(3000); // Wait 3s between attempts
+          const infoRes = await etgPost("/hotel/order/info/", {
+            ordering: { ordering_type: "desc", ordering_by: "created_at" },
+            pagination: { page_size: 50, page_number: 1 },
+            language: "en"
+          });
+          if (infoRes.status === "ok" && infoRes.data?.orders) {
+            const matchedOrder = infoRes.data.orders.find(o => o.partner_data?.order_id === partnerOrderId);
+            if (matchedOrder) {
+              order_id = matchedOrder.order_id;
+              break;
+            }
+          }
+        } catch (err) {}
+      }
+      return { status: "ok", order_id };
+    }
+
+    if (status === "error") {
+      const err = r.error || "error";
+      const terminalFailures = ["soldout", "book_limit", "block", "charge", "3ds", "not_allowed", "booking_finish_did_not_succeed", "provider"];
+      if (terminalFailures.includes(err)) {
+        return { status: err };
+      }
+    }
+
+    if (status === "3ds") {
+      return { status: "3ds" };
+    }
+
     if (i < maxAttempts - 1) await sleep(5000);
   }
   return { status: "timeout" };
@@ -122,6 +162,17 @@ async function scenario1() {
   if (!result) return;
   const { pbHash: bookHash, payType } = result;
 
+  const partner_order_id = `natoure_${Date.now()}_success`;
+
+  // 1. Create booking process (booking/form)
+  const formRes = await etgPost("/hotel/order/booking/form/", {
+    partner_order_id,
+    book_hash: bookHash,
+    language: "en",
+    user_ip: "127.0.0.1",
+  });
+  console.log("   form status:", formRes.status, formRes.error || "");
+
   const finish = await etgPost("/hotel/order/booking/finish/", {
     book_hash: bookHash,
     language: "en",
@@ -129,16 +180,19 @@ async function scenario1() {
     guests: GUESTS,
     rooms: [{ guests: GUESTS }],
     payment_type: { type: payType?.type || "deposit", amount: payType?.amount, currency_code: payType?.currency_code || "USD" },
-    partner: { partner_order_id: `natoure_${Date.now()}_success` },
+    partner: { partner_order_id },
   });
 
+  console.log("   finish response:", JSON.stringify(finish));
   console.log("   finish status:", finish.status, finish.error || "");
-  const orderIds = finish.data?.order_ids;
-  if (!orderIds?.length) { console.error("   Order ID yoxdur"); return; }
 
-  const status = await pollStatus(orderIds);
-  console.log(`   ✅ Final status: ${status.status} | Order ID: ${orderIds[0]}`);
-  results.scenario1 = { order_id: orderIds[0], status: status.status };
+  const status = await pollStatus(partner_order_id);
+  if (status.order_id) {
+    console.log(`   ✅ Final status: ${status.status} | Order ID: ${status.order_id}`);
+    results.scenario1 = { order_id: status.order_id, status: status.status };
+  } else {
+    console.error("   Order ID yoxdur");
+  }
 }
 
 // ─── SSENARI 2: unknown → success (istənilən otel) ───────────────────────────
@@ -148,6 +202,17 @@ async function scenario2() {
   if (!result) { console.error("Prebook xəta"); return; }
   const { pbHash, payType } = result;
 
+  const partner_order_id = `natoure_${Date.now()}_unknown`;
+
+  // 1. Create booking process (booking/form)
+  const formRes = await etgPost("/hotel/order/booking/form/", {
+    partner_order_id,
+    book_hash: pbHash,
+    language: "en",
+    user_ip: "127.0.0.1",
+  });
+  console.log("   form status:", formRes.status, formRes.error || "");
+
   const finish = await etgPost("/hotel/order/booking/finish/", {
     book_hash: pbHash,
     language: "en",
@@ -155,16 +220,18 @@ async function scenario2() {
     guests: GUESTS_AZ,
     rooms: [{ guests: GUESTS_AZ }],
     payment_type: { type: payType?.type || "deposit", amount: payType?.amount, currency_code: payType?.currency_code || "USD" },
-    partner: { partner_order_id: `natoure_${Date.now()}_unknown` },
+    partner: { partner_order_id },
   });
 
   console.log("   finish status:", finish.status, finish.error || "");
-  const orderIds = finish.data?.order_ids;
-  if (!orderIds?.length) { console.error("   Order ID yoxdur"); return; }
 
-  const status = await pollStatus(orderIds);
-  console.log(`   ✅ Final status: ${status.status} | Order ID: ${orderIds[0]}`);
-  results.scenario2 = { order_id: orderIds[0], status: status.status };
+  const status = await pollStatus(partner_order_id);
+  if (status.order_id) {
+    console.log(`   ✅ Final status: ${status.status} | Order ID: ${status.order_id}`);
+    results.scenario2 = { order_id: status.order_id, status: status.status };
+  } else {
+    console.error("   Order ID yoxdur");
+  }
 }
 
 // ─── SSENARI 3: timeout → soldout ────────────────────────────────────────────
@@ -174,6 +241,17 @@ async function scenario3() {
   if (!result) { console.error("Prebook xəta"); return; }
   const { pbHash, payType } = result;
 
+  const partner_order_id = `natoure_${Date.now()}_unknown_soldout`;
+
+  // 1. Create booking process (booking/form)
+  const formRes = await etgPost("/hotel/order/booking/form/", {
+    partner_order_id,
+    book_hash: pbHash,
+    language: "en",
+    user_ip: "127.0.0.1",
+  });
+  console.log("   form status:", formRes.status, formRes.error || "");
+
   const finish = await etgPost("/hotel/order/booking/finish/", {
     book_hash: pbHash,
     language: "en",
@@ -181,16 +259,18 @@ async function scenario3() {
     guests: GUESTS_AZ,
     rooms: [{ guests: GUESTS_AZ }],
     payment_type: { type: payType?.type || "deposit", amount: payType?.amount, currency_code: payType?.currency_code || "USD" },
-    partner: { partner_order_id: `natoure_${Date.now()}_unknown_soldout` },
+    partner: { partner_order_id },
   });
 
   console.log("   finish status:", finish.status, finish.error || "");
-  const orderIds = finish.data?.order_ids;
-  if (!orderIds?.length) { console.error("   Order ID yoxdur"); return; }
 
-  const status = await pollStatus(orderIds);
-  console.log(`   ✅ Final status: ${status.status} | Order ID: ${orderIds[0]}`);
-  results.scenario3 = { order_id: orderIds[0], status: status.status };
+  const status = await pollStatus(partner_order_id);
+  if (status.status === "soldout") {
+    console.log(`   ✅ Final status: ${status.status} (Uğurla alındı)`);
+    results.scenario3 = { order_id: "NONE_SOLDOUT", status: status.status };
+  } else {
+    console.error("   Gözlənilməz status: " + status.status);
+  }
 }
 
 // ─── SSENARI 4: unknown → book_limit ─────────────────────────────────────────
@@ -200,6 +280,17 @@ async function scenario4() {
   if (!result) { console.error("Prebook xəta"); return; }
   const { pbHash, payType } = result;
 
+  const partner_order_id = `natoure_${Date.now()}_unknown_book_limit`;
+
+  // 1. Create booking process (booking/form)
+  const formRes = await etgPost("/hotel/order/booking/form/", {
+    partner_order_id,
+    book_hash: pbHash,
+    language: "en",
+    user_ip: "127.0.0.1",
+  });
+  console.log("   form status:", formRes.status, formRes.error || "");
+
   const finish = await etgPost("/hotel/order/booking/finish/", {
     book_hash: pbHash,
     language: "en",
@@ -207,16 +298,18 @@ async function scenario4() {
     guests: GUESTS_AZ,
     rooms: [{ guests: GUESTS_AZ }],
     payment_type: { type: payType?.type || "deposit", amount: payType?.amount, currency_code: payType?.currency_code || "USD" },
-    partner: { partner_order_id: `natoure_${Date.now()}_unknown_book_limit` },
+    partner: { partner_order_id },
   });
 
   console.log("   finish status:", finish.status, finish.error || "");
-  const orderIds = finish.data?.order_ids;
-  if (!orderIds?.length) { console.error("   Order ID yoxdur"); return; }
 
-  const status = await pollStatus(orderIds);
-  console.log(`   ✅ Final status: ${status.status} | Order ID: ${orderIds[0]}`);
-  results.scenario4 = { order_id: orderIds[0], status: status.status };
+  const status = await pollStatus(partner_order_id);
+  if (status.status === "book_limit") {
+    console.log(`   ✅ Final status: ${status.status} (Uğurla alındı)`);
+    results.scenario4 = { order_id: "NONE_BOOK_LIMIT", status: status.status };
+  } else {
+    console.error("   Gözlənilməz status: " + status.status);
+  }
 }
 
 // ─── ANA AXIN ─────────────────────────────────────────────────────────────────
