@@ -15,7 +15,7 @@ export interface ServiceItem {
 export const SERVICES: ServiceItem[] = [
   { key: "flights",   icon: "✈️", label: { az: "Aviabilet",           en: "Flights",         tr: "Uçuş Bileti" },         href: "/#planner", featured: true },
   { key: "hotels",    icon: "🏨", label: { az: "Otellər",             en: "Hotels",          tr: "Oteller" },             href: "/oteller",  featured: true },
-  { key: "car",       icon: "🚗", label: { az: "Rent a Car",          en: "Car Rental",      tr: "Araç Kiralama" },       href: "/#planner", featured: true },
+  { key: "car",       icon: "🚗", label: { az: "Rent a Car",          en: "Car Rental",      tr: "Araç Kiralama" },                          featured: true },
   { key: "cruise",    icon: "🛳️", label: { az: "Kruiz Turları",        en: "Cruise Tours",    tr: "Kruvaziyer Turları" },                     featured: true },
   { key: "train",     icon: "🚂", label: { az: "Qatar Biletləri",      en: "Train Tickets",   tr: "Tren Biletleri" },                         featured: true },
   { key: "package",   icon: "🏝️", label: { az: "Paket Turlar",         en: "Package Tours",   tr: "Paket Turlar" },        href: "/turlar",   featured: true },
