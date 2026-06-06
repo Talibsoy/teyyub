@@ -1083,14 +1083,15 @@ export default function HomePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {SERVICES.filter(s => s.featured).map(s => {
               const external = serviceIsExternal(s);
+              const Icon = s.icon;
               const cta = external
                 ? (language === "az" ? "WhatsApp-da soruş" : language === "tr" ? "WhatsApp'tan sor" : "Ask on WhatsApp")
                 : (language === "az" ? "Bax" : language === "tr" ? "İncele" : "Explore");
               const cls = "group bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 text-left no-underline flex flex-col";
               const inner = (
                 <>
-                  <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-2xl mb-3 group-hover:bg-sky-100 transition-colors">
-                    <span translate="no">{s.icon}</span>
+                  <div className={`w-12 h-12 rounded-xl ${s.bgClass} flex items-center justify-center mb-3 transition-transform group-hover:scale-105`}>
+                    <Icon className={s.iconClass} size={24} strokeWidth={2} />
                   </div>
                   <h3 className="font-bold text-slate-800 text-sm mb-2">{s.label[language]}</h3>
                   <span className="mt-auto text-[11px] font-bold text-sky-600 inline-flex items-center gap-1">

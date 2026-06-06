@@ -56,6 +56,7 @@ export default function ServicesTicker() {
       <div className="ticker-track">
         {items.map((s, i) => {
           const external = serviceIsExternal(s);
+          const Icon = s.icon;
           return (
             <a
               key={i}
@@ -66,24 +67,24 @@ export default function ServicesTicker() {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 6,
-                padding: "0 28px",
+                gap: 8,
+                padding: "0 26px",
                 height: "100%",
                 whiteSpace: "nowrap",
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: 600,
-                color: "rgba(255,255,255,0.75)",
+                color: "rgba(255,255,255,0.78)",
                 letterSpacing: "0.02em",
                 textDecoration: "none",
                 transition: "color .2s",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.78)")}
             >
-              <span style={{ fontSize: 14 }}>{s.icon}</span>
+              <Icon size={15} strokeWidth={2.25} color="#38bdf8" style={{ flexShrink: 0 }} />
               <span translate="no">{s.label[language]}</span>
               {/* Ayırıcı nöqtə */}
-              <span style={{ color: "rgba(14,165,233,0.5)", marginLeft: 8 }}>•</span>
+              <span style={{ color: "rgba(14,165,233,0.5)", marginLeft: 6 }}>•</span>
             </a>
           );
         })}
