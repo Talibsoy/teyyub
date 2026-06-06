@@ -4,26 +4,115 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Amerika qitəsi: bütün 50 ABŞ ştatı + Havaii adaları + ABŞ əraziləri + Kanada,
+// Meksika, Mərkəzi Amerika, Karib adaları, Braziliya və Cənubi Amerika.
+// `country` sahəsi dublikat yoxlaması üçün açardır, ona görə hər biri unikaldır.
 const DESTINATIONS = [
-  { country: "Turkey", emoji: "🇹🇷", query: "Turkey travel Istanbul Antalya" },
-  { country: "Dubai", emoji: "🇦🇪", query: "Dubai travel UAE skyline" },
-  { country: "Egypt", emoji: "🇪🇬", query: "Egypt pyramids travel Cairo" },
-  { country: "Maldives", emoji: "🇲🇻", query: "Maldives island travel ocean" },
-  { country: "Italy", emoji: "🇮🇹", query: "Italy Rome Venice travel" },
-  { country: "Greece", emoji: "🇬🇷", query: "Greece Santorini travel" },
-  { country: "Thailand", emoji: "🇹🇭", query: "Thailand Bangkok travel" },
-  { country: "Spain", emoji: "🇪🇸", query: "Spain Barcelona travel" },
-  { country: "France", emoji: "🇫🇷", query: "France Paris Eiffel Tower travel" },
-  { country: "Morocco", emoji: "🇲🇦", query: "Morocco Marrakech travel" },
-  { country: "Bali", emoji: "🇮🇩", query: "Bali Indonesia travel temple" },
-  { country: "Portugal", emoji: "🇵🇹", query: "Portugal Lisbon travel" },
-  { country: "Czech Republic", emoji: "🇨🇿", query: "Czech Republic Prague travel" },
-  { country: "Austria", emoji: "🇦🇹", query: "Austria Vienna travel" },
-  { country: "Switzerland", emoji: "🇨🇭", query: "Switzerland Alps travel" },
-  { country: "Singapore", emoji: "🇸🇬", query: "Singapore city travel" },
-  { country: "Japan", emoji: "🇯🇵", query: "Japan Tokyo travel cherry blossom" },
-  { country: "Saudi Arabia", emoji: "🇸🇦", query: "Saudi Arabia Riyadh travel" },
-  { country: "Qatar", emoji: "🇶🇦", query: "Qatar Doha travel skyline" },
+  // ── ABŞ — 50 ŞTAT ──────────────────────────────────────────────
+  { country: "Gulf Shores, Alabama", emoji: "🏖️", query: "Gulf Shores Alabama beach" },
+  { country: "Denali & Glaciers, Alaska", emoji: "🐻", query: "Alaska Denali glacier wildlife" },
+  { country: "Grand Canyon, Arizona", emoji: "🏜️", query: "Grand Canyon Arizona desert" },
+  { country: "Hot Springs, Arkansas", emoji: "♨️", query: "Hot Springs National Park Arkansas" },
+  { country: "Yosemite & Coast, California", emoji: "🏞️", query: "Yosemite California Golden Gate coast" },
+  { country: "Rocky Mountains, Colorado", emoji: "⛰️", query: "Rocky Mountains Colorado Denver" },
+  { country: "Coastal New England, Connecticut", emoji: "🍁", query: "Connecticut New England autumn coast" },
+  { country: "Rehoboth Beach, Delaware", emoji: "🏖️", query: "Delaware Rehoboth Beach coast" },
+  { country: "Miami & Everglades, Florida", emoji: "🏖️", query: "Florida Miami beach Everglades" },
+  { country: "Savannah, Georgia", emoji: "🌳", query: "Savannah Georgia historic district" },
+  { country: "Volcanoes & Beaches, Hawaii", emoji: "🌺", query: "Hawaii beach volcano island" },
+  { country: "Sawtooth Mountains, Idaho", emoji: "🏔️", query: "Idaho Sawtooth mountains lake" },
+  { country: "Chicago, Illinois", emoji: "🌆", query: "Chicago Illinois skyline river" },
+  { country: "Indianapolis, Indiana", emoji: "🏁", query: "Indianapolis Indiana speedway downtown" },
+  { country: "Heartland Plains, Iowa", emoji: "🌾", query: "Iowa countryside fields barn" },
+  { country: "Tallgrass Prairie, Kansas", emoji: "🌻", query: "Kansas prairie plains sunflower" },
+  { country: "Bluegrass Country, Kentucky", emoji: "🐎", query: "Kentucky bluegrass horses Louisville" },
+  { country: "New Orleans, Louisiana", emoji: "🎷", query: "New Orleans Louisiana French Quarter" },
+  { country: "Acadia Coast, Maine", emoji: "🦞", query: "Maine Acadia coast lighthouse" },
+  { country: "Chesapeake Bay, Maryland", emoji: "🦀", query: "Maryland Baltimore Chesapeake Bay" },
+  { country: "Boston, Massachusetts", emoji: "📜", query: "Boston Massachusetts Freedom Trail" },
+  { country: "Great Lakes, Michigan", emoji: "🌊", query: "Michigan Great Lakes Mackinac" },
+  { country: "Land of Lakes, Minnesota", emoji: "🛶", query: "Minnesota lakes Boundary Waters" },
+  { country: "Mississippi River Delta", emoji: "🎶", query: "Mississippi River delta blues" },
+  { country: "Gateway Arch, Missouri", emoji: "🌉", query: "St Louis Missouri Gateway Arch" },
+  { country: "Glacier National Park, Montana", emoji: "🏔️", query: "Glacier National Park Montana" },
+  { country: "Sandhills, Nebraska", emoji: "🌾", query: "Nebraska sandhills plains" },
+  { country: "Las Vegas, Nevada", emoji: "🎰", query: "Las Vegas Nevada Strip night" },
+  { country: "White Mountains, New Hampshire", emoji: "🍁", query: "New Hampshire White Mountains autumn" },
+  { country: "Atlantic City, New Jersey", emoji: "🎡", query: "New Jersey Atlantic City boardwalk" },
+  { country: "Santa Fe, New Mexico", emoji: "🎈", query: "Santa Fe New Mexico desert balloon" },
+  { country: "New York City, New York", emoji: "🗽", query: "New York City skyline Statue of Liberty" },
+  { country: "Blue Ridge Mountains, North Carolina", emoji: "🏔️", query: "North Carolina Blue Ridge Smoky Mountains" },
+  { country: "Badlands, North Dakota", emoji: "🦬", query: "North Dakota Theodore Roosevelt badlands" },
+  { country: "Cleveland & Lake Erie, Ohio", emoji: "🎸", query: "Cleveland Ohio rock hall lake" },
+  { country: "Route 66, Oklahoma", emoji: "🤠", query: "Oklahoma route 66 plains" },
+  { country: "Crater Lake & Coast, Oregon", emoji: "🌲", query: "Oregon Crater Lake coast forest" },
+  { country: "Philadelphia, Pennsylvania", emoji: "🔔", query: "Philadelphia Pennsylvania Liberty Bell" },
+  { country: "Newport, Rhode Island", emoji: "⛵", query: "Rhode Island Newport mansions coast" },
+  { country: "Charleston, South Carolina", emoji: "🌴", query: "Charleston South Carolina historic" },
+  { country: "Mount Rushmore, South Dakota", emoji: "🗿", query: "Mount Rushmore South Dakota monument" },
+  { country: "Smoky Mountains & Nashville, Tennessee", emoji: "🎸", query: "Nashville Tennessee Smoky Mountains" },
+  { country: "San Antonio, Texas", emoji: "🤠", query: "San Antonio Texas Alamo River Walk" },
+  { country: "Zion & Bryce Canyon, Utah", emoji: "🪨", query: "Zion Bryce Canyon Utah" },
+  { country: "Green Mountains, Vermont", emoji: "🍁", query: "Vermont Green Mountains autumn" },
+  { country: "Shenandoah, Virginia", emoji: "🏛️", query: "Virginia Shenandoah Williamsburg" },
+  { country: "Seattle & Mount Rainier, Washington", emoji: "🗻", query: "Seattle Washington Space Needle Mount Rainier" },
+  { country: "New River Gorge, West Virginia", emoji: "🚣", query: "West Virginia New River Gorge" },
+  { country: "Wisconsin Dells", emoji: "🧀", query: "Wisconsin Dells lakes" },
+  { country: "Yellowstone & Grand Teton, Wyoming", emoji: "🌋", query: "Yellowstone Grand Teton Wyoming" },
+
+  // ── ABŞ FEDERAL & ƏRAZİLƏR ────────────────────────────────────
+  { country: "Washington, D.C.", emoji: "🏛️", query: "Washington DC monuments Capitol" },
+  { country: "Puerto Rico", emoji: "🏝️", query: "Puerto Rico San Juan beach old town" },
+  { country: "U.S. Virgin Islands", emoji: "🐠", query: "US Virgin Islands St Thomas beach" },
+
+  // ── HAVAİİ ADALARI ────────────────────────────────────────────
+  { country: "Oahu, Hawaii", emoji: "🏝️", query: "Oahu Hawaii Waikiki Diamond Head" },
+  { country: "Maui, Hawaii", emoji: "🌅", query: "Maui Hawaii road to Hana beach" },
+  { country: "Kauai, Hawaii", emoji: "🏞️", query: "Kauai Hawaii Na Pali coast" },
+  { country: "Big Island, Hawaii", emoji: "🌋", query: "Big Island Hawaii volcano Kilauea" },
+
+  // ── KANADA ────────────────────────────────────────────────────
+  { country: "Toronto, Canada", emoji: "🏙️", query: "Toronto Canada CN Tower skyline" },
+  { country: "Vancouver, Canada", emoji: "🌲", query: "Vancouver Canada mountains harbor" },
+  { country: "Banff National Park, Canada", emoji: "🏔️", query: "Banff National Park Canada lake" },
+  { country: "Quebec City, Canada", emoji: "🏰", query: "Quebec City Canada old town castle" },
+  { country: "Montreal, Canada", emoji: "⛪", query: "Montreal Canada old city" },
+
+  // ── MEKSİKA ───────────────────────────────────────────────────
+  { country: "Cancún, Mexico", emoji: "🏖️", query: "Cancun Mexico beach Caribbean" },
+  { country: "Mexico City, Mexico", emoji: "🏛️", query: "Mexico City Zocalo historic" },
+  { country: "Tulum, Mexico", emoji: "🏝️", query: "Tulum Mexico Mayan ruins beach" },
+  { country: "Chichén Itzá, Mexico", emoji: "🛕", query: "Chichen Itza Mexico pyramid Mayan" },
+  { country: "Cabo San Lucas, Mexico", emoji: "🌊", query: "Cabo San Lucas Mexico beach arch" },
+
+  // ── MƏRKƏZİ AMERİKA ──────────────────────────────────────────
+  { country: "Costa Rica", emoji: "🦥", query: "Costa Rica rainforest beach volcano" },
+  { country: "Panama Canal & City", emoji: "🚢", query: "Panama Canal city skyline" },
+  { country: "Tikal & Antigua, Guatemala", emoji: "🛕", query: "Guatemala Tikal Antigua ruins" },
+
+  // ── KARİB ADALARI ────────────────────────────────────────────
+  { country: "Bahamas", emoji: "🏝️", query: "Bahamas beach turquoise water" },
+  { country: "Jamaica", emoji: "🌴", query: "Jamaica beach waterfall" },
+  { country: "Dominican Republic", emoji: "🏖️", query: "Dominican Republic Punta Cana beach" },
+  { country: "Havana, Cuba", emoji: "🚗", query: "Cuba Havana old town classic car" },
+  { country: "Aruba", emoji: "🌊", query: "Aruba beach Caribbean" },
+  { country: "Barbados", emoji: "🐢", query: "Barbados beach Caribbean" },
+
+  // ── BRAZİLİYA ─────────────────────────────────────────────────
+  { country: "Rio de Janeiro, Brazil", emoji: "🎉", query: "Rio de Janeiro Brazil Christ Redeemer beach" },
+  { country: "Amazon Rainforest, Brazil", emoji: "🌳", query: "Amazon rainforest Brazil river" },
+  { country: "Iguaçu Falls, Brazil", emoji: "💦", query: "Iguazu Falls Brazil waterfall" },
+  { country: "Salvador, Brazil", emoji: "🥁", query: "Salvador Bahia Brazil colorful" },
+
+  // ── CƏNUBİ AMERİKA ───────────────────────────────────────────
+  { country: "Machu Picchu, Peru", emoji: "🏔️", query: "Machu Picchu Peru Inca ruins" },
+  { country: "Patagonia, Argentina", emoji: "🏔️", query: "Patagonia Argentina mountains glacier" },
+  { country: "Buenos Aires, Argentina", emoji: "💃", query: "Buenos Aires Argentina tango city" },
+  { country: "Galápagos Islands, Ecuador", emoji: "🐢", query: "Galapagos Islands Ecuador wildlife" },
+  { country: "Cartagena, Colombia", emoji: "🌴", query: "Cartagena Colombia colorful old town" },
+  { country: "Atacama Desert, Chile", emoji: "🌵", query: "Atacama Desert Chile landscape" },
+  { country: "Torres del Paine, Chile", emoji: "🗻", query: "Torres del Paine Chile Patagonia" },
+  { country: "Uyuni Salt Flats, Bolivia", emoji: "🧂", query: "Uyuni Salt Flats Bolivia mirror" },
 ];
 
 export async function GET(req: NextRequest) {
@@ -89,23 +178,34 @@ export async function GET(req: NextRequest) {
           messages: [
             {
               role: "user",
-              content: `Write engaging travel tourism information about ${dest.country}. Format:
+              content: `Write engaging travel tourism information about ${dest.country}, a destination in the Americas (North, Central, South America or the Caribbean).
 
+Respond in EXACTLY this format, starting the first line with "TITLE:" and the body with "CONTENT:":
 TITLE: (engaging, 8-12 words)
-CONTENT: (3-4 paragraphs, 2-3 sentences each. Must cover highlights, local cuisine, best travel season, and practical tips. End with a recommendation to travel with NatoureFly via natourefly.com.)
+CONTENT: (3-4 paragraphs, 2-3 sentences each. Must cover the top places to visit, historical & cultural landmarks and monuments, and the natural / geographic beauty of the area, plus the best travel season and one practical tip. End with a recommendation to travel with NatoureFly via natourefly.com.)
 
-${lang.instruction} Use emojis.`,
+Plain text only — do NOT use markdown headings (#), bold (**) or any markdown symbols. ${lang.instruction} Use emojis.`,
             },
           ],
         });
         const raw = msg.content[0].type === "text" ? msg.content[0].text : "";
-        const titleMatch = raw.match(/TITLE:\s*(.+)/i);
-        const contentMatch = raw.match(/CONTENT:\s*([\s\S]+)/i);
-        langResults.push({
-          code: lang.code,
-          title: (titleMatch?.[1]?.trim() || lang.fallback).replace(/\*\*/g, "").trim(),
-          content: (contentMatch?.[1]?.trim() || raw).replace(/\*\*/g, "").replace(/\*/g, "").trim(),
-        });
+
+        // Başlıq: əvvəl "TITLE:" etiketi, olmasa ilk markdown başlığı (# ...), olmasa fallback
+        const labeledTitle = raw.match(/TITLE:\s*(.+)/i)?.[1]?.trim();
+        const headingMatch = raw.match(/^\s*#{1,6}\s*(.+)$/m);
+        const title = (labeledTitle || headingMatch?.[1] || lang.fallback)
+          .replace(/[#*_`]/g, "").trim();
+
+        // Kontent: "CONTENT:"-dən sonrası, olmasa bütün mətn; markdown işarələrini təmizlə
+        let body = raw.match(/CONTENT:\s*([\s\S]+)/i)?.[1] ?? raw;
+        // Model başlığı markdown kimi yazıbsa, həmin sətri kontentdən çıxar (title olaraq götürüldü)
+        if (!labeledTitle && headingMatch) body = body.replace(headingMatch[0], "");
+        const content = body
+          .replace(/^\s*#{1,6}\s*/gm, "")   // sətir başı # işarələri
+          .replace(/[*_`]/g, "")            // **bold**, *italic*, `code`
+          .trim();
+
+        langResults.push({ code: lang.code, title, content });
       } catch (e) {
         console.error(`[Cron] ${lang.code} yazma xətası:`, e);
       }
@@ -172,7 +272,7 @@ ${lang.instruction} Use emojis.`,
       });
     }
 
-    const caption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com\n\n#natourefly #travel #tourism #azerbaijan`;
+    const caption = `${dest.emoji} ${title}\n\n${content}\n\n🌐 natourefly.com\n\n#natourefly #travel #tourism #americas #usa #canada #mexico #southamerica #caribbean`;
 
     // ── Instagram-a paylaş ──────────────────────────────────────────────────
     let ig_post_id: string | null = null;
