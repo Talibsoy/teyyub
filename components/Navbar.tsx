@@ -16,7 +16,7 @@ export default function Navbar() {
 
   const languages = [
     { code: "az" as Locale, label: "AZ", flagCode: "az" },
-    { code: "en" as Locale, label: "EN", flagCode: "gb" },
+    { code: "en" as Locale, label: "US", flagCode: "us" },
     { code: "tr" as Locale, label: "TR", flagCode: "tr" },
   ];
 
