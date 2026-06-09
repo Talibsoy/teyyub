@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         // RateHawk axtarış cavabı ulduz qaytarmaya bilər (null) — belə otelləri
         // filtrdən atma, yoxsa ulduz seçimi bütün nəticələri silir.
         if (!stars) return true;
-        return h.stars == null || h.stars >= stars;
+        return !h.stars || h.stars >= stars;   // ulduz məlum deyilsə (0/null), saxla
       })
       .map((h) => {
         const originalAzn = Math.round(h.price_usd * 1.70);
