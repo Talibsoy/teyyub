@@ -179,17 +179,37 @@ export default function OtellerPage() {
   const [childAges, setChildAges] = useState<number[]>([]);
   const [residency, setResidency] = useState("az");
   const [stars,    setStars]    = useState(0);
+  const [meals,    setMeals]    = useState<string[]>([]);
+  const [earlyCheckIn, setEarlyCheckIn] = useState("");
+  const [lateCheckOut, setLateCheckOut] = useState("");
+  const [freeCancellation, setFreeCancellation] = useState(false);
   const [hotels,   setHotels]   = useState<HotelOffer[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [searched, setSearched] = useState(false);
   const [error,    setError]    = useState("");
 
-  const STAR_OPTIONS = [
-    { value: 0, label: language === "az" ? "Hamısı" : language === "tr" ? "Hepsi" : "All" },
-    { value: 3, label: "⭐⭐⭐ 3+" },
-    { value: 4, label: "⭐⭐⭐⭐ 4+" },
-    { value: 5, label: "⭐⭐⭐⭐⭐ 5" },
+  const STAR_BUTTONS = [
+    { value: 0, label: language === "az" ? "Ulduz yox" : language === "tr" ? "Yıldız yok" : "No stars" },
+    { value: 2, label: language === "az" ? "2 ulduz" : language === "tr" ? "2 yıldız" : "2 stars" },
+    { value: 3, label: language === "az" ? "3 ulduz" : language === "tr" ? "3 yıldız" : "3 stars" },
+    { value: 4, label: language === "az" ? "4 ulduz" : language === "tr" ? "4 yıldız" : "4 stars" },
+    { value: 5, label: language === "az" ? "5 ulduz" : language === "tr" ? "5 yıldız" : "5 stars" },
   ];
+
+  const MEAL_OPTIONS = [
+    { value: "RO", label: "RO", tooltip: "Room Only" },
+    { value: "BB", label: "BB", tooltip: "Bed & Breakfast" },
+    { value: "HB", label: "HB", tooltip: "Half Board" },
+    { value: "FB", label: "FB", tooltip: "Full Board" },
+    { value: "AI", label: "AI", tooltip: "All Inclusive" },
+  ];
+
+  const TIME_SLOTS_EARLY = ["06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00"];
+  const TIME_SLOTS_LATE  = ["12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"];
+
+  function toggleMeal(v: string) {
+    setMeals(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
+  }
 
   const nights = Math.max(1, Math.ceil(
     (new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000
@@ -222,7 +242,11 @@ export default function OtellerPage() {
           childAges,
           residency,
           rooms: 1,
-          stars: stars || undefined
+          stars: stars || undefined,
+          meals: meals.length > 0 ? meals : undefined,
+          earlyCheckIn: earlyCheckIn || undefined,
+          lateCheckOut: lateCheckOut || undefined,
+          freeCancellation: freeCancellation || undefined,
         }),
       });
       const data = await res.json();
@@ -371,14 +395,8 @@ export default function OtellerPage() {
               </div>
             )}
 
-            {/* Sıra 2 */}
-            <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
-              <div style={{ width: 180 }}>
-                <label style={lbl}>⭐ {language === "az" ? "Ulduz" : language === "tr" ? "Yıldız" : "Stars"}</label>
-                <select value={stars} onChange={e => setStars(Number(e.target.value))} style={inp}>
-                  {STAR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
+            {/* Sıra 2 — axtarış düyməsi */}
+            <div style={{ display: "flex", gap: 14, alignItems: "flex-end", marginBottom: 14 }}>
               <div style={{ flex: 1 }} />
               <button onClick={search} disabled={loading} style={{
                 padding: "13px 36px", borderRadius: 12, border: "none",
@@ -400,6 +418,99 @@ export default function OtellerPage() {
                   </>
                 )}
               </button>
+            </div>
+
+            {/* ── Əlavə parametrlər (RateHawk-style) ── */}
+            <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12, marginTop: 0 }}>
+                {language === "az" ? "Əlavə parametrlər" : language === "tr" ? "Ek parametreler" : "Additional parameters"}
+              </p>
+
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "16px 20px" }}>
+
+                {/* ⭐ Star rating toggle buttons */}
+                <div>
+                  <label style={lbl}>⭐ {language === "az" ? "Ulduz reytinqi" : language === "tr" ? "Yıldız" : "Star rating"}</label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {STAR_BUTTONS.map(opt => (
+                      <button key={opt.value} onClick={() => setStars(stars === opt.value ? 0 : opt.value)}
+                        style={{
+                          padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          border: stars === opt.value ? "1.5px solid #0284c7" : "1.5px solid #e2e8f0",
+                          background: stars === opt.value ? "#f0f9ff" : "white",
+                          color: stars === opt.value ? "#0284c7" : "#64748b",
+                          transition: "all 0.15s",
+                        }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 🍽️ Meal type buttons */}
+                <div>
+                  <label style={lbl}>🍽️ {language === "az" ? "Qidalanma" : language === "tr" ? "Yemek tipi" : "Meal type"}</label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {MEAL_OPTIONS.map(opt => (
+                      <button key={opt.value} onClick={() => toggleMeal(opt.value)} title={opt.tooltip}
+                        style={{
+                          padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                          border: meals.includes(opt.value) ? "1.5px solid #0284c7" : "1.5px solid #e2e8f0",
+                          background: meals.includes(opt.value) ? "#f0f9ff" : "white",
+                          color: meals.includes(opt.value) ? "#0284c7" : "#64748b",
+                          transition: "all 0.15s",
+                        }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 🕐 Early check-in */}
+                <div>
+                  <label style={lbl}>🕐 {language === "az" ? "Erkən giriş" : language === "tr" ? "Erken giriş" : "Early check-in"}</label>
+                  <select value={earlyCheckIn} onChange={e => setEarlyCheckIn(e.target.value)}
+                    style={{ ...inp, width: 130, padding: "8px 12px" }}>
+                    <option value="">{language === "az" ? "Saatı seç" : language === "tr" ? "Saati seç" : "Select time"}</option>
+                    {TIME_SLOTS_EARLY.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+
+                {/* 🕐 Late check-out */}
+                <div>
+                  <label style={lbl}>🕐 {language === "az" ? "Gec çıxış" : language === "tr" ? "Geç çıkış" : "Late check-out"}</label>
+                  <select value={lateCheckOut} onChange={e => setLateCheckOut(e.target.value)}
+                    style={{ ...inp, width: 130, padding: "8px 12px" }}>
+                    <option value="">{language === "az" ? "Saatı seç" : language === "tr" ? "Saati seç" : "Select time"}</option>
+                    {TIME_SLOTS_LATE.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+
+                {/* ✅ Free cancellation toggle */}
+                <div>
+                  <button onClick={() => setFreeCancellation(!freeCancellation)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      border: freeCancellation ? "1.5px solid #10b981" : "1.5px solid #e2e8f0",
+                      background: freeCancellation ? "#ecfdf5" : "white",
+                      color: freeCancellation ? "#059669" : "#64748b",
+                      transition: "all 0.15s",
+                    }}>
+                    <span style={{
+                      display: "inline-flex", width: 36, height: 20, borderRadius: 10, padding: 2,
+                      background: freeCancellation ? "#10b981" : "#cbd5e1",
+                      transition: "background 0.2s",
+                      justifyContent: freeCancellation ? "flex-end" : "flex-start",
+                      alignItems: "center",
+                    }}>
+                      <span style={{ width: 16, height: 16, borderRadius: "50%", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} />
+                    </span>
+                    {language === "az" ? "Ödənişsiz ləğv" : language === "tr" ? "Ücretsiz iptal" : "Free cancellation"}
+                  </button>
+                </div>
+
+              </div>
             </div>
 
             {error && (
