@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         ok: true,
         hotels: [],
-        message: "Sandbox rejimində yalnız İstanbul, Dubai, Antalya, Şarm əş-Şeyx, Hurgada və ya Otel ID-si (hid) axtarıla bilər."
+        message: "Sandbox rejimində yalnız Los Angeles, İstanbul, Dubai, Antalya, Şarm əş-Şeyx, Hurgada və ya Otel ID-si (hid) axtarıla bilər."
       });
     }
 

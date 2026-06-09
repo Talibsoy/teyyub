@@ -4,10 +4,14 @@ import http from "node:http";
 // RATEHAWK_BASE funksiya içində hesablanır (modul-level sabit build-time inline olur)
 // RATEHAWK_PROXY_URL varsa Contabo proxy üzərindən keç (statik IP → ETG whitelist)
 function getRatehawkBase() {
+  // Sandbox: birbaşa ETG sandbox-a get. Proxy production endpoint-inə yönəlir, ona görə
+  // sandbox açarları proxy üzərindən "incorrect_credentials" verir — sandbox-da proxy keçilir.
+  if (process.env.RATEHAWK_SANDBOX === "true") {
+    return "https://api-sandbox.worldota.net/api/b2b/v3";
+  }
+  // Production: statik whitelist IP üçün proxy üzərindən
   if (process.env.RATEHAWK_PROXY_URL) return process.env.RATEHAWK_PROXY_URL;
-  return process.env.RATEHAWK_SANDBOX === "true"
-    ? "https://api-sandbox.worldota.net/api/b2b/v3"
-    : "https://api.worldota.net/api/b2b/v3";
+  return "https://api.worldota.net/api/b2b/v3";
 }
 
 export interface HotelOffer {
@@ -142,8 +146,14 @@ export function parseAmenities(codes: string[]): {
 // Sandbox test otelləri + real otel ID-ləri (production üçün artır)
 export const TRACKED_DESTINATIONS: DestinationGroup[] = [
   {
+    // ETG sandbox test otelləri (Conrad LA 10004834, Downtown LA Apartments 10047711,
+    // Key View Residences 10595223) — sertifikasiya üçün
+    name: "Los Angeles",
+    hids: [10004834, 10047711, 10595223],
+  },
+  {
     name: "İstanbul",
-    hids: [10004834, 10047711, 8819557],
+    hids: [8819557],
   },
   {
     name: "Dubai",
@@ -151,7 +161,7 @@ export const TRACKED_DESTINATIONS: DestinationGroup[] = [
   },
   {
     name: "Antalya",
-    hids: [10595223, 10654204, 10678836],
+    hids: [10654204, 10678836],
   },
   {
     name: "Şarm əl-Şeyx",
@@ -555,7 +565,7 @@ export async function searchHotelsForAI(params: {
   });
 
   if (!destGroup) {
-    return `Sandbox rejimində yalnız İstanbul, Dubai, Antalya, Şarm əş-Şeyx və Hurgada üçün otel axtarmaq mümkündür. Zəhmət olmasa bu şəhərlərdən birini daxil edin.`;
+    return `Sandbox rejimində yalnız Los Angeles, İstanbul, Dubai, Antalya, Şarm əş-Şeyx və Hurgada üçün otel axtarmaq mümkündür. Zəhmət olmasa bu şəhərlərdən birini daxil edin.`;
   }
 
   try {

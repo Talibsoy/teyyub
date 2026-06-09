@@ -7,10 +7,14 @@
 import https from "node:https";
 
 function getRatehawkBase() {
+  // Sandbox: birbaşa ETG sandbox-a get. Proxy production endpoint-inə yönəlir, ona görə
+  // sandbox açarları proxy üzərindən "incorrect_credentials" verir — sandbox-da proxy keçilir.
+  if (process.env.RATEHAWK_SANDBOX === "true") {
+    return "https://api-sandbox.worldota.net/api/b2b/v3";
+  }
+  // Production: statik whitelist IP üçün proxy üzərindən
   if (process.env.RATEHAWK_PROXY_URL) return process.env.RATEHAWK_PROXY_URL;
-  return process.env.RATEHAWK_SANDBOX === "true"
-    ? "https://api-sandbox.worldota.net/api/b2b/v3"
-    : "https://api.worldota.net/api/b2b/v3";
+  return "https://api.worldota.net/api/b2b/v3";
 }
 
 function getAuth(): string {
