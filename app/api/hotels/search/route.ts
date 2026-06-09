@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchHotels, TRACKED_DESTINATIONS, HotelOffer as RHHotelOffer } from "@/lib/ratehawk";
+import { searchHotels, searchHotelsByRegion, multicomplete, HotelOffer as RHHotelOffer } from "@/lib/ratehawk";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,41 +9,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "destination, checkin, checkout tələb olunur" }, { status: 400 });
     }
 
-    // Diakritikləri normallaşdır — məs. Türk "İstanbul".toLowerCase() = "i̇stanbul"
-    // (gizli birləşən nöqtə ilə), ona görə adi "Istanbul" uyğun gəlmirdi.
-    const norm = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-    const query = norm(destination);
+    const query = destination.trim();
     const isHid = /^\d+$/.test(query);
-    let destGroup;
+    const guests = [{ adults: adults || 2, children: Array.isArray(childAges) ? childAges : [] }];
+
+    let rhOffers: RHHotelOffer[];
+    let destName = query;
 
     if (isHid) {
-      destGroup = {
-        name: `Hotel #${query}`,
-        hids: [parseInt(query, 10)]
-      };
+      // Birbaşa otel ID (hid) ilə axtarış
+      rhOffers = await searchHotels(
+        { name: `Hotel #${query}`, hids: [parseInt(query, 10)] },
+        checkin, checkout, guests, residency || "az"
+      );
     } else {
-      destGroup = TRACKED_DESTINATIONS.find((d) => {
-        const name = norm(d.name);
-        return (
-          name.includes(query) ||
-          query.includes(name) ||
-          (query.includes("sharm") && name.includes("sarm")) ||
-          (query.includes("hurghada") && name.includes("hurgada"))
-        );
-      });
+      // RateHawk-ın əsl axtarışı: multicomplete ilə region tap, sonra bütün otelləri gətir
+      const mc = await multicomplete(query);
+      const region = mc.regions[0];
+      if (!region) {
+        return NextResponse.json({
+          ok: true,
+          hotels: [],
+          message: `"${query}" üçün region tapılmadı. Başqa şəhər və ya otel ID-si yazın.`,
+        });
+      }
+      destName = region.name;
+      rhOffers = await searchHotelsByRegion(region.id, region.name, checkin, checkout, guests, residency || "az");
     }
-
-    if (!destGroup) {
-      // Sandbox constraint: Only return tracked destinations
-      return NextResponse.json({
-        ok: true,
-        hotels: [],
-        message: "Sandbox rejimində yalnız Los Angeles, İstanbul, Dubai, Antalya, Şarm əş-Şeyx, Hurgada və ya Otel ID-si (hid) axtarıla bilər."
-      });
-    }
-
-    const guests = [{ adults: adults || 2, children: Array.isArray(childAges) ? childAges : [] }];
-    const rhOffers = await searchHotels(destGroup, checkin, checkout, guests, residency || "az");
 
     const nights = Math.max(1, Math.ceil(
       (new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000
@@ -65,7 +57,7 @@ export async function POST(req: NextRequest) {
         return {
           id:              h.hotel_id,
           name:            h.hotel_name,
-          destination:     destGroup.name,
+          destination:     destName,
           checkin:         h.checkin,
           checkout:        h.checkout,
           nights,
@@ -91,26 +83,21 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Debug endpoint — GET /api/hotels/search?dest=Antalya
+// Debug endpoint — GET /api/hotels/search?dest=Los Angeles
 export async function GET(req: NextRequest) {
-  const dest = req.nextUrl.searchParams.get("dest") || "Antalya";
-  const destGroup = TRACKED_DESTINATIONS.find(
-    (d) => d.name.toLowerCase().includes(dest.toLowerCase()) || dest.toLowerCase().includes(d.name.toLowerCase())
-  );
-  if (!destGroup) {
-    return NextResponse.json({ error: "Destination not tracked in sandbox" });
-  }
+  const dest = req.nextUrl.searchParams.get("dest") || "Los Angeles";
   const checkin = new Date();
   checkin.setDate(checkin.getDate() + 30);
   const checkout = new Date(checkin);
   checkout.setDate(checkout.getDate() + 7);
+  const ci = checkin.toISOString().split("T")[0];
+  const co = checkout.toISOString().split("T")[0];
   try {
-    const hotels = await searchHotels(
-      destGroup,
-      checkin.toISOString().split("T")[0],
-      checkout.toISOString().split("T")[0]
-    );
-    return NextResponse.json({ ok: true, count: hotels.length, hotels });
+    const mc = await multicomplete(dest);
+    const region = mc.regions[0];
+    if (!region) return NextResponse.json({ error: "Region not found", query: dest });
+    const hotels = await searchHotelsByRegion(region.id, region.name, ci, co);
+    return NextResponse.json({ ok: true, region: region.name, count: hotels.length, hotels: hotels.slice(0, 10) });
   } catch (e) {
     return NextResponse.json({ error: String(e) });
   }

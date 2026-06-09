@@ -468,6 +468,60 @@ export async function searchHotels(
   }
 }
 
+// ── RateHawk-vari axtarış: multicomplete (avtomatik tamamlama) + region serp ──
+
+// Şəhər/region/otel avtomatik tamamlama: /search/multicomplete/
+export async function multicomplete(query: string, language = "en"): Promise<{
+  regions: { id: number; name: string; type?: string }[];
+  hotels: { id: string; name: string }[];
+}> {
+  try {
+    const res = await ratehawkPost("/search/multicomplete/", { query, language });
+    if (res.status !== "ok") return { regions: [], hotels: [] };
+    const d = (res.data || {}) as {
+      regions?: { id: number; name: string; type?: string }[];
+      hotels?: { id: string; name: string }[];
+    };
+    return { regions: d.regions || [], hotels: d.hotels || [] };
+  } catch (e) {
+    console.error("RateHawk multicomplete:", (e as Error).message);
+    return { regions: [], hotels: [] };
+  }
+}
+
+// Region üzrə bütün otelləri axtar: /search/serp/region/ (RateHawk-ın əsl axtarışı)
+export async function searchHotelsByRegion(
+  regionId: number,
+  regionName: string,
+  checkin: string,
+  checkout: string,
+  guests: SearchGuest[] = [{ adults: 2, children: [] }],
+  residency = "az",
+  limit = 60
+): Promise<HotelOffer[]> {
+  try {
+    const res = await ratehawkPost("/search/serp/region/", {
+      region_id: regionId,
+      checkin,
+      checkout,
+      residency,
+      language: "en",
+      currency: "USD",
+      guests,
+    });
+    if (res.status === "ok" && res.data?.hotels) {
+      return parseHotels(res.data.hotels.slice(0, limit), regionName, checkin, checkout);
+    }
+    if (res.status !== "ok") {
+      console.error(`RateHawk serp/region (${regionName}) status=${res.status}`, res.error || "");
+    }
+    return [];
+  } catch (e) {
+    console.error(`RateHawk searchHotelsByRegion (${regionName}):`, (e as Error).message);
+    return [];
+  }
+}
+
 // Növbəti 30 gün sonra checkin, 7 gecəlik checkout
 export function getDefaultDates(): { checkin: string; checkout: string } {
   const checkin = new Date();
