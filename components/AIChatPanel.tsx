@@ -147,7 +147,7 @@ function TourPackageCard({
           {language === "az" ? "Rezervasiya Et" : language === "tr" ? "Rezervasyon Yap" : "Reserve Now"}
         </button>
         <a
-          href={`https://wa.me/994517769632?text=${waText}`}
+          href={`https://wa.me/447828721748?text=${waText}`}
           target="_blank" rel="noopener noreferrer"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
@@ -224,7 +224,7 @@ function FlightPackageCard({
       </div>
       <div style={{ padding: "8px 14px 12px", display: "flex", flexDirection: "column", gap: 7 }}>
         <a
-          href={`https://wa.me/994517769632?text=${waText}`}
+          href={`https://wa.me/447828721748?text=${waText}`}
           target="_blank" rel="noopener noreferrer"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
@@ -292,7 +292,7 @@ function HotelPackageCard({
       </div>
       <div style={{ padding: "8px 14px 12px", display: "flex", flexDirection: "column", gap: 7 }}>
         <a
-          href={`https://wa.me/994517769632?text=${waText}`}
+          href={`https://wa.me/447828721748?text=${waText}`}
           target="_blank" rel="noopener noreferrer"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 7,

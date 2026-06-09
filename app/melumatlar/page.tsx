@@ -114,7 +114,7 @@ export default function MelumatlarPage() {
                     {new Date(selected.created_at).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric" })}
                   </p>
                   <a
-                    href={`https://wa.me/994517769632?text=${encodeURIComponent(t.waMsg(selected.country))}`}
+                    href={`https://wa.me/447828721748?text=${encodeURIComponent(t.waMsg(selected.country))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

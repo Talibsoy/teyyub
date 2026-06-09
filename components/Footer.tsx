@@ -32,7 +32,7 @@ export default function Footer() {
                 target="_blank" rel="noopener noreferrer"
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold hover:opacity-80 transition"
                 style={{ background: "#1877F2" }}>f</a>
-              <a href="https://wa.me/994517769632"
+              <a href="https://wa.me/447828721748"
                 target="_blank" rel="noopener noreferrer"
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-semibold hover:opacity-80 transition"
                 style={{ background: "#25D366" }}>WA</a>

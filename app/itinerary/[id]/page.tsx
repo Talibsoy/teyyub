@@ -268,7 +268,7 @@ export default async function ItineraryPage(
               <h3 className="font-semibold text-slate-800 mb-1">Bu proqramı bəyəndiniz?</h3>
               <p className="text-sm text-slate-500 mb-4">Rezervasiya üçün bizə yazın — hər şeyi biz həll edirik.</p>
               <a
-                href={`https://wa.me/994517769632?text=${waMsg}`}
+                href={`https://wa.me/447828721748?text=${waMsg}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors"

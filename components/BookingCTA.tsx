@@ -38,7 +38,7 @@ export default function BookingCTA({ tourId, seatsLeft, tourName, language = "az
           {language === "az" ? "Növbəti tur üçün bizimlə əlaqə saxlayın" : language === "tr" ? "Bir sonraki tur için bizimle iletişime geçin" : "Contact us for the next tour"}
         </p>
         <a
-          href={`https://wa.me/994517769632?text=${encodeURIComponent(waText)}`}
+          href={`https://wa.me/447828721748?text=${encodeURIComponent(waText)}`}
           target="_blank" rel="noopener noreferrer"
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
@@ -87,7 +87,7 @@ export default function BookingCTA({ tourId, seatsLeft, tourName, language = "az
       <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 12 }}>
         {language === "az" ? "Sualınız var? " : language === "tr" ? "Sorunuz mu var? " : "Have questions? "}
         <a
-          href={`https://wa.me/994517769632?text=${encodeURIComponent(waAskText)}`}
+          href={`https://wa.me/447828721748?text=${encodeURIComponent(waAskText)}`}
           target="_blank" rel="noopener noreferrer"
           style={{ color: "#25D366", textDecoration: "none", fontWeight: 600 }}
         >

@@ -1,4 +1,4 @@
-export const WA_NUMBER = "994517769632";
+export const WA_NUMBER = "447828721748";
 export const WA_DEFAULT_MSG = "Salam, tur haqqında təklif almaq istəyirəm";
 
 export function waLink(msg?: string) {

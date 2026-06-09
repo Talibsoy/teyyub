@@ -115,7 +115,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             {ctaDesc}
           </p>
           <a
-            href={`https://wa.me/994517769632?text=${encodeURIComponent(waMsg)}`}
+            href={`https://wa.me/447828721748?text=${encodeURIComponent(waMsg)}`}
             target="_blank" rel="noopener noreferrer"
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,

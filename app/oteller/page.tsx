@@ -156,7 +156,7 @@ function HotelCard({ hotel, language, adults, children, childAges }: {
             Onlayn Rezervasiya Et
           </a>
         )}
-        <a href={`https://wa.me/994517769632?text=${encodeURIComponent(waMsg)}`}
+        <a href={`https://wa.me/447828721748?text=${encodeURIComponent(waMsg)}`}
           target="_blank" rel="noopener noreferrer"
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#25D366", color: "white", borderRadius: 12, padding: "12px", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(37,211,102,0.3)" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
@@ -461,7 +461,7 @@ export default function OtellerPage() {
                 ? "Tarihleri değiştirin veya yıldız filtresini azaltın"
                 : "Change travel dates or reduce the star filter"}
             </p>
-            <a href={`https://wa.me/994517769632?text=${encodeURIComponent(fallbackWaMsg)}`}
+            <a href={`https://wa.me/447828721748?text=${encodeURIComponent(fallbackWaMsg)}`}
               target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#25D366", color: "white", borderRadius: 12, padding: "12px 24px", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
               {language === "az" ? "Komandamızla əlaqə saxlayın" : language === "tr" ? "Ekibimizle iletişime geçin" : "Contact our support team"}
