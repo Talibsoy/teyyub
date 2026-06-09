@@ -30,8 +30,7 @@ No test suite exists. Validate with `typecheck` + manual testing.
 | Service | Purpose | Lib |
 |---------|---------|-----|
 | Duffel API | Real-time flight search + booking | `lib/duffel.ts` |
-| Booking.com (RapidAPI) | Hotel search (customer-facing) | `lib/hotels.ts` |
-| RateHawk (WorldOTA) | Hotel search (AI price analysis) | `lib/ratehawk.ts` |
+| RateHawk (WorldOTA/ETG) | All hotel search + booking | `lib/ratehawk.ts`, `lib/ratehawk-booking.ts` |
 | Epoint.az | Payment gateway (AZN) | `lib/epoint.ts` |
 | Anthropic Claude | AI sales agent + intent extraction | `lib/ai-agent.ts` |
 | Upstash Redis | Rate limiting, conversation history, CBAR rate cache | throughout |
@@ -47,7 +46,7 @@ No test suite exists. Validate with `typecheck` + manual testing.
 WhatsApp/Instagram → /api/whatsapp or /api/webhook
   → lib/conversation-store (Redis history)
   → lib/ai-agent (Claude agentic loop, max 5 rounds)
-  → tools: search_flights (Duffel), search_hotels (RapidAPI), check_tour_availability (Supabase)
+  → tools: search_flights (Duffel), search_hotels (RateHawk), check_tour_availability (Supabase)
   → OPERATOR_HANDOFF → lib/telegram (notify staff)
 ```
 
@@ -61,7 +60,7 @@ WhatsApp/Instagram → /api/whatsapp or /api/webhook
 ```
 
 **Daily cron jobs** (vercel.json, all UTC):
-- `07:00` — `/api/cron/generate-tours` — Duffel + RapidAPI → auto-create tours in Supabase
+- `07:00` — `/api/cron/generate-tours` — Duffel + RateHawk → auto-create tours in Supabase
 - `08:00` — `/api/cron/hotels` — RateHawk → sync hotel prices to Supabase
 - `09:00` — `/api/cron/embed-tours` — Voyage AI → embed tours for pgvector
 - `10:00` — `/api/cron/price-analysis` — RateHawk + Duffel → price report
@@ -101,7 +100,7 @@ if (isAuthError(auth)) return auth;  // auth IS the NextResponse error
 
 - All prices shown in AZN (`₼`)
 - Flight commission: `COMMISSION = 1.17` (17%) in `lib/duffel.ts`
-- Hotel markup: `MARKUP = 1.17` (17%) in `lib/hotels.ts`; RateHawk uses `1.15`
+- Hotel markup: RateHawk uses `1.15` (15%) in `lib/ratehawk.ts`
 - **`flight.price_azn` from Duffel = total for ALL passengers.** Never multiply by passenger count again — this caused a 2x inflation bug.
 - CBAR (Central Bank of AZ) exchange rates cached 1 hour in Redis key `cbar:azn_rates`
 - Loyalty points: 100₼ = 1 xal (earn on paid, deduct on refunded)
@@ -141,9 +140,9 @@ Omitting `timeZone` silently shows wrong times on production (Vercel = UTC).
 
 `app/api/chat/route.ts` uses **brace-depth extraction** (not regex) to parse `FLIGHT_PACKAGE:{...}`, `TOUR_PACKAGE:{...}`, `HOTEL_PACKAGE:{...}` from AI text. Supports multiline JSON. See `extractJsonBlock()` and `removeJsonBlock()` functions.
 
-### Hotels Dest ID Cache
+### RateHawk Sandbox vs Production
 
-`lib/hotels.ts` — `getDestId()` caches Booking.com destination IDs in Redis for 24h (`hotel_dest:<query>` key). This reduces RapidAPI rate limit consumption significantly.
+`lib/ratehawk.ts` / `lib/ratehawk-booking.ts` — `getRatehawkBase()`: in sandbox (`RATEHAWK_SANDBOX=true`) it calls `api-sandbox.worldota.net` **directly** — the Contabo proxy (`RATEHAWK_PROXY_URL`) forwards to the *production* host, so sandbox creds 401 through it. Production uses the proxy for the whitelisted static IP. Sandbox test hotels live in `TRACKED_DESTINATIONS` (Los Angeles = 10004834 / 10047711 / 10595223).
 
 ### ETG/RateHawk Booking
 
@@ -160,7 +159,7 @@ Omitting `timeZone` silently shows wrong times on production (Vercel = UTC).
 ```
 /api/flights/search   POST  requireAuth + Redis rate limit (10/60s per user)
 /api/flights/book     POST  requireAuth → Duffel createOrder → Supabase insert
-/api/hotels/search    POST  → lib/hotels (RapidAPI Booking.com, dest cached 24h)
+/api/hotels/search    POST  → lib/ratehawk (sandbox direct / prod via proxy)
 /api/bookings         POST  Create tour booking record (public, customer form)
 /api/booking/finish   POST  ETG/RateHawk hotel booking → status poll
 /api/payment/create   POST  → Epoint createEpointOrder (amount from DB)
@@ -184,8 +183,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
 ANTHROPIC_API_KEY
 DUFFEL_API_KEY
-RAPIDAPI_KEY
 RATEHAWK_API_KEY + RATEHAWK_SECRET + RATEHAWK_SANDBOX (true/false)
+RATEHAWK_PROXY_URL + RATEHAWK_PROXY_SECRET   # production: whitelisted static-IP proxy
 EPOINT_PUBLIC_KEY + EPOINT_PRIVATE_KEY
 UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
 NEXT_PUBLIC_APP_URL             # https://www.natourefly.com

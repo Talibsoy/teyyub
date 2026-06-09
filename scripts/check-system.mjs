@@ -65,12 +65,12 @@ async function checkHealth() {
 
 async function checkHotelApi() {
   try {
-    const res = await fetch(`${SITE_URL}/api/hotels/search?dest=Antalya`, { signal: AbortSignal.timeout(10000) });
+    const res = await fetch(`${SITE_URL}/api/hotels/search?dest=Los Angeles`, { signal: AbortSignal.timeout(15000) });
     const json = await res.json();
-    if (json.step === "OK") return ok("Hotel API (RapidAPI) — işləyir");
-    if (json.error?.includes("429") || json.step === "DEST_ERROR") return warn("Hotel API — RapidAPI limit (plan yüksəlt)");
-    if (json.step === "KEY_MISSING") return err("Hotel API — RAPIDAPI_KEY yoxdur");
-    return warn(`Hotel API — ${json.step || "naməlum vəziyyət"}`);
+    if (json.ok && json.count > 0) return ok(`Hotel API (RateHawk) — ${json.count} otel`);
+    if (json.ok) return warn("Hotel API (RateHawk) — 0 otel (tarix/availability)");
+    if (json.error) return err(`Hotel API — ${json.error}`);
+    return warn("Hotel API — naməlum vəziyyət");
   } catch (e) {
     return err(`Hotel API: ${e.message}`);
   }

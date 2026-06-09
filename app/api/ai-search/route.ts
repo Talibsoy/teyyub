@@ -6,7 +6,7 @@ import Anthropic                     from "@anthropic-ai/sdk";
 import { getSupabaseAdmin }          from "@/lib/supabase";
 import { getCachedProfile }          from "@/lib/profile-cache";
 import { searchFlights }             from "@/lib/duffel";
-import { searchHotels }              from "@/lib/hotels";
+import { searchHotels as rhSearchHotels, TRACKED_DESTINATIONS } from "@/lib/ratehawk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -120,6 +120,23 @@ function scoreTour(tour: Tour, intent: SearchIntent, archetype: string | null): 
   return score;
 }
 
+// RateHawk-dan paket üçün bir otel tap (yalnız tracked sandbox şəhərləri: Los Angeles, İstanbul, Dubai, Antalya, Şarm, Hurgada)
+async function findPackageHotel(
+  hotelQuery: string, checkin: string, checkout: string, passengers: number, userCurrency: "USD" | "AZN"
+): Promise<{ name: string; stars: number | null; rating: number | null; price_marked_up: number } | null> {
+  const q = hotelQuery.toLowerCase().trim();
+  const destGroup = TRACKED_DESTINATIONS.find((d) => {
+    const name = d.name.toLowerCase();
+    return name.includes(q) || q.includes(name);
+  });
+  if (!destGroup) return null;
+  const offers = await rhSearchHotels(destGroup, checkin, checkout, [{ adults: passengers, children: [] }], "az");
+  if (!offers.length) return null;
+  const h = offers[0];
+  const price_marked_up = userCurrency === "AZN" ? Math.ceil(h.price_usd * 1.70) : Math.ceil(h.price_usd);
+  return { name: h.hotel_name, stars: h.stars || null, rating: null, price_marked_up };
+}
+
 async function buildDynamicPackage(intent: SearchIntent, origin: string): Promise<DynamicPackage | null> {
   if (!intent.checkin_date || !intent.checkout_date || !intent.destination) return null;
 
@@ -137,14 +154,14 @@ async function buildDynamicPackage(intent: SearchIntent, origin: string): Promis
 
   const [flightRes, hotelRes] = await Promise.allSettled([
     searchFlights({ origin, destination: iata, date: intent.checkin_date, return_date: intent.checkout_date, passengers }),
-    searchHotels({ destination: hotelQuery, checkin: intent.checkin_date, checkout: intent.checkout_date, adults: passengers, rooms: 1, currency: userCurrency }),
+    findPackageHotel(hotelQuery, intent.checkin_date, intent.checkout_date, passengers, userCurrency),
   ]);
 
   if (flightRes.status === "rejected" || !flightRes.value.length) return null;
-  if (hotelRes.status === "rejected" || !hotelRes.value.length) return null;
+  const hotel = hotelRes.status === "fulfilled" ? hotelRes.value : null;
+  if (!hotel) return null;
 
   const flight = flightRes.value[0];
-  const hotel  = hotelRes.value[0];
 
   let priceAzn = 0;
   let priceUsd = 0;

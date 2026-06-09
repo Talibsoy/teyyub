@@ -1,8 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { HotelOffer } from "@/lib/hotels";
 import { useLanguage } from "@/components/LanguageContext";
+
+// /api/hotels/search cavabının forması (əvvəl lib/hotels-dən import olunurdu)
+interface HotelOffer {
+  id: string; name: string; destination: string; checkin: string; checkout: string;
+  nights: number; price_original: number; price_marked_up: number; currency: string;
+  stars: number | null; rating: number | null; review_count: number;
+  booking_url: string; address: string; facilities: string[];
+  book_hash?: string | null; meal?: string; room_type?: string;
+}
 
 const DESTINATIONS = [
   // 🇺🇸 Amerika
