@@ -9,8 +9,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "destination, checkin, checkout tələb olunur" }, { status: 400 });
     }
 
-    // RateHawk destination matching (checks if search is a direct hid)
-    const query = destination.toLowerCase().trim();
+    // Diakritikləri normallaşdır — məs. Türk "İstanbul".toLowerCase() = "i̇stanbul"
+    // (gizli birləşən nöqtə ilə), ona görə adi "Istanbul" uyğun gəlmirdi.
+    const norm = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    const query = norm(destination);
     const isHid = /^\d+$/.test(query);
     let destGroup;
 
@@ -21,11 +23,11 @@ export async function POST(req: NextRequest) {
       };
     } else {
       destGroup = TRACKED_DESTINATIONS.find((d) => {
-        const name = d.name.toLowerCase();
+        const name = norm(d.name);
         return (
           name.includes(query) ||
           query.includes(name) ||
-          (query.includes("sharm") && name.includes("şarm")) ||
+          (query.includes("sharm") && name.includes("sarm")) ||
           (query.includes("hurghada") && name.includes("hurgada"))
         );
       });
@@ -50,8 +52,10 @@ export async function POST(req: NextRequest) {
     // Map RateHawk HotelOffer to the schema expected by the client frontend
     const hotels = rhOffers
       .filter((h) => {
+        // RateHawk axtarış cavabı ulduz qaytarmaya bilər (null) — belə otelləri
+        // filtrdən atma, yoxsa ulduz seçimi bütün nəticələri silir.
         if (!stars) return true;
-        return h.stars >= stars;
+        return h.stars == null || h.stars >= stars;
       })
       .map((h) => {
         const originalAzn = Math.round(h.price_usd * 1.70);
