@@ -112,21 +112,22 @@ function PrebookForm() {
 
     setBookingLoading(true);
     setBookingError("");
-    setBookingStatusText("Rezervasiya yaradılır və status yoxlanılır (90 saniyəyə qədər çəkə bilər)...");
+    setBookingStatusText("Rezervasiya yaradılır və status yoxlanılır (200 saniyəyə qədər çəkə bilər)...");
 
-    // Generate scenario-specific partner_order_id if selected
+    // Generate scenario-specific partner_order_id if selected.
+    // ETG sandbox sehrli suffix formatı: <finiş_nəticəsi>_<status_nəticəsi>
     let partner_order_id = `natoure_${Date.now()}`;
-    if (testScenario === "1") partner_order_id += "_success";
-    else if (testScenario === "2") partner_order_id += "_unknown";
-    else if (testScenario === "3") partner_order_id += "_unknown_soldout";
-    else if (testScenario === "4") partner_order_id += "_unknown_book_limit";
+    if (testScenario === "1") partner_order_id += "_success";              // S1: uğurlu
+    else if (testScenario === "2") partner_order_id += "_unknown_success"; // S2: unknown finişdə → ok
+    else if (testScenario === "3") partner_order_id += "_timeout_soldout"; // S3: timeout → soldout
+    else if (testScenario === "4") partner_order_id += "_unknown_book_limit"; // S4: unknown → book_limit
 
     // Start UI update simulation for polling
     let secondsLeft = 0;
     const interval = setInterval(() => {
       secondsLeft += 5;
-      if (secondsLeft < 90) {
-        setBookingStatusText(`Rezervasiya statusu yoxlanılır... Keçən vaxt: ${secondsLeft}s (Maks. 90s)`);
+      if (secondsLeft < 200) {
+        setBookingStatusText(`Rezervasiya statusu yoxlanılır... Keçən vaxt: ${secondsLeft}s (Maks. 200s)`);
       }
     }, 5000);
 

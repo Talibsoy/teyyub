@@ -270,30 +270,9 @@ export async function getBookingStatus(
       const statusValue = res.status;
       if (statusValue === "ok") {
         finalStatus = "ok";
-        // If ok, retrieve actual order ID from order/info (since it's not in status response)
-        try {
-          const infoRes = await etgPost("/hotel/order/info/", {
-            ordering: {
-              ordering_type: "desc",
-              ordering_by: "created_at"
-            },
-            pagination: {
-              page_size: "50",
-              page_number: "1"
-            },
-            language: "en",
-          });
-          if (infoRes.status === "ok" && infoRes.data) {
-            const ordersData = infoRes.data as { orders?: Array<{ order_id: number; partner_data?: { order_id?: string } }> };
-            const ordersList = ordersData.orders;
-            const matchedOrder = ordersList?.find(o => o.partner_data?.order_id === partnerOrderId);
-            if (matchedOrder) {
-              orderId = String(matchedOrder.order_id);
-            }
-          }
-        } catch (infoErr) {
-          console.warn("[RateHawk Booking] Error fetching order ID from order/info:", infoErr);
-        }
+        // ETG tövsiyəsi (Anna #7): yekun status YALNIZ /finish/status/-dən gəlir.
+        // order/info booking axınında İSTİFADƏ OLUNMUR (o, hesabın order tarixçəsidir).
+        // order_id finish cavabındakı order_ids-dən, ya da partner_order_id-dən götürülür.
       } else if (statusValue === "error") {
         finalStatus = (res.error as BookingStatus) || "unknown";
       } else if (statusValue === "3ds") {
@@ -323,13 +302,13 @@ export async function getBookingStatus(
   }
 }
 
-// Polling — continues polling every 5s up to 90s for "processing", "timeout", "unknown", or "server_error" (5xx)
+// Polling — continues polling every 5s up to 200s for "processing", "timeout", "unknown", or "server_error" (5xx)
 export async function pollBookingStatus(
   orderIds?: string[],
   partnerOrderId?: string
 ): Promise<BookingStatusResult> {
   const INTERVAL_MS  = 5000;
-  const MAX_ATTEMPTS = parseInt(process.env.ETG_POLLING_MAX || "18", 10); // default 90s (18×5s)
+  const MAX_ATTEMPTS = parseInt(process.env.ETG_POLLING_MAX || "40", 10); // default 200s (40×5s) — ETG booking timeout ilə eyni olmalıdır
 
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     const result = await getBookingStatus(orderIds, partnerOrderId);
