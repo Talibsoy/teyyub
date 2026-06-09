@@ -353,7 +353,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
               "@type": "TravelAgency",
               "name": "Natoure",
               "url": "https://www.natourefly.com",
-              "telephone": "+994504888080",
+              "telephone": "+447828721748",
             },
           }),
         }}
