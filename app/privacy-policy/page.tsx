@@ -143,7 +143,7 @@ export default function PrivacyPolicyPage() {
           <div className="bg-gray-50 rounded-xl p-6 space-y-2 text-sm">
             <p><strong>FlyNaToure Turizm OTA</strong></p>
             <p>📍 Bakı şəhəri, Azərbaycan</p>
-            <p>📞 <a href="tel:+994517769632" className="text-[#0057A8] hover:underline">+994 51 776 96 32</a></p>
+            <p>📞 <a href="tel:+447828721748" className="text-[#0057A8] hover:underline">+44 7828 721748</a></p>
             <p>✉️ <a href="mailto:info@natourefly.com" className="text-[#0057A8] hover:underline">info@natourefly.com</a></p>
             <p>🌐 <a href="https://natourefly.com" className="text-[#0057A8] hover:underline">natourefly.com</a></p>
           </div>

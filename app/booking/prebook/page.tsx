@@ -372,7 +372,7 @@ function PrebookForm() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                 <div>
                   <label style={lbl}>Telefon *</label>
-                  <input required type="tel" placeholder="+994 51 776 96 32" value={phone} onChange={e => setPhone(e.target.value)} style={inp} />
+                  <input required type="tel" placeholder="+44 7828 721748" value={phone} onChange={e => setPhone(e.target.value)} style={inp} />
                 </div>
                 <div>
                   <label style={lbl}>E-mail</label>

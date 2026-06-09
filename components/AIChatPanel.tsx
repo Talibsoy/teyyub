@@ -580,7 +580,7 @@ export default function AIChatPanel() {
                         ? "Bizimle doğrudan iletişime geçin:"
                         : "Contact us directly:"}
                     </p>
-                    <a href="tel:+994517769632" style={{
+                    <a href="tel:+447828721748" style={{
                       display: "flex", alignItems: "center", gap: 8,
                       padding: "10px 14px", borderRadius: 8,
                       background: "linear-gradient(135deg,#0284c7,#4f46e5)",
@@ -591,10 +591,10 @@ export default function AIChatPanel() {
                         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.22 2.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.16 6.16l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
                       </svg>
                       {language === "az"
-                        ? "+994 51 776 96 32 — Zəng edin"
+                        ? "+44 7828 721748 — Zəng edin"
                         : language === "tr"
-                        ? "+994 51 776 96 32 — Arayın"
-                        : "+994 51 776 96 32 — Call Us"}
+                        ? "+44 7828 721748 — Arayın"
+                        : "+44 7828 721748 — Call Us"}
                     </a>
                   </div>
                 )}

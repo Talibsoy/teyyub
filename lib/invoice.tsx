@@ -197,7 +197,7 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
             <Text style={styles.companyName}>Natoure.az</Text>
             <Text style={styles.companyInfo}>
               Bakı, Azərbaycan{"\n"}
-              Tel: +994 51 776 96 32{"\n"}
+              Tel: +44 7828 721748{"\n"}
               www.natourefly.com
             </Text>
           </View>
@@ -316,7 +316,7 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
         {/* Footer */}
         <View style={styles.footer}>
           <Text>Bu qaimə Natoure.az tərəfindən avtomatik yaradılmışdır.</Text>
-          <Text>Sual üçün: +994 51 776 96 32 | www.natourefly.com</Text>
+          <Text>Sual üçün: +44 7828 721748 | www.natourefly.com</Text>
         </View>
       </Page>
     </Document>

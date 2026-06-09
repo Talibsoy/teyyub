@@ -89,10 +89,10 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm text-slate-500">
               <li>{language === "az" ? "📍 Bakı, Azərbaycan" : language === "tr" ? "📍 Bakü, Azerbaycan" : "📍 Baku, Azerbaijan"}</li>
               <li>
-                <a href="tel:+994517769632"
+                <a href="tel:+447828721748"
                   className="hover:text-sky-600 transition-colors"
                   style={{ textDecoration: "none", color: "inherit" }}>
-                  📞 +994 51 776 96 32
+                  📞 +44 7828 721748
                 </a>
               </li>
               <li>

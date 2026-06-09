@@ -12,12 +12,12 @@ const KNOWLEDGE: Array<{ content: string; source: string; metadata?: Record<stri
   // ─── Şirkət məlumatları ───────────────────────────────────────────────────
   {
     source: "company",
-    content: `Natoure (natourefly.com) Azərbaycanın etibarlı turizm şirkətidir. Bakıda yerləşirik. Biz Türkiyə, Dubai, Misir, Avropa, Bali, Tailand və digər istiqamətlərə tur satırıq. Xidmətlərimizə uçuş, otel, transfer, viza dəstəyi daxildir. Əlaqə: +994 51 776 96 32, info@natourefly.com. İş saatları: Bazar ertəsi – Şənbə, 09:00–18:00.`,
+    content: `Natoure (natourefly.com) Azərbaycanın etibarlı turizm şirkətidir. Bakıda yerləşirik. Biz Türkiyə, Dubai, Misir, Avropa, Bali, Tailand və digər istiqamətlərə tur satırıq. Xidmətlərimizə uçuş, otel, transfer, viza dəstəyi daxildir. Əlaqə: +44 7828 721748, info@natourefly.com. İş saatları: Bazar ertəsi – Şənbə, 09:00–18:00.`,
     metadata: { category: "general" },
   },
   {
     source: "company",
-    content: `Natoure WhatsApp: +994 51 776 96 32. Instagram: @natoure.fly. Facebook: natoure. Rezervasiya üçün WhatsApp-da yazın və ya natourefly.com saytından online rezervasiya edin. Ödəniş nağd, köçürmə və ya hissə-hissə (taksit) ilə mümkündür.`,
+    content: `Natoure WhatsApp: +44 7828 721748. Instagram: @natoure.fly. Facebook: natoure. Rezervasiya üçün WhatsApp-da yazın və ya natourefly.com saytından online rezervasiya edin. Ödəniş nağd, köçürmə və ya hissə-hissə (taksit) ilə mümkündür.`,
     metadata: { category: "contact" },
   },
   {

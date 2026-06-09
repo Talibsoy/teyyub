@@ -70,7 +70,7 @@ const jsonLd = {
   url: "https://www.natourefly.com",
   logo: "https://www.natourefly.com/logo.png",
   description: "Trusted premium travel agency. Tours to Turkey, Dubai, Egypt, Europe.",
-  telephone: "+994517769632",
+  telephone: "+447828721748",
   email: "info@natourefly.com",
   address: {
     "@type": "PostalAddress",

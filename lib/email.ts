@@ -99,7 +99,7 @@ export function bookingConfirmHtml(data: {
 
             <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0 0 24px">
               Suallarınız üçün bizimlə əlaqə saxlayın:<br>
-              📞 <a href="tel:+994517769632" style="color:#3b82f6">+994 51 776 96 32</a><br>
+              📞 <a href="tel:+447828721748" style="color:#3b82f6">+44 7828 721748</a><br>
               💬 WhatsApp ilə də yaza bilərsiniz
             </p>
           </td>
@@ -158,7 +158,7 @@ export function paymentReceiptHtml(data: {
                 <strong style="color:#374151;text-transform:capitalize">${data.paymentMethod}</strong>
               </td></tr>
             </table>
-            <p style="color:#6b7280;font-size:13px">Suallarınız üçün: <a href="tel:+994517769632" style="color:#3b82f6">+994 51 776 96 32</a></p>
+            <p style="color:#6b7280;font-size:13px">Suallarınız üçün: <a href="tel:+447828721748" style="color:#3b82f6">+44 7828 721748</a></p>
           </td>
         </tr>
         <tr>

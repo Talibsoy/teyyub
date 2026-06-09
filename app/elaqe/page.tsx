@@ -33,7 +33,7 @@ export default function ElaqePage() {
     {
       Icon: Phone,
       title: language === "az" ? "Telefon / WhatsApp" : language === "tr" ? "Telefon / WhatsApp" : "Phone / WhatsApp",
-      lines: ["+994 51 776 96 32"]
+      lines: ["+44 7828 721748"]
     },
     {
       Icon: Mail,
