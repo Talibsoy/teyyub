@@ -47,12 +47,13 @@ function todayPlus(days: number) {
   return d.toISOString().split("T")[0];
 }
 
-function HotelCard({ hotel, language, adults, children, childAges }: {
+function HotelCard({ hotel, language, adults, children, childAges, residency }: {
   hotel: HotelOffer;
   language: string;
   adults: number;
   children: number;
   childAges: number[];
+  residency: string;
 }) {
   const perNight = Math.ceil(hotel.price_marked_up / hotel.nights);
   const starsStr = hotel.stars ? "⭐".repeat(Math.min(hotel.stars, 5)) : "";
@@ -63,7 +64,7 @@ function HotelCard({ hotel, language, adults, children, childAges }: {
     ? `Merhaba! "${hotel.name}" oteli ile ilgileniyorum.\nBölge: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıkış: ${hotel.checkout} (${hotel.nights} gece)\nFiyat: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasyon yaptırmak istiyorum.`
     : `Hello! I'm interested in the "${hotel.name}" hotel.\nLocation: ${hotel.destination}\nCheck-in: ${hotel.checkin} | Check-out: ${hotel.checkout} (${hotel.nights} nights)\nPrice: ${hotel.price_marked_up.toLocaleString()} AZN\nI would like to make a booking.`;
 
-  const bookingUrl = `/booking/prebook?hotel_id=${hotel.id}&checkin=${hotel.checkin}&checkout=${hotel.checkout}&hash=${encodeURIComponent(hotel.book_hash || "")}&hotel_name=${encodeURIComponent(hotel.name)}&price=${hotel.price_marked_up}&room=${encodeURIComponent(hotel.room_type || "")}&meal=${encodeURIComponent(hotel.meal || "")}&adults=${adults}&children=${children}&child_ages=${childAges.join(",")}`;
+  const detailUrl = `/oteller/${encodeURIComponent(hotel.id)}?checkin=${hotel.checkin}&checkout=${hotel.checkout}&adults=${adults}&children=${children}&child_ages=${childAges.join(",")}&residency=${residency}`;
 
   return (
     <div style={{
@@ -150,12 +151,10 @@ function HotelCard({ hotel, language, adults, children, childAges }: {
       </div>
 
       <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        {hotel.book_hash && (
-          <a href={bookingUrl}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", borderRadius: 12, padding: "12px", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(2,132,199,0.3)", textAlign: "center" }}>
-            Onlayn Rezervasiya Et
-          </a>
-        )}
+        <a href={detailUrl}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", borderRadius: 12, padding: "12px", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(2,132,199,0.3)", textAlign: "center" }}>
+          {language === "az" ? "Otaqlara bax və bron et" : language === "tr" ? "Odaları gör ve rezervasyon yap" : "View rooms & book"}
+        </a>
         <a href={`https://wa.me/447828721748?text=${encodeURIComponent(waMsg)}`}
           target="_blank" rel="noopener noreferrer"
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#25D366", color: "white", borderRadius: 12, padding: "12px", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 4px 15px rgba(37,211,102,0.3)" }}>
@@ -550,7 +549,7 @@ export default function OtellerPage() {
               · {destination} · {language === "az" ? `${nights} gecə` : language === "tr" ? `${nights} gece` : `${nights} nights`} · {language === "az" ? `${adults} nəfər` : language === "tr" ? `${adults} kişi` : `${adults} guests`}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
-              {hotels.map(h => <HotelCard key={h.id} hotel={h} language={language} adults={adults} children={children} childAges={childAges} />)}
+              {hotels.map(h => <HotelCard key={h.id} hotel={h} language={language} adults={adults} children={children} childAges={childAges} residency={residency} />)}
             </div>
           </>
         )}

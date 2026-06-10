@@ -522,6 +522,142 @@ export async function searchHotelsByRegion(
   }
 }
 
+// ── Hotel page (hp) + static — RateHawk detal axını (otaqlar, rg_ext şəkillər) ──
+
+const MEAL_LABELS: Record<string, string> = {
+  "all-inclusive": "Hər şey daxil (All Inclusive)",
+  "breakfast": "Səhər yeməyi daxil",
+  "breakfast-buffet": "Açıq büfe səhər yeməyi",
+  "half-board": "Yarım pansion (səhər + axşam)",
+  "full-board": "Tam pansion (3 öğün)",
+  "dinner": "Axşam yeməyi daxil",
+  "lunch": "Nahar daxil",
+  "nomeal": "Yemək daxil deyil",
+  "room-only": "Yalnız otaq",
+  "soft-all-inclusive": "Yüngül hər şey daxil",
+  "ultra-all-inclusive": "Ultra hər şey daxil",
+};
+export function mealLabel(code: string): string {
+  const k = (code || "").toLowerCase().replace(/_/g, "-");
+  return MEAL_LABELS[k] || code || "Yemək daxil deyil";
+}
+
+export interface RoomRate {
+  book_hash:    string;
+  room_name:    string;
+  meal:         string;
+  meal_code:    string;
+  rg_ext:       Record<string, number>;
+  price_usd:    number;
+  price_azn:    number;
+  free_cancellation_until: string | null;
+  cancellation_penalty:    string | null;
+  images:       string[];
+}
+
+export interface HotelStatic {
+  hotel_id:    string;
+  name:        string;
+  stars:       number;
+  address:     string;
+  description: string;
+  photos:      string[];
+  amenities:   string[];
+  room_groups: { rg_ext: Record<string, number>; name: string; images: string[] }[];
+}
+
+interface HpRate {
+  book_hash?: string;
+  room_name?: string;
+  meal?:      string;
+  rg_ext?:    Record<string, number>;
+  payment_options?: { payment_types?: Array<{
+    show_amount?: string; amount?: string;
+    cancellation_penalties?: { policies?: Array<{ amount_charge?: string; end_at?: string | null }> };
+  }> };
+}
+interface StaticRoomGroup { rg_ext?: Record<string, number>; name?: string; name_struct?: { main_name?: string }; images?: string[]; }
+interface StaticInfo {
+  hid?: number; name?: string; star_rating?: number; address?: string; description?: string;
+  description_struct?: Array<{ paragraphs?: string[] }>; images?: string[];
+  amenity_groups?: Array<{ amenities?: string[] }>; room_groups?: StaticRoomGroup[];
+}
+
+const img = (url: string): string => (url || "").replace("{size}", "640x400");
+
+// Static: foto + room_groups (rg_ext + şəkillər)
+export async function getHotelStaticFull(hotelId: string): Promise<HotelStatic | null> {
+  try {
+    const res = await ratehawkPost("/hotel/info/", { id: hotelId, language: "en" });
+    if (res.status !== "ok" || !res.data) return null;
+    const h = res.data as StaticInfo;
+    const amenityCodes: string[] = (h.amenity_groups || []).flatMap((g) => g.amenities || []);
+    return {
+      hotel_id:    String(h.hid || hotelId),
+      name:        h.name || "",
+      stars:       h.star_rating || 0,
+      address:     h.address || "",
+      description: (h.description_struct || []).map((d) => (d.paragraphs || []).join(" ")).join("\n\n") || h.description || "",
+      photos:      (h.images || []).slice(0, 12).map(img),
+      amenities:   parseAmenities(amenityCodes).included,
+      room_groups: (h.room_groups || []).map((rg) => ({
+        rg_ext: rg.rg_ext || {},
+        name:   rg.name_struct?.main_name || rg.name || "",
+        images: (rg.images || []).slice(0, 4).map(img),
+      })),
+    };
+  } catch { return null; }
+}
+
+// rg_ext uyğunluğu: ən çox uyğun gələn room_group-un şəkilləri (Anna #3 — düzgün yol)
+function matchRoomImages(rgExt: Record<string, number>, groups: HotelStatic["room_groups"]): string[] {
+  if (!rgExt || !groups?.length) return [];
+  let best: HotelStatic["room_groups"][number] | null = null;
+  let bestScore = -1;
+  for (const g of groups) {
+    let score = 0;
+    for (const k of Object.keys(rgExt)) if (g.rg_ext?.[k] === rgExt[k]) score++;
+    if (score > bestScore) { bestScore = score; best = g; }
+  }
+  return best?.images || [];
+}
+
+// Hotel page: otaq rate-ləri (book_hash ilə) + static şəkillər birləşmiş
+export async function getHotelPage(
+  hotelId: string, checkin: string, checkout: string,
+  guests: SearchGuest[] = [{ adults: 2, children: [] }], residency = "az"
+): Promise<{ static: HotelStatic | null; rooms: RoomRate[] }> {
+  const [staticData, hpRes] = await Promise.all([
+    getHotelStaticFull(hotelId),
+    ratehawkPost("/search/hp/", { id: hotelId, checkin, checkout, residency, language: "en", currency: "USD", guests }),
+  ]);
+  const rooms: RoomRate[] = [];
+  const hotels = (hpRes.status === "ok" && hpRes.data?.hotels) as Array<{ rates?: HpRate[] }> | undefined;
+  const rates = hotels?.[0]?.rates || [];
+  for (const rate of rates) {
+    const pt = rate.payment_options?.payment_types?.[0];
+    const totalUsd = parseFloat(pt?.show_amount || pt?.amount || "0");
+    if (!rate.book_hash || totalUsd <= 0) continue;
+    const usd = Math.ceil(totalUsd * 1.15);
+    const policies = pt?.cancellation_penalties?.policies || [];
+    const freePolicy = policies.find((p) => parseFloat(p.amount_charge || "0") === 0 && p.end_at);
+    const penalty = policies.find((p) => parseFloat(p.amount_charge || "0") > 0);
+    rooms.push({
+      book_hash: rate.book_hash,
+      room_name: rate.room_name || "Standart otaq",
+      meal:      mealLabel(rate.meal || ""),
+      meal_code: rate.meal || "",
+      rg_ext:    rate.rg_ext || {},
+      price_usd: usd,
+      price_azn: Math.ceil(usd * 1.70),
+      free_cancellation_until: freePolicy?.end_at || null,
+      cancellation_penalty:    penalty ? `${Math.ceil(parseFloat(penalty.amount_charge || "0") * 1.70)} AZN` : null,
+      images:    staticData ? matchRoomImages(rate.rg_ext || {}, staticData.room_groups) : [],
+    });
+  }
+  return { static: staticData, rooms };
+}
+
 // Növbəti 30 gün sonra checkin, 7 gecəlik checkout
 export function getDefaultDates(): { checkin: string; checkout: string } {
   const checkin = new Date();
