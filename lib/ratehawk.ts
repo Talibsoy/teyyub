@@ -651,7 +651,7 @@ export async function getHotelPage(
       price_usd: usd,
       price_azn: Math.ceil(usd * 1.70),
       free_cancellation_until: freePolicy?.end_at || null,
-      cancellation_penalty:    penalty ? `${Math.ceil(parseFloat(penalty.amount_charge || "0") * 1.70)} AZN` : null,
+      cancellation_penalty:    penalty ? `${Math.ceil(parseFloat(penalty.amount_charge || "0") * 1.15)} USD` : null,
       images:    staticData ? matchRoomImages(rate.rg_ext || {}, staticData.room_groups) : [],
     });
   }

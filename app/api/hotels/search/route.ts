@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
         return !h.stars || h.stars >= stars;   // ulduz məlum deyilsə (0/null), saxla
       })
       .map((h) => {
-        const originalAzn = Math.round(h.price_usd * 1.70);
-        // RateHawk price_usd is already marked up by 15% in lib/ratehawk.ts (price_usd = totalPrice * 1.15)
-        const priceMarkedUp = Math.ceil(h.price_usd * 1.70);
+        // Valyuta yalnız USD (RateHawk native USD; price_usd artıq +15% markup-ludur)
+        const originalUsd = Math.round(h.price_usd / 1.15);
+        const priceMarkedUp = Math.ceil(h.price_usd);
 
         return {
           // hp/info string id tələb edir (rəqəmli hid yox) — detal səhifəsi üçün
@@ -62,9 +62,9 @@ export async function POST(req: NextRequest) {
           checkin:         h.checkin,
           checkout:        h.checkout,
           nights,
-          price_original:  originalAzn,
+          price_original:  originalUsd,
           price_marked_up: priceMarkedUp,
-          currency:        "AZN",
+          currency:        "USD",
           stars:           h.stars || null,
           rating:          null,
           review_count:    0,

@@ -64,7 +64,7 @@ export default function HotelDetailPage() {
   function bookUrl(r: RoomRate) {
     const q = new URLSearchParams({
       hotel_id: hotelId, checkin, checkout, hash: r.book_hash,
-      hotel_name: info?.name || "Otel", price: String(r.price_azn),
+      hotel_name: info?.name || "Otel", price: String(r.price_usd),
       room: r.room_name, meal: r.meal, adults, children, child_ages: childAges,
     });
     return `/booking/prebook?${q.toString()}`;
@@ -154,7 +154,7 @@ export default function HotelDetailPage() {
                 </div>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
                   <div>
-                    <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#0284c7", lineHeight: 1 }}>{r.price_azn.toLocaleString()} <span style={{ fontSize: 13 }}>AZN</span></p>
+                    <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#0284c7", lineHeight: 1 }}>{r.price_usd.toLocaleString()} <span style={{ fontSize: 13 }}>USD</span></p>
                     <p style={{ margin: "2px 0 0", fontSize: 11, color: "#94a3b8" }}>{nights} gecə · vergi və xidmət haqqı daxil</p>
                   </div>
                   <a href={bookUrl(r)} style={{ background: "linear-gradient(135deg,#0284c7,#4f46e5)", color: "white", borderRadius: 12, padding: "11px 22px", fontWeight: 700, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap", boxShadow: "0 4px 14px rgba(2,132,199,0.3)" }}>Bron et →</a>

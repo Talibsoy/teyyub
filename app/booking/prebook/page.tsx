@@ -147,7 +147,7 @@ function PrebookForm() {
           })),
           partner_order_id,
           price: parseFloat(markedPrice),
-          currency: "AZN",
+          currency: "USD",
           destination: hotelName,
           checkin,
         }),
@@ -413,7 +413,7 @@ function PrebookForm() {
               }}
             >
               <Lock size={16} />
-              {bookingLoading ? "Emal edilir..." : `Sifarişi Təsdiqlə — ${markedPrice} AZN`}
+              {bookingLoading ? "Emal edilir..." : `Sifarişi Təsdiqlə — ${markedPrice} USD`}
             </button>
           </form>
 
@@ -454,7 +454,7 @@ function PrebookForm() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, borderBottom: "1px dashed #e2e8f0", paddingBottom: 12, marginBottom: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", color: "#64748b" }}>
                   <span>Otaq qiyməti ({adultsCount} böyük):</span>
-                  <span>{markedPrice} AZN</span>
+                  <span>{markedPrice} USD</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a", fontWeight: 700 }}>
                   <span>Servis və vergilər:</span>
@@ -464,7 +464,7 @@ function PrebookForm() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Yekun məbləğ:</span>
                 <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: "#0284c7" }}>{markedPrice} AZN</span>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: "#0284c7" }}>{markedPrice} USD</span>
                   <p style={{ margin: 0, fontSize: 10, color: "#94a3b8" }}>bütün vergilər daxil</p>
                 </div>
               </div>

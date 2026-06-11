@@ -83,10 +83,10 @@ function HotelCard({ hotel, language, adults, children, childAges, residency }: 
   const starsStr = hotel.stars ? "⭐".repeat(Math.min(hotel.stars, 5)) : "";
 
   const waMsg = language === "az"
-    ? `Salam! "${hotel.name}" oteli ilə maraqlanıram.\nMəkan: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıxış: ${hotel.checkout} (${hotel.nights} gecə)\nQiymət: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasiya etmək istəyirəm.`
+    ? `Salam! "${hotel.name}" oteli ilə maraqlanıram.\nMəkan: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıxış: ${hotel.checkout} (${hotel.nights} gecə)\nQiymət: ${hotel.price_marked_up.toLocaleString()} USD\nRezervasiya etmək istəyirəm.`
     : language === "tr"
-    ? `Merhaba! "${hotel.name}" oteli ile ilgileniyorum.\nBölge: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıkış: ${hotel.checkout} (${hotel.nights} gece)\nFiyat: ${hotel.price_marked_up.toLocaleString()} AZN\nRezervasyon yaptırmak istiyorum.`
-    : `Hello! I'm interested in the "${hotel.name}" hotel.\nLocation: ${hotel.destination}\nCheck-in: ${hotel.checkin} | Check-out: ${hotel.checkout} (${hotel.nights} nights)\nPrice: ${hotel.price_marked_up.toLocaleString()} AZN\nI would like to make a booking.`;
+    ? `Merhaba! "${hotel.name}" oteli ile ilgileniyorum.\nBölge: ${hotel.destination}\nGiriş: ${hotel.checkin} | Çıkış: ${hotel.checkout} (${hotel.nights} gece)\nFiyat: ${hotel.price_marked_up.toLocaleString()} USD\nRezervasyon yaptırmak istiyorum.`
+    : `Hello! I'm interested in the "${hotel.name}" hotel.\nLocation: ${hotel.destination}\nCheck-in: ${hotel.checkin} | Check-out: ${hotel.checkout} (${hotel.nights} nights)\nPrice: ${hotel.price_marked_up.toLocaleString()} USD\nI would like to make a booking.`;
 
   const detailUrl = `/oteller/${encodeURIComponent(hotel.id)}?checkin=${hotel.checkin}&checkout=${hotel.checkout}&adults=${adults}&children=${children}&child_ages=${childAges.join(",")}&residency=${residency}`;
 
@@ -155,7 +155,7 @@ function HotelCard({ hotel, language, adults, children, childAges, residency }: 
       <div style={{ padding: "12px 20px", flex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>{language === "az" ? "Gecəlik" : language === "tr" ? "Gecelik" : "Per night"}</p>
-          <p style={{ margin: "2px 0 0", fontSize: 14, color: "#64748b", fontWeight: 600 }}>{perNight.toLocaleString()} AZN</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, color: "#64748b", fontWeight: 600 }}>{perNight.toLocaleString()} USD</p>
         </div>
         <div style={{ textAlign: "right" }}>
           <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>
@@ -166,7 +166,7 @@ function HotelCard({ hotel, language, adults, children, childAges, residency }: 
               : `for ${hotel.nights} nights`}
           </p>
           <p style={{ margin: "2px 0 0", fontSize: 24, fontWeight: 800, color: "#0284c7", lineHeight: 1 }}>
-            {hotel.price_marked_up.toLocaleString()} <span style={{ fontSize: 14 }}>AZN</span>
+            {hotel.price_marked_up.toLocaleString()} <span style={{ fontSize: 14 }}>USD</span>
           </p>
           <p style={{ margin: "2px 0 0", fontSize: 10, color: "#94a3b8" }}>
             {language === "az" ? "Xidmət haqqı daxil" : language === "tr" ? "Hizmet bedeli dahil" : "Service fee included"}
@@ -579,7 +579,7 @@ export default function OtellerPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "white" }}>
                 <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{language === "az" ? "Maks. qiymət" : language === "tr" ? "Maks. fiyat" : "Max price"}</span>
                 <input type="number" min={0} value={maxPrice || ""} onChange={e => setMaxPrice(Number(e.target.value) || 0)} placeholder="∞" style={{ width: 90, border: "none", outline: "none", fontSize: 13, fontWeight: 700, color: "#0f172a", background: "transparent" }} />
-                <span style={{ fontSize: 12, color: "#64748b" }}>AZN</span>
+                <span style={{ fontSize: 12, color: "#64748b" }}>USD</span>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
