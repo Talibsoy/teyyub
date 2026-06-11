@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
         const priceMarkedUp = Math.ceil(h.price_usd * 1.70);
 
         return {
-          id:              h.hotel_id,
+          // hp/info string id tələb edir (rəqəmli hid yox) — detal səhifəsi üçün
+          id:              h.hotel_string_id || h.hotel_id,
           name:            h.hotel_name,
           destination:     destName,
           checkin:         h.checkin,
