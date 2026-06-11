@@ -206,6 +206,8 @@ export default function OtellerPage() {
   const [earlyCheckIn, setEarlyCheckIn] = useState("");
   const [lateCheckOut, setLateCheckOut] = useState("");
   const [freeCancellation, setFreeCancellation] = useState(false);
+  const [maxPrice, setMaxPrice] = useState(0);          // 0 = limitsiz
+  const [sortBy,   setSortBy]   = useState("");          // "" | price_asc | price_desc | rating_desc
   const [hotels,   setHotels]   = useState<HotelOffer[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [searched, setSearched] = useState(false);
@@ -566,8 +568,28 @@ export default function OtellerPage() {
                 : "found"}{" "}
               · {destination} · {language === "az" ? `${nights} gecə` : language === "tr" ? `${nights} gece` : `${nights} nights`} · {language === "az" ? `${adults} nəfər` : language === "tr" ? `${adults} kişi` : `${adults} guests`}
             </p>
+            {/* Sıralama + qiymət filtri (RateHawk-style) */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 16 }}>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: "9px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#0f172a", background: "white", fontWeight: 600 }}>
+                <option value="">{language === "az" ? "Sıralama: Populyar" : language === "tr" ? "Sıralama: Popüler" : "Sort: Popular"}</option>
+                <option value="price_asc">{language === "az" ? "Qiymət: ucuzdan bahaya" : language === "tr" ? "Fiyat: ucuzdan pahalıya" : "Price: low to high"}</option>
+                <option value="price_desc">{language === "az" ? "Qiymət: bahadan ucuza" : language === "tr" ? "Fiyat: pahalıdan ucuza" : "Price: high to low"}</option>
+                <option value="rating_desc">{language === "az" ? "Reytinq: yüksək" : language === "tr" ? "Puan: yüksek" : "Rating: high"}</option>
+              </select>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "white" }}>
+                <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{language === "az" ? "Maks. qiymət" : language === "tr" ? "Maks. fiyat" : "Max price"}</span>
+                <input type="number" min={0} value={maxPrice || ""} onChange={e => setMaxPrice(Number(e.target.value) || 0)} placeholder="∞" style={{ width: 90, border: "none", outline: "none", fontSize: 13, fontWeight: 700, color: "#0f172a", background: "transparent" }} />
+                <span style={{ fontSize: 12, color: "#64748b" }}>AZN</span>
+              </div>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
-              {hotels.map(h => <HotelCard key={h.id} hotel={h} language={language} adults={adults} children={children} childAges={childAges} residency={residency} />)}
+              {hotels
+                .filter(h => !maxPrice || h.price_marked_up <= maxPrice)
+                .sort((a, b) =>
+                  sortBy === "price_asc" ? a.price_marked_up - b.price_marked_up :
+                  sortBy === "price_desc" ? b.price_marked_up - a.price_marked_up :
+                  sortBy === "rating_desc" ? (b.rating || 0) - (a.rating || 0) : 0)
+                .map(h => <HotelCard key={h.id} hotel={h} language={language} adults={adults} children={children} childAges={childAges} residency={residency} />)}
             </div>
           </>
         )}
