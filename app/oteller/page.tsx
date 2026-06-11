@@ -47,6 +47,30 @@ function todayPlus(days: number) {
   return d.toISOString().split("T")[0];
 }
 
+// Residency — bütün dünya ölkələri (ISO 3166-1 alpha-2), RateHawk formatına uyğun
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: "az", name: "Azerbaijan" }, { code: "tr", name: "Turkey" }, { code: "ru", name: "Russia" },
+  { code: "us", name: "United States" }, { code: "gb", name: "United Kingdom" }, { code: "ae", name: "United Arab Emirates" },
+  { code: "de", name: "Germany" }, { code: "fr", name: "France" }, { code: "it", name: "Italy" }, { code: "es", name: "Spain" },
+  { code: "nl", name: "Netherlands" }, { code: "be", name: "Belgium" }, { code: "ch", name: "Switzerland" }, { code: "at", name: "Austria" },
+  { code: "se", name: "Sweden" }, { code: "no", name: "Norway" }, { code: "dk", name: "Denmark" }, { code: "fi", name: "Finland" },
+  { code: "pl", name: "Poland" }, { code: "cz", name: "Czechia" }, { code: "pt", name: "Portugal" }, { code: "gr", name: "Greece" },
+  { code: "ie", name: "Ireland" }, { code: "hu", name: "Hungary" }, { code: "ro", name: "Romania" }, { code: "ua", name: "Ukraine" },
+  { code: "ge", name: "Georgia" }, { code: "kz", name: "Kazakhstan" }, { code: "uz", name: "Uzbekistan" }, { code: "by", name: "Belarus" },
+  { code: "sa", name: "Saudi Arabia" }, { code: "qa", name: "Qatar" }, { code: "kw", name: "Kuwait" }, { code: "bh", name: "Bahrain" },
+  { code: "om", name: "Oman" }, { code: "il", name: "Israel" }, { code: "ir", name: "Iran" }, { code: "iq", name: "Iraq" },
+  { code: "eg", name: "Egypt" }, { code: "ma", name: "Morocco" }, { code: "tn", name: "Tunisia" }, { code: "dz", name: "Algeria" },
+  { code: "za", name: "South Africa" }, { code: "ng", name: "Nigeria" }, { code: "ke", name: "Kenya" }, { code: "et", name: "Ethiopia" },
+  { code: "in", name: "India" }, { code: "pk", name: "Pakistan" }, { code: "bd", name: "Bangladesh" }, { code: "lk", name: "Sri Lanka" },
+  { code: "cn", name: "China" }, { code: "jp", name: "Japan" }, { code: "kr", name: "South Korea" }, { code: "hk", name: "Hong Kong" },
+  { code: "tw", name: "Taiwan" }, { code: "th", name: "Thailand" }, { code: "vn", name: "Vietnam" }, { code: "ph", name: "Philippines" },
+  { code: "id", name: "Indonesia" }, { code: "my", name: "Malaysia" }, { code: "sg", name: "Singapore" },
+  { code: "au", name: "Australia" }, { code: "nz", name: "New Zealand" },
+  { code: "ca", name: "Canada" }, { code: "mx", name: "Mexico" }, { code: "br", name: "Brazil" }, { code: "ar", name: "Argentina" },
+  { code: "cl", name: "Chile" }, { code: "co", name: "Colombia" }, { code: "pe", name: "Peru" }, { code: "cu", name: "Cuba" },
+  { code: "mc", name: "Monaco" },
+].sort((a, b) => a.name.localeCompare(b.name));
+
 function HotelCard({ hotel, language, adults, children, childAges, residency }: {
   hotel: HotelOffer;
   language: string;
@@ -362,12 +386,9 @@ export default function OtellerPage() {
               <div>
                 <label style={lbl}>🛂 {language === "az" ? "Vətəndaşlıq" : language === "tr" ? "Vatandaşlık" : "Residency"}</label>
                 <select value={residency} onChange={e => setResidency(e.target.value)} style={inp}>
-                  <option value="az">Azərbaycan (AZ)</option>
-                  <option value="mc">Monako (MC)</option>
-                  <option value="tr">Türkiyə (TR)</option>
-                  <option value="ae">BƏƏ (AE)</option>
-                  <option value="us">ABŞ (US)</option>
-                  <option value="gb">Böyük Britaniya (GB)</option>
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.name} ({c.code.toUpperCase()})</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -393,31 +414,6 @@ export default function OtellerPage() {
                 ))}
               </div>
             )}
-
-            {/* Sıra 2 — axtarış düyməsi */}
-            <div style={{ display: "flex", gap: 14, alignItems: "flex-end", marginBottom: 14 }}>
-              <div style={{ flex: 1 }} />
-              <button onClick={search} disabled={loading} style={{
-                padding: "13px 36px", borderRadius: 12, border: "none",
-                background: loading ? "#cbd5e1" : "linear-gradient(135deg,#0284c7,#4f46e5)",
-                color: "white", fontWeight: 800, fontSize: 15,
-                cursor: loading ? "not-allowed" : "pointer",
-                boxShadow: loading ? "none" : "0 6px 20px rgba(2,132,199,0.4)",
-                transition: "all 0.2s", display: "flex", alignItems: "center", gap: 10,
-              }}>
-                {loading ? (
-                  <>
-                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite" }} />
-                    {language === "az" ? "Axtarılır..." : language === "tr" ? "Aranıyor..." : "Searching..."}
-                  </>
-                ) : (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    {language === "az" ? "Otel Axtar" : language === "tr" ? "Otel Ara" : "Search Hotels"}
-                  </>
-                )}
-              </button>
-            </div>
 
             {/* ── Əlavə parametrlər (RateHawk-style) ── */}
             <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
@@ -515,6 +511,28 @@ export default function OtellerPage() {
             {error && (
               <p style={{ color: "#dc2626", fontSize: 13, marginTop: 12, padding: "10px 14px", background: "#fef2f2", borderRadius: 8, border: "1px solid #fecaca" }}>{error}</p>
             )}
+
+            {/* Axtar düyməsi — formanın altında (RateHawk-style) */}
+            <button onClick={search} disabled={loading} style={{
+              width: "100%", marginTop: 18, padding: "15px", borderRadius: 12, border: "none",
+              background: loading ? "#cbd5e1" : "linear-gradient(135deg,#0284c7,#4f46e5)",
+              color: "white", fontWeight: 800, fontSize: 16,
+              cursor: loading ? "not-allowed" : "pointer",
+              boxShadow: loading ? "none" : "0 6px 20px rgba(2,132,199,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            }}>
+              {loading ? (
+                <>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite" }} />
+                  {language === "az" ? "Axtarılır..." : language === "tr" ? "Aranıyor..." : "Searching..."}
+                </>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  {language === "az" ? "Otel Axtar" : language === "tr" ? "Otel Ara" : "Search Hotels"}
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
