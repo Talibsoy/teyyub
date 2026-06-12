@@ -449,23 +449,39 @@ export default function HomePage() {
                   </div>
 
                   <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Axtarış Parametrləri (AI Parser)</h4>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{language === "az" ? "Axtarış Parametrləri (AI Parser)" : language === "tr" ? "Arama Parametreleri (AI Parser)" : "Search Parameters (AI Parser)"}</h4>
                     <div className="grid grid-cols-2 gap-2.5 text-xs text-slate-600">
-                      <div>📍 Haradan: <span className="font-semibold text-slate-800">{parsedParams.origin}</span></div>
-                      <div>🏁 Haraya: <span className="font-semibold text-slate-800">{parsedParams.destination}</span></div>
-                      <div>📅 Tarix: <span className="font-semibold text-slate-800">{parsedParams.departure_date}</span></div>
-                      <div>🕒 Müddət: <span className="font-semibold text-slate-800">{parsedParams.duration_days} Gün</span></div>
-                      <div>👥 Nəfər: <span className="font-semibold text-slate-800">{parsedParams.travelers_count} nəfər</span></div>
-                      <div>💰 Maks. Büdcə: <span className="font-semibold text-sky-700">${parsedParams.budget}</span></div>
-                      <div>⭐ Otel: <span className="font-semibold text-slate-800">{parsedParams.hotel_stars}★ (Reytinq {parsedParams.hotel_rating}+)</span></div>
-                      <div>🚗 Rent-a-car: <span className="font-semibold text-emerald-600">Bəli</span></div>
+                      <div>📍 {language === "az" ? "Haradan" : language === "tr" ? "Nereden" : "From"}: <span className="font-semibold text-slate-800">{parsedParams.origin}</span></div>
+                      <div>🏁 {language === "az" ? "Haraya" : language === "tr" ? "Nereye" : "To"}: <span className="font-semibold text-slate-800">{parsedParams.destination}</span></div>
+                      <div>📅 {language === "az" ? "Tarix" : language === "tr" ? "Tarih" : "Date"}: <span className="font-semibold text-slate-800">{parsedParams.departure_date}</span></div>
+                      <div>🕒 {language === "az" ? "Müddət" : language === "tr" ? "Süre" : "Duration"}: <span className="font-semibold text-slate-800">{parsedParams.duration_days} {language === "az" ? "Gün" : language === "tr" ? "Gün" : "Days"}</span></div>
+                      <div>👥 {language === "az" ? "Nəfər" : language === "tr" ? "Kişi" : "Travelers"}: <span className="font-semibold text-slate-800">{parsedParams.travelers_count} {language === "az" ? "nəfər" : language === "tr" ? "kişi" : "travelers"}</span></div>
+                      <div>💰 {language === "az" ? "Maks. Büdcə" : language === "tr" ? "Maks. Bütçe" : "Max Budget"}: <span className="font-semibold text-sky-700">${parsedParams.budget}</span></div>
+                      <div>⭐ {language === "az" ? "Otel" : language === "tr" ? "Otel" : "Hotel"}: <span className="font-semibold text-slate-800">{parsedParams.hotel_stars}★ ({language === "az" ? "Reytinq" : language === "tr" ? "Puan" : "Rating"} {parsedParams.hotel_rating}+)</span></div>
+                      <div>🚗 Rent-a-car: <span className="font-semibold text-emerald-600">{language === "az" ? "Bəli" : language === "tr" ? "Evet" : "Yes"}</span></div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Səyahət Marşrutu</h4>
-                    
-                    {[
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{language === "az" ? "Səyahət Marşrutu" : language === "tr" ? "Seyahat Rotası" : "Travel Itinerary"}</h4>
+
+                    {(language === "en" ? [
+                      { day: "Day 1", t: "SFO Flight & Hotel Check-in", d: "Check-in at Stanford Court hotel. Dinner by the Fisherman's Wharf waterfront." },
+                      { day: "Day 2", t: "Golden Gate Bridge Tour", d: "An elegant bike ride across the Golden Gate Bridge to the village of Sausalito." },
+                      { day: "Day 3", t: "Alcatraz & Pier 39", d: "Boat trip to the historic Alcatraz Island prison and sea lions at Pier 39." },
+                      { day: "Day 4", t: "Napa Valley Wine Tour", d: "Drive your rental car through Napa Valley's stunning vineyards for gastronomy and relaxation." },
+                      { day: "Day 5", t: "Union Square Shopping", d: "Premium boutiques of Union Square and food tours in Chinatown." },
+                      { day: "Day 6", t: "Golden Gate Park", d: "Museums, a calm stroll in the Japanese Tea Garden, and a beautiful sunset." },
+                      { day: "Day 7", t: "Check-out & Return", d: "Hotel check-out, car return, and flight back to NYC." },
+                    ] : language === "tr" ? [
+                      { day: "1. Gün", t: "SFO Uçuşu & Otel Check-in", d: "Stanford Court otelinde check-in. Fisherman's Wharf sahilinde akşam yemeği." },
+                      { day: "2. Gün", t: "Golden Gate Köprüsü Turu", d: "Golden Gate Köprüsü'nü geçerek bisikletle Sausalito köyüne zarif bir gezi." },
+                      { day: "3. Gün", t: "Alcatraz & Pier 39", d: "Tarihi Alcatraz adası hapishanesine tekne gezisi ve Pier 39'da deniz aslanları." },
+                      { day: "4. Gün", t: "Napa Valley Şarap Turu", d: "Kiralık arabayla Napa Vadisi'nin muhteşem bağlarında gastronomi ve dinlenme." },
+                      { day: "5. Gün", t: "Union Square Alışverişi", d: "Union Square'in premium butikleri ve Chinatown'da lezzet turları." },
+                      { day: "6. Gün", t: "Golden Gate Parkı", d: "Müzeler, Japon Çay Bahçesi'nde sakin yürüyüş ve estetik gün batımı." },
+                      { day: "7. Gün", t: "Check-out & Dönüş", d: "Otelden çıkış, araç teslimi ve NYC'ye uçuş." },
+                    ] : [
                       { day: "Gün 1", t: "SFO Uçuşu & Otel Check-in", d: "Stanford Court otelində qeydiyyat. Fisherman's Wharf sahilində şam yeməyi." },
                       { day: "Gün 2", t: "Golden Gate Bridge Turu", d: "Zərif velosiped gəzintisi ilə Golden Gate körpüsünü keçərək Sausalito kəndinə səfər." },
                       { day: "Gün 3", t: "Alcatraz & Pier 39", d: "Tarixi Alcatraz adası həbsxanasına qayıqla gediş və Pier 39 dəniz şirləri kəşfi." },
@@ -473,7 +489,7 @@ export default function HomePage() {
                       { day: "Gün 5", t: "Union Square Alış-verişi", d: "Union Square-in premium butikləri və Chinatown-da ləzzət turları." },
                       { day: "Gün 6", t: "Golden Gate Parkı", d: "Muzeylər, Yapon Çay Bağında sakit gəzinti və estetik gün batımı." },
                       { day: "Gün 7", t: "Check-out & Geri Dönüş", d: "Oteldən çıxış, maşının təhvili və NYC-yə uçuş." }
-                    ].map((item, idx) => (
+                    ]).map((item, idx) => (
                       <div key={idx} className="flex gap-3 border-l-2 border-slate-100 pl-4 relative">
                         <div className="absolute w-2.5 h-2.5 rounded-full bg-sky-500 left-[-6px] top-1" />
                         <div>
@@ -489,7 +505,7 @@ export default function HomePage() {
                       onClick={() => setScreen("wizard")}
                       className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-sm shadow-md hover:scale-[1.01] transition-all"
                     >
-                      Planı Təsdiqlə və Bilet Axtarışına Başla
+                      {language === "az" ? "Planı Təsdiqlə və Bilet Axtarışına Başla" : language === "tr" ? "Planı Onayla ve Bilet Aramaya Başla" : "Confirm Plan & Start Flight Search"}
                     </button>
                   )}
                 </div>
@@ -500,10 +516,10 @@ export default function HomePage() {
                   {/* Steps Progress */}
                   <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
                     {[
-                      { step: "flight", label: "1. Aviabiletlər" },
-                      { step: "hotel", label: "2. Otellər" },
-                      { step: "car", label: "3. Avtomobil" },
-                      { step: "checkout", label: "4. Ödəniş & Pasport" }
+                      { step: "flight", label: language === "az" ? "1. Aviabiletlər" : language === "tr" ? "1. Uçak Bileti" : "1. Flights" },
+                      { step: "hotel", label: language === "az" ? "2. Otellər" : language === "tr" ? "2. Oteller" : "2. Hotels" },
+                      { step: "car", label: language === "az" ? "3. Avtomobil" : language === "tr" ? "3. Araç" : "3. Car" },
+                      { step: "checkout", label: language === "az" ? "4. Ödəniş & Pasport" : language === "tr" ? "4. Ödeme & Pasaport" : "4. Payment & Passport" }
                     ].map(s => (
                       <div
                         key={s.step}
@@ -519,7 +535,7 @@ export default function HomePage() {
                   {/* Flight Selector */}
                   {wizardStep === "flight" && (
                     <div>
-                      <h3 className="font-extrabold text-base text-slate-900 mb-4">Uçuş biletini seçin</h3>
+                      <h3 className="font-extrabold text-base text-slate-900 mb-4">{language === "az" ? "Uçuş biletini seçin" : language === "tr" ? "Uçuş biletini seçin" : "Select your flight"}</h3>
 
                       {/* One-way / Round-trip toggle */}
                       <div className="flex gap-2 mb-4">
