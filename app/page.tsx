@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Sparkles, Check, Plane,
@@ -314,6 +314,23 @@ export default function HomePage() {
     setScreen("final");
   };
 
+  // Populyar məkanlar — viewport-a girəndə bir dəfəlik scroll-reveal
+  const destGridRef = useRef<HTMLDivElement>(null);
+  const [destVisible, setDestVisible] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDestVisible(true);
+      return;
+    }
+    const el = destGridRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) { setDestVisible(true); io.disconnect(); } },
+      { threshold: 0.15 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <>
@@ -335,6 +352,17 @@ export default function HomePage() {
         .blob-delay2 { animation-delay: 4s; }
         .fade-in-up { animation: fadeInUp 0.6s ease both; }
         .spin-slow { animation: spinSlow 2s linear infinite; }
+        @keyframes kenburns {
+          0%   { transform: scale(1)    translate(0,0); }
+          50%  { transform: scale(1.08) translate(-1.5%,-1%); }
+          100% { transform: scale(1)    translate(0,0); }
+        }
+        .kenburns { animation: kenburns 20s ease-in-out infinite; will-change: transform; }
+        @media (prefers-reduced-motion: reduce) {
+          .kenburns { animation: none !important; }
+          [data-dest-card] { transition: none !important; }
+          .blob { animation: none !important; }
+        }
       `}</style>
 
       {/* ── HERO & AI INTERACTIVE SECTION ──────────────── */}
@@ -1005,32 +1033,55 @@ export default function HomePage() {
       {/* ── SECTIONS FOR SEO & BRAND CONFIDENCE ─────────── */}
       
       {/* Popular Destinations Bento Grid */}
-      <section className="px-4 py-14 bg-[#f8fafc]">
-        <div className="max-w-5xl mx-auto">
+      <section className="relative overflow-hidden px-4 py-14 bg-[#f8fafc]">
+        {/* Yumşaq üzən işıq fonları */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="blob absolute -top-20 -left-16 w-96 h-96 rounded-full bg-sky-400/10 blur-3xl" />
+          <div className="blob blob-delay2 absolute bottom-0 right-0 w-96 h-96 rounded-full bg-indigo-400/10 blur-3xl" />
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto">
           <p className="text-center text-[12px] text-sky-700 font-bold uppercase tracking-widest mb-2">
             {language === "az" ? "Dünya Sizi Gözləyir" : language === "tr" ? "Dünya Sizi Bekliyor" : "The World Awaits You"}
           </p>
           <h2 className="text-center text-3xl font-extrabold text-slate-800 mb-10">
             {language === "az" ? "Populyar Məkanlar" : language === "tr" ? "Popüler Destinasyonlar" : "Popular Destinations"}
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 auto-rows-[160px] sm:auto-rows-[200px]">
+          <div ref={destGridRef} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 auto-rows-[150px] sm:auto-rows-[190px] [grid-auto-flow:dense]">
             {[
-              { name: language === "az" ? "Dubay" : "Dubai", country: language === "az" ? "BƏƏ" : language === "tr" ? "BAE" : "UAE", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80", big: true },
-              { name: language === "az" ? "Maldiv Adaları" : language === "tr" ? "Maldivler" : "Maldives", country: language === "az" ? "Hind Okeanı" : language === "tr" ? "Hint Okyanusu" : "Indian Ocean", img: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80" },
-              { name: "Antalya", country: language === "az" ? "Türkiyə" : language === "tr" ? "Türkiye" : "Turkey", img: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&q=80" },
-              { name: "Paris", country: language === "az" ? "Fransa" : language === "tr" ? "Fransa" : "France", img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80" },
-              { name: "Bali", country: language === "az" ? "İndoneziya" : language === "tr" ? "Endonezya" : "Indonesia", img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80" },
-              { name: language === "az" ? "Barselona" : "Barcelona", country: language === "az" ? "İspaniya" : language === "tr" ? "İspanya" : "Spain", img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" },
-              { name: language === "az" ? "Tokio" : "Tokyo", country: language === "az" ? "Yaponiya" : language === "tr" ? "Japonya" : "Japan", img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80" },
-              { name: language === "az" ? "Roma" : "Rome", country: language === "az" ? "İtaliya" : language === "tr" ? "İtalya" : "Italy", img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80" },
+              { name: language === "az" ? "Dubay" : "Dubai", country: language === "az" ? "BƏƏ" : language === "tr" ? "BAE" : "UAE", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&q=80&auto=format", big: true },
+              { name: language === "az" ? "Nyu-York" : "New York", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=900&q=80&auto=format", big: true },
+              { name: language === "az" ? "Los-Anceles" : "Los Angeles", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1534190760961-74e8c1b5c3da?w=600&q=80&auto=format" },
+              { name: language === "az" ? "Mayami" : "Miami", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?w=600&q=80&auto=format" },
+              { name: language === "az" ? "Las-Veqas" : "Las Vegas", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=600&q=80&auto=format" },
+              { name: language === "az" ? "San-Fransisko" : "San Francisco", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1521747116042-5a810fda9664?w=600&q=80&auto=format" },
+              { name: language === "az" ? "Maldiv Adaları" : language === "tr" ? "Maldivler" : "Maldives", country: language === "az" ? "Hind Okeanı" : language === "tr" ? "Hint Okyanusu" : "Indian Ocean", img: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80&auto=format" },
+              { name: "Antalya", country: language === "az" ? "Türkiyə" : language === "tr" ? "Türkiye" : "Turkey", img: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&q=80&auto=format" },
+              { name: "Paris", country: language === "az" ? "Fransa" : language === "tr" ? "Fransa" : "France", img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80&auto=format" },
+              { name: "Bali", country: language === "az" ? "İndoneziya" : language === "tr" ? "Endonezya" : "Indonesia", img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80&auto=format" },
+              { name: language === "az" ? "Barselona" : "Barcelona", country: language === "az" ? "İspaniya" : language === "tr" ? "İspanya" : "Spain", img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80&auto=format" },
+              { name: language === "az" ? "Tokio" : "Tokyo", country: language === "az" ? "Yaponiya" : language === "tr" ? "Japonya" : "Japan", img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80&auto=format" },
+              { name: language === "az" ? "Roma" : "Rome", country: language === "az" ? "İtaliya" : language === "tr" ? "İtalya" : "Italy", img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80&auto=format" },
             ].map((d, i) => (
               <a key={d.name} href={`/turlar?dest=${encodeURIComponent(d.name)}`}
-                className={`relative rounded-2xl overflow-hidden group block ${i === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}>
-                <img src={d.img} alt={d.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                data-dest-card
+                className={`relative rounded-2xl overflow-hidden group block transition-all duration-500 ease-out
+                  ${destVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-7"}
+                  hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-sky-900/20 ring-1 ring-white/0 hover:ring-white/25
+                  ${d.big ? "col-span-2 row-span-2 sm:col-span-2 sm:row-span-2" : ""}`}
+                style={{ transitionDelay: destVisible ? `${Math.min(i, 8) * 70}ms` : "0ms" }}>
+                <div className="absolute inset-0 overflow-hidden transition-transform duration-500 group-hover:scale-105">
+                  <img src={d.img} alt={d.name} loading="lazy" decoding="async"
+                    className="kenburns w-full h-full object-cover" style={{ animationDuration: `${18 + (i % 4) * 2}s` }} />
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-                <div className="absolute bottom-3 left-3">
+                <div className="absolute inset-0 bg-gradient-to-t from-sky-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute bottom-3 left-3 right-3">
                   <p className="text-white font-bold text-base leading-tight drop-shadow">{d.name}</p>
                   <p className="text-white/75 text-xs">{d.country}</p>
+                  <span className="flex items-center gap-1 text-white text-xs font-semibold mt-1 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                    {language === "az" ? "Kəşf et" : language === "tr" ? "Keşfet" : "Explore"} <ArrowRight size={12} />
+                  </span>
                 </div>
               </a>
             ))}
