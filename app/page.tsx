@@ -1051,7 +1051,7 @@ export default function HomePage() {
             {[
               { name: language === "az" ? "Dubay" : "Dubai", country: language === "az" ? "BƏƏ" : language === "tr" ? "BAE" : "UAE", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&q=80&auto=format", big: true },
               { name: language === "az" ? "Nyu-York" : "New York", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=900&q=80&auto=format", big: true },
-              { name: language === "az" ? "Los-Anceles" : "Los Angeles", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1534190760961-74e8c1b5c3da?w=600&q=80&auto=format" },
+              { name: language === "az" ? "Los-Anceles" : "Los Angeles", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=600&q=80&auto=format" },
               { name: language === "az" ? "Mayami" : "Miami", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?w=600&q=80&auto=format" },
               { name: language === "az" ? "Las-Veqas" : "Las Vegas", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=600&q=80&auto=format" },
               { name: language === "az" ? "San-Fransisko" : "San Francisco", country: language === "az" ? "ABŞ" : language === "tr" ? "ABD" : "USA", img: "https://images.unsplash.com/photo-1521747116042-5a810fda9664?w=600&q=80&auto=format" },
