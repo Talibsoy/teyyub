@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
     const system = `You are Natoure's AI travel planner. Parse the user's free-text travel request and produce a structured day-by-day plan.
 Today is ${today}. Current year ${year}.
 
+CRITICAL LANGUAGE RULE: EVERY human-readable string value you output — destination_city, departure_date_label, every itinerary "title" and "description", and bot_message — MUST be written entirely in ${lang}. Never output English unless ${lang} is English. (IATA codes stay as uppercase Latin letters.)
+
 Return ONLY valid JSON (no markdown, no commentary) with EXACTLY this shape:
 {
   "params": {
@@ -49,7 +51,7 @@ Rules:
       model: "claude-sonnet-4-6",
       max_tokens: 2200,
       system,
-      messages: [{ role: "user", content: String(prompt) }],
+      messages: [{ role: "user", content: `${String(prompt)}\n\n(Write the entire JSON response — all titles, descriptions and the bot_message — in ${lang}.)` }],
     });
 
     const raw = msg.content[0]?.type === "text" ? msg.content[0].text : "";
