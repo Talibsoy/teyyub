@@ -108,15 +108,21 @@ export default function HomePage() {
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [parsedParams, setParsedParams] = useState({
-    origin: "NYC",
-    destination: "SFO",
-    departure_date: "16 İyul 2026",
+    origin: "New York",
+    origin_iata: "JFK",
+    destination: "San Francisco",   // şəhər adı — otel axtarışı üçün
+    destination_iata: "SFO",        // IATA — uçuş axtarışı üçün
+    departure_date: "16 İyul 2026", // göstərilən etiket
+    departure_date_iso: "2026-07-16",
     duration_days: 7,
     travelers_count: 2,
     budget: 2500,
     hotel_stars: 4,
     hotel_rating: 7
   });
+  // AI-nın yaratdığı dinamik marşrut ({day, t, d}); boşdursa sabit nümunə göstərilir
+  const [itinerary, setItinerary] = useState<{ day: string; t: string; d: string }[]>([]);
+  const [planLoading, setPlanLoading] = useState(false);
 
   // Wizard steps: 'flight' | 'hotel' | 'car' | 'checkout'
   const [wizardStep, setWizardStep] = useState<"flight" | "hotel" | "car" | "checkout">("flight");
@@ -157,23 +163,51 @@ export default function HomePage() {
   const totalInvoicePrice = markupFlightPrice + markupHotelPrice + markupCarPrice;
 
   // Handles AI prompt submit
-  const handlePromptSubmit = () => {
-    // Boş qalsa, göstərilən nümunə (placeholder) mətnini istifadə et
+  const handlePromptSubmit = async () => {
     const effectivePrompt = prompt.trim() || ui.aiPlaceholder;
     const userMsg: Msg = { role: "user", text: effectivePrompt, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
-
-    setTimeout(() => {
+    setPlanLoading(true);
+    try {
+      // AI promptu parse edir + seçilmiş dildə dinamik marşrut yaradır
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: effectivePrompt, language }),
+      });
+      const data = await res.json();
+      if (data.ok && data.params) {
+        const p = data.params;
+        setParsedParams(prev => ({
+          ...prev,
+          origin:           p.origin_city || prev.origin,
+          origin_iata:      p.origin_iata || prev.origin_iata,
+          destination:      p.destination_city || prev.destination,
+          destination_iata: p.destination_iata || prev.destination_iata,
+          departure_date:     p.departure_date_label || prev.departure_date,
+          departure_date_iso: p.departure_date_iso || prev.departure_date_iso,
+          duration_days:    Number(p.duration_days) || prev.duration_days,
+          travelers_count:  Number(p.travelers_count) || prev.travelers_count,
+          budget:           Number(p.budget) || prev.budget,
+          hotel_stars:      Number(p.hotel_stars) || prev.hotel_stars,
+          hotel_rating:     Number(p.hotel_rating) || prev.hotel_rating,
+        }));
+        const dayLabel = (n: number) => language === "en" ? `Day ${n}` : language === "tr" ? `${n}. Gün` : `Gün ${n}`;
+        setItinerary((data.itinerary || []).map((it: { day: number; title: string; description: string }) => ({
+          day: dayLabel(Number(it.day)), t: it.title, d: it.description,
+        })));
+        if (data.bot_message) setMessages(prev => [...prev, { role: "bot", text: data.bot_message, timestamp: new Date() }]);
+      } else {
+        setItinerary([]); // AI uğursuz → sabit nümunə fallback
+      }
+    } catch {
+      setItinerary([]);
+    } finally {
       setIsTyping(false);
-      const botMsg: Msg = {
-        role: "bot",
-        text: "Səyahət tələbləriniz analiz edildi. New York (NYC) ➔ San Francisco (SFO) marşrutu üzrə 16 iyul tarixli 7 günlük planınız hazırdır! Sol tərəfdən marşrut detallarına baxıb, sağ tərəfdən axtarışa başlaya bilərsiniz.",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMsg]);
+      setPlanLoading(false);
       setScreen("itinerary");
-    }, 1800);
+    }
   };
 
   // Search functions
@@ -186,9 +220,7 @@ export default function HomePage() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
-      const dateStr = parsedParams.departure_date.includes("İyul")
-        ? `2026-07-${parsedParams.departure_date.split(" ")[0].padStart(2, "0")}`
-        : parsedParams.departure_date;
+      const dateStr = parsedParams.departure_date_iso;
 
       const res = await fetch("/api/flights/search", {
         method: "POST",
@@ -197,8 +229,8 @@ export default function HomePage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          origin: parsedParams.origin,
-          destination: parsedParams.destination,
+          origin: parsedParams.origin_iata,
+          destination: parsedParams.destination_iata,
           date: dateStr,
           passengers: parsedParams.travelers_count,
           ...(tripType === "roundtrip" ? { return_date: dateStr } : {}),
@@ -232,8 +264,8 @@ export default function HomePage() {
     setHotelError(null);
     setHotelsList([]);
     try {
-      const checkin = "2026-07-16";
-      const checkoutDate = new Date("2026-07-16");
+      const checkin = parsedParams.departure_date_iso;
+      const checkoutDate = new Date(checkin);
       checkoutDate.setDate(checkoutDate.getDate() + parsedParams.duration_days);
       const checkout = checkoutDate.toISOString().split("T")[0];
 
@@ -465,7 +497,7 @@ export default function HomePage() {
                   <div className="space-y-4">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{language === "az" ? "Səyahət Marşrutu" : language === "tr" ? "Seyahat Rotası" : "Travel Itinerary"}</h4>
 
-                    {(language === "en" ? [
+                    {(itinerary.length > 0 ? itinerary : language === "en" ? [
                       { day: "Day 1", t: "SFO Flight & Hotel Check-in", d: "Check-in at Stanford Court hotel. Dinner by the Fisherman's Wharf waterfront." },
                       { day: "Day 2", t: "Golden Gate Bridge Tour", d: "An elegant bike ride across the Golden Gate Bridge to the village of Sausalito." },
                       { day: "Day 3", t: "Alcatraz & Pier 39", d: "Boat trip to the historic Alcatraz Island prison and sea lions at Pier 39." },
@@ -558,12 +590,12 @@ export default function HomePage() {
 
                       <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
                         <div className="text-xs text-slate-500 space-y-0.5">
-                          <div>Marşrut: <span className="font-bold text-slate-700">{parsedParams.origin} ➔ {parsedParams.destination}</span></div>
-                          <div>Tarix: <span className="font-bold text-slate-700">{parsedParams.departure_date}</span></div>
+                          <div>{language === "az" ? "Marşrut" : language === "tr" ? "Rota" : "Route"}: <span className="font-bold text-slate-700">{parsedParams.origin} ➔ {parsedParams.destination}</span></div>
+                          <div>{language === "az" ? "Tarix" : language === "tr" ? "Tarih" : "Date"}: <span className="font-bold text-slate-700">{parsedParams.departure_date}</span></div>
                           {tripType === "roundtrip" && (
-                            <div className="text-[#0284c7] font-semibold">↩ Gediş-dönüş bilet axtarılacaq</div>
+                            <div className="text-[#0284c7] font-semibold">↩ {language === "az" ? "Gediş-dönüş bilet axtarılacaq" : language === "tr" ? "Gidiş-dönüş bilet aranacak" : "Round-trip flight will be searched"}</div>
                           )}
-                          <div>Sərnişin: <span className="font-bold text-slate-700">{parsedParams.travelers_count} nəfər</span></div>
+                          <div>{language === "az" ? "Sərnişin" : language === "tr" ? "Yolcu" : "Passengers"}: <span className="font-bold text-slate-700">{parsedParams.travelers_count} {language === "az" ? "nəfər" : language === "tr" ? "kişi" : ""}</span></div>
                         </div>
                         <button
                           onClick={searchFlights}
@@ -617,7 +649,7 @@ export default function HomePage() {
                               onClick={() => setWizardStep("hotel")}
                               className="mt-6 w-full py-3 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition"
                             >
-                              Otellərə Keç
+                              {language === "az" ? "Otellərə Keç" : language === "tr" ? "Otellere Geç" : "Continue to Hotels"}
                             </button>
                           )}
                         </div>
