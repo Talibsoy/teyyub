@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingFinish, pollBookingStatus } from "@/lib/ratehawk-booking";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendTelegramAlert } from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
@@ -58,15 +58,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Supabase-ə yaz
+    // 3. Supabase-ə yaz — service-role client (RLS-i keçir; anon client bookings-ə
+    //    insert edə bilmir → əvvəllər otel bronları səssizcə yazılmırdı). Xətanı yoxla.
     const primaryOrderId = orderIds[0] || partner_order_id;
-    await supabase.from("bookings").insert([{
+    const { error: insertError } = await getSupabaseAdmin().from("bookings").insert([{
       booking_number: primaryOrderId,
       status:         statusResult.ok ? "confirmed" : "failed",
-      notes:          JSON.stringify({ order_ids: orderIds, etg_status: statusResult.status }),
+      notes:          JSON.stringify({
+        type:        "hotel",
+        order_ids:   orderIds,
+        etg_status:  statusResult.status,
+        hotel:       body.destination || "",
+        checkin:     body.checkin || "",
+        guest:       guests[0] ? `${guests[0].first_name} ${guests[0].last_name}` : "",
+        phone,
+      }),
       total_price:    body.price || 0,
       currency:       body.currency || "USD",
-    }]).select().single();
+    }]);
+    if (insertError) {
+      // Booking ETG-də artıq yaranıb — DB yazısı uğursuz olsa belə müştəriyə "ok" qaytarırıq,
+      // amma itməsin deyə loglayır və Telegram-a xəbər veririk.
+      console.error("[Booking Finish] DB insert failed:", insertError.message);
+      sendTelegramAlert("Booking DB xətası", `Order ${primaryOrderId} ETG-də yarandı, amma DB-yə yazılmadı: ${insertError.message}`, {
+        name: "", phone, email: email || "", destination: body.destination || "", travel_date: body.checkin || "",
+      }).catch(() => {});
+    }
 
     // 4. Uğursuzluq halları
     if (!statusResult.ok) {
