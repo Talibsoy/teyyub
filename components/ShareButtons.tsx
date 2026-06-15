@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 
-export default function ShareButtons({ tourId, tourName, priceAzn, language = "az" }: {
+export default function ShareButtons({ tourId, tourName, priceUsd, language = "az" }: {
   tourId: string;
   tourName: string;
-  priceAzn: number;
+  priceUsd: number;
   language?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const url = `https://www.natourefly.com/turlar/${tourId}`;
-  const text = `${tourName} — ${priceAzn} AZN\n${url}`;
+  const text = `${tourName} — $${priceUsd}\n${url}`;
 
   function copyLink() {
     navigator.clipboard.writeText(url).then(() => {

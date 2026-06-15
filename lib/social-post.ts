@@ -5,6 +5,8 @@ const BOT_TOKEN         = process.env.TELEGRAM_BOT_TOKEN     || "";
 const CHANNEL_ID        = process.env.TELEGRAM_CHANNEL_ID    || process.env.TELEGRAM_CHAT_ID || "";
 const APP_URL           = process.env.NEXT_PUBLIC_APP_URL    || "https://www.natourefly.com";
 
+import { aznToUsd } from "./markup";
+
 export interface TourPostData {
   id: string;
   name: string;
@@ -25,7 +27,7 @@ function buildCaption(tour: TourPostData): string {
   return [
     `✈️ *${tour.name}*`,
     `📍 ${tour.destination}`,
-    `💰 ${tour.price_azn} AZN`,
+    `💰 $${aznToUsd(tour.price_azn)}`,
     dateStr,
     tour.description ? `\n${tour.description}` : "",
     `\n🔗 ${link}`,

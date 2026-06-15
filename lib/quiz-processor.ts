@@ -173,25 +173,25 @@ export const QUIZ_QUESTIONS = [
     options: [
       {
         id: "Q5_A",
-        label: "500 AZN-dən az",
+        label: "$300-dən az",
         emoji: "💵",
         score_impact: { pref_budget_sensitivity: 0.4 },
       },
       {
         id: "Q5_B",
-        label: "500 – 1500 AZN",
+        label: "$300 – $900",
         emoji: "💵💵",
         score_impact: { pref_budget_sensitivity: 0.1 },
       },
       {
         id: "Q5_C",
-        label: "1500 – 3000 AZN",
+        label: "$900 – $1800",
         emoji: "💎",
         score_impact: { pref_budget_sensitivity: -0.1 },
       },
       {
         id: "Q5_D",
-        label: "3000 AZN+",
+        label: "$1800+",
         emoji: "💎💎",
         score_impact: {
           pref_budget_sensitivity: -0.3,

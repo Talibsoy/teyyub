@@ -9,6 +9,7 @@ import type { Archetype } from "@/lib/quiz-processor";
 import { ARCHETYPE_LABELS } from "@/lib/quiz-processor";
 import { tracker } from "@/lib/tracking-client";
 import { useLanguage } from "@/components/LanguageContext";
+import { aznToUsd } from "@/lib/markup";
 
 interface Tour {
   id: string;
@@ -188,8 +189,8 @@ function TurlarContent() {
         const q = search.toLowerCase();
         if (!t.name.toLowerCase().includes(q) && !t.destination.toLowerCase().includes(q)) return false;
       }
-      if (minPrice && t.price_azn < Number(minPrice)) return false;
-      if (maxPrice && t.price_azn > Number(maxPrice)) return false;
+      if (minPrice && aznToUsd(t.price_azn) < Number(minPrice)) return false;
+      if (maxPrice && aznToUsd(t.price_azn) > Number(maxPrice)) return false;
       if (durFilter !== "hamisi") {
         const d = getDuration(t.start_date, t.end_date);
         if (durFilter === "1-5"  && !(d >= 1 && d <= 5)) return false;
@@ -310,7 +311,7 @@ function TurlarContent() {
             </span>
             <input
               type="number"
-              placeholder={language === "az" ? "Min (AZN)" : language === "tr" ? "Min (AZN)" : "Min (AZN)"}
+              placeholder={language === "az" ? "Min ($)" : language === "tr" ? "Min ($)" : "Min ($)"}
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
               className="pl-10 pr-3 py-2.5 rounded-xl text-sm outline-none w-full sm:w-32"
@@ -323,7 +324,7 @@ function TurlarContent() {
             </span>
             <input
               type="number"
-              placeholder={language === "az" ? "Maks (AZN)" : language === "tr" ? "Maks (AZN)" : "Max (AZN)"}
+              placeholder={language === "az" ? "Maks ($)" : language === "tr" ? "Maks ($)" : "Max ($)"}
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
               className="pl-12 pr-4 py-2.5 rounded-xl text-sm outline-none w-full sm:w-36"
@@ -427,7 +428,7 @@ function TurlarContent() {
                   </div>
                   <div className="p-4 pt-0">
                     <div className="flex items-center justify-between mb-3 pt-3" style={{ borderTop: "1px solid #e2e8f0" }}>
-                      <span className="text-lg font-bold" style={{ color: "#0284c7" }}>{tour.price_azn} AZN</span>
+                      <span className="text-lg font-bold" style={{ color: "#0284c7" }}>{`$${aznToUsd(tour.price_azn)}`}</span>
                       <span className="text-xs" style={{ color: "#555" }}>
                         {language === "az" ? "/nəfər" : language === "tr" ? "/kişi" : "/person"}
                       </span>

@@ -7,6 +7,7 @@
 
 import { getSupabaseAdmin } from "./supabase";
 import { searchKnowledge } from "./knowledge";
+import { aznToUsd } from "./markup";
 
 interface Tour {
   name:        string;
@@ -75,7 +76,7 @@ async function getToursFromDB(userMessage?: string): Promise<string> {
       const available = t.max_seats - t.booked_seats;
       const parts = [
         `${t.name} (${t.destination})`,
-        `  Qiymət: ${t.price_azn} AZN${t.price_usd ? ` / ${t.price_usd} USD` : ""}`,
+        `  Qiymət: $${t.price_usd || aznToUsd(t.price_azn)} USD`,
         `  Otel: ${t.hotel || "məlum deyil"}`,
       ];
       if (t.start_date) {
@@ -104,7 +105,7 @@ async function getToursFromDB(userMessage?: string): Promise<string> {
       const parts = [
         `${p.name} [GİZLİ PAKET] (${p.destination})`,
         `  Növ: ${typeLabel[p.package_type] || p.package_type}`,
-        `  Qiymət: ${p.price_azn.toLocaleString()} AZN`,
+        `  Qiymət: $${aznToUsd(p.price_azn)} USD`,
       ];
       if (p.duration_nights) parts.push(`  Müddət: ${p.duration_nights} gecə`);
       if (p.flight_info)     parts.push(`  Uçuş: ${p.flight_info}`);

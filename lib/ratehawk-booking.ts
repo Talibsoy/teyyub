@@ -76,14 +76,52 @@ interface EtgResponse {
 // 1. PREBOOK
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface TaxItem {
+  name:     string;
+  amount:   number;
+  currency: string;
+  included: boolean;   // included_by_supplier — qiymətə daxildir / üstünə əlavə olunur
+}
+
+export interface CancellationStep {
+  end_at: string;   // ISO 8601 UTC — bu vaxtdan sonra bu cərimə tutulur
+  charge: number;
+}
+
 export interface PrebookResult {
   ok:                    boolean;
   book_hash?:            string;
   price?:                number;
   currency?:             string;
-  cancellation_deadline?: string;   // "2026-05-10T23:59:00" — bu tarixə qədər pulsuz ləğv
+  cancellation_deadline?: string;   // "2026-05-10T23:59:00" UTC — bu tarixə qədər pulsuz ləğv
+  cancellation_policies?: CancellationStep[];
+  taxes?:                TaxItem[];
   non_refundable?:        boolean;
   error?:                string;
+}
+
+// ETG prebook cavabında rate (book_hash + payment_options) obyektinin tipi
+interface EtgRate {
+  book_hash?: string;
+  payment_options?: {
+    payment_types?: Array<{
+      amount:        string;
+      currency_code: string;
+      type:          string;
+      cancellation_penalties?: {
+        free_cancellation_before?: string;
+        policies?: Array<{ end_at: string; amount_charge: string }>;
+      };
+      tax_data?: {
+        taxes?: Array<{
+          name:                 string;
+          amount:               string;
+          currency_code:        string;
+          included_by_supplier: boolean;
+        }>;
+      };
+    }>;
+  };
 }
 
 export async function prebook(hash: string): Promise<PrebookResult> {
@@ -94,36 +132,41 @@ export async function prebook(hash: string): Promise<PrebookResult> {
       return { ok: false, error: res.error || "prebook_failed" };
     }
 
-    const d = res.data as {
-      book_hash: string;
-      payment_options?: {
-        payment_types?: Array<{
-          amount:       string;
-          currency_code: string;
-          type:         string;
-          cancellation_penalties?: {
-            free_cancellation_before?: string;
-            policies?: Array<{ end_at: string; amount_charge: string }>;
-          };
-        }>;
-      };
-    };
+    // ETG prebook book_hash-i data.hotels[0].rates[0]-də qaytarır (üst səviyyədə yox).
+    // Köhnə kod d.book_hash (üst səviyyə) oxuyurdu → həmişə undefined → "no_book_hash".
+    const data = res.data as { hotels?: Array<{ rates?: EtgRate[] }> } & EtgRate;
+    const rate: EtgRate = data.hotels?.[0]?.rates?.[0] ?? data;
+    const bookHash = rate.book_hash;
 
-    const payType  = d.payment_options?.payment_types?.[0];
+    if (!bookHash) {
+      return { ok: false, error: "no_book_hash" };
+    }
+
+    const payType  = rate.payment_options?.payment_types?.[0];
     const cancel   = payType?.cancellation_penalties;
     const nonRefundable = !cancel?.free_cancellation_before &&
                           (cancel?.policies?.length ?? 0) > 0;
 
-    if (!d.book_hash) {
-      return { ok: false, error: "no_book_hash" };
-    }
+    const taxes: TaxItem[] = (payType?.tax_data?.taxes ?? []).map((t) => ({
+      name:     t.name,
+      amount:   parseFloat(t.amount || "0"),
+      currency: t.currency_code || payType?.currency_code || "USD",
+      included: !!t.included_by_supplier,
+    }));
+
+    const policies: CancellationStep[] = (cancel?.policies ?? []).map((p) => ({
+      end_at: p.end_at,
+      charge: parseFloat(p.amount_charge || "0"),
+    }));
 
     return {
       ok:                    true,
-      book_hash:             d.book_hash,
+      book_hash:             bookHash,
       price:                 parseFloat(payType?.amount || "0"),
       currency:              payType?.currency_code || "USD",
       cancellation_deadline: cancel?.free_cancellation_before,
+      cancellation_policies: policies,
+      taxes,
       non_refundable:        nonRefundable,
     };
   } catch (err) {

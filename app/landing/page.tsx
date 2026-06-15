@@ -41,7 +41,7 @@ const MODAL_RESULT: ModalData = {
   destination: "Antalya, Türkiyə",
   hotel: "Rixos Premium Belek",
   img: "https://images.unsplash.com/photo-1571366343168-631c5bcca7a4?w=900&q=85",
-  price: "3.250 AZN",
+  price: "$1,900",
   rating: 5,
   review: "Sizin istəyinizə əsasən Rixos Premium Belek ideal seçimdir — hər şey daxil, şəxsi çimərlik və romantik atmosfer. Gediş-dönüş uçuş daxildir.",
 };
@@ -187,7 +187,7 @@ function HeroSection({ onResult }: { onResult: () => void }) {
           <textarea
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            placeholder="Məsələn: Gələn ay yoldaşımla romantik və isti bir yerə getmək istəyirik, büdcəmiz 2000 AZN-dir..."
+            placeholder="Məsələn: Gələn ay yoldaşımla romantik və isti bir yerə getmək istəyirik, büdcəmiz $2000-dır..."
             style={{
               width: "100%", minHeight: 120, padding: "20px 24px",
               border: "none", outline: "none", resize: "none",

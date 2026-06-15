@@ -3,6 +3,19 @@
 
 export const SERVICE_FEE_PERCENTAGE = 0.10; // 10% Service Fee
 
+// Interim display-only FX rate. Legacy data (tours, bookings) is stored in AZN
+// because the Epoint gateway charges AZN; the customer-facing site shows USD.
+// This rate matches the codebase fallback (FALLBACK_AZN["USD"]) and is used ONLY
+// for display — never for the amount sent to the payment gateway.
+// TODO: drop once the USD gateway replaces Epoint and data is stored in USD.
+export const AZN_USD_RATE = 1.70;
+
+/** Convert a stored AZN price to a rounded USD figure for display only. */
+export function aznToUsd(azn: number): number {
+  if (isNaN(azn) || azn <= 0) return 0;
+  return Math.round(azn / AZN_USD_RATE);
+}
+
 /**
  * Applies the 10% service fee markup to a raw provider price and rounds it.
  * @param rawPrice The B2B provider net price (USD/AZN).

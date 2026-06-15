@@ -11,8 +11,6 @@ import { searchBuses } from "./buses";
 import {
   checkTourAvailability,
   getWeatherForecast,
-  getExchangeRate,
-  calculatePackage,
   saveLeadToCRM,
   getVisaInfo,
 } from "./tools";
@@ -35,17 +33,16 @@ Your goal is to guide every conversation into a successful booking (flights, hot
 - Email: info@natourefly.com. Website: natourefly.com.
 
 === LANGUANGE & CURRENCY POLICY ===
-1. PRIMARY LANGUAGE & CURRENCY: Default to English and USD ($) for global/US travelers.
-2. DYNAMIC LANGUAGE FALLBACK: If the user addresses you in Azerbaijani (or another language), instantly switch to that language and adopt the regional currency (e.g. AZN (₼) for Azerbaijani).
-3. EXCHANGR RATES: Use the get_exchange_rate tool if you need to convert between USD and AZN.
-4. All prices must include a 15% Flynatoure concierge service fee (already calculated by tools). Mention that "all taxes and service fees are included".
+1. CURRENCY: ALWAYS quote every price in US Dollars ($/USD). Never show AZN (₼/manat) or any other currency, and never convert between currencies — the tools already return final USD prices.
+2. DYNAMIC LANGUAGE FALLBACK: If the user addresses you in Azerbaijani (or another language), instantly switch to that language — but keep ALL prices in USD ($) regardless of language.
+3. All prices must include a 15% Flynatoure concierge service fee (already calculated by tools). Mention that "all taxes and service fees are included".
 
 === AZƏRBAYCAN DİLİ QAYDALARI (IF CHATTING IN AZERBAIJANI) ===
 Ahəng Qanunu, Rəsmi "Siz" müraciəti (Siz, Sizin, Sizə), və fel zamanı qaydalarına tam riayət et:
 - AHƏNG QANUNU: tur+lar, otel+lər, müştəri+yə, Bakı+dan
 - FEL ZAMANLARI: ✓ gəlir, ✓ getdi, ✓ edəcəyik (NOT: edəcik), ✓ deyil (NOT: deil)
 - DÜZGÜN YAZILIŞ: ✓ zəhmət olmasa, ✓ hörmətlə, ✓ salam (NOT: merhaba), ✓ əlaqə saxlayacağıq (NOT: iletişime geçeceğiz), ✓ nəfər (NOT: kişi)
-- Qiymət göstərəndə AZN manat simvolu və ya AZN qeyd et. Mötərizədə USD qarşılığını göstər.
+- Qiymət göstərəndə HƏMİŞƏ ABŞ dolları ($/USD) ilə göstər. AZN/manat işlətmə.
 
 === INITIAL LEAD QUALIFICATION ===
 In your very first message, gracefully ask for:
@@ -238,15 +235,6 @@ const ALL_TOOLS: Anthropic.Tool[] = [
     }
   },
   {
-    name: "get_exchange_rate",
-    description: "Fetches current USD/EUR to AZN exchange rates for currency conversion calculations.",
-    input_schema: {
-      type: "object" as const,
-      properties: {},
-      required: []
-    }
-  },
-  {
     name: "calculate_package",
     description: "Calculates total package price combining flights, hotels, and custom options in USD/AZN.",
     input_schema: {
@@ -348,7 +336,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
           return `No hotels found in ${input.destination} for dates ${input.checkin} - ${input.checkout}.`;
         }
         return hotels.map((h: { name: string; price_marked_up: number; nights: number; rating: number | null; stars: number | null; id: string }) =>
-          `[HOTEL_ID:${h.id}] ${h.name} | $${Math.ceil(h.price_marked_up / 1.7)} USD (${h.nights} nights, all fees included) | Rating: ${h.rating ?? "—"}/10 | ${h.stars ? h.stars + "★" : ""}`
+          `[HOTEL_ID:${h.id}] ${h.name} | $${h.price_marked_up} USD (${h.nights} nights, all fees included) | Rating: ${h.rating ?? "—"}/10 | ${h.stars ? h.stars + "★" : ""}`
         ).join("\n");
       } catch {
         return "Hotel search encountered an issue. Please try again.";
@@ -399,9 +387,6 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
 
     case "get_weather":
       return getWeatherForecast(input.city as string, input.date as string | undefined);
-
-    case "get_exchange_rate":
-      return getExchangeRate();
 
     case "calculate_package": {
       const flight = (input.flight_total_usd as number) || 0;

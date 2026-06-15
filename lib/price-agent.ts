@@ -6,6 +6,7 @@
  */
 
 import { searchHotels, getHotelDetails, TRACKED_DESTINATIONS, HotelOffer } from "./ratehawk";
+import { aznToUsd } from "./markup";
 import { searchFlights, FlightOffer }                                        from "./duffel";
 
 // ─── CBAR məzənnəsi ─────────────────────────────────────────────────────────
@@ -146,8 +147,8 @@ function buildNaturalText(report: PriceReport): string {
         ? new Date(f.arrival_time  ).toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" }) : "";
       const time = dep && arr ? ` | ${dep} → ${arr}` : "";
 
-      const perPerson = Math.round(f.price_azn / guests);
-      lines.push(`${i + 1}. **${f.airline}** — ${perPerson} AZN/nəfər (${guests} nəfər cəmi: ${f.price_azn} AZN)`);
+      const perPerson = aznToUsd(Math.round(f.price_azn / guests));
+      lines.push(`${i + 1}. **${f.airline}** — $${perPerson}/nəfər (${guests} nəfər cəmi: $${aznToUsd(f.price_azn)})`);
       lines.push(`   ${f.stop_label}${time}${f.duration_label ? ` (${f.duration_label})` : ""}`);
       lines.push(`   🧳 ${f.baggage_summary}`);
       if (f.extra_bag_info) lines.push(`   ${f.extra_bag_info}`);
@@ -160,7 +161,7 @@ function buildNaturalText(report: PriceReport): string {
     lines.push("🏨 **OTEL VARİANTLARI** (artan qiymət sırası ilə):\n");
     hotels.forEach((h, i) => {
       lines.push(`${i + 1}. **${h.hotel_name}** — ${h.star_label}`);
-      lines.push(`   💰 ${h.price_azn} AZN (${nights} gecə, ${guests} nəfər)`);
+      lines.push(`   💰 $${aznToUsd(h.price_azn)} (${nights} gecə, ${guests} nəfər)`);
       lines.push(`   📍 ${h.address || destination}`);
       lines.push(`   ${h.sea_proximity}`);
       lines.push(`   🍽️ Yemək: **${h.meal_plan}**`);
@@ -186,7 +187,7 @@ function buildNaturalText(report: PriceReport): string {
   if (packages.length > 0) {
     lines.push("📦 **HAZIR PAKETLƏR** (uçuş + otel birlikdə):\n");
     packages.forEach(p => {
-      lines.push(`**${p.type} Paket** → ${p.per_person_azn} AZN/nəfər · cəmi ${p.total_azn} AZN`);
+      lines.push(`**${p.type} Paket** → $${aznToUsd(p.per_person_azn)}/nəfər · cəmi $${aznToUsd(p.total_azn)}`);
       lines.push(`  ✈️ ${p.flight.airline} (${p.flight.stop_label})`);
       lines.push(`  🏨 ${p.hotel.hotel_name} · ${p.hotel.star_label} · ${p.hotel.meal_plan}`);
       lines.push(`  ${p.hotel.sea_proximity}`);
@@ -279,7 +280,7 @@ export async function analyzePrices(params: {
         cabin_baggage_pieces:    f.cabin_baggage,
         checked_baggage_pieces:  f.checked_baggage,
         extra_bag_info:          f.extra_bag_kg > 0
-          ? `Əlavə baqaj əlavə edə bilərsiniz: ${f.extra_bag_kg} kq — ${f.extra_bag_azn} AZN`
+          ? `Əlavə baqaj əlavə edə bilərsiniz: ${f.extra_bag_kg} kq — $${aznToUsd(f.extra_bag_azn)}`
           : "",
         baggage_summary:         bagSummary,
         price_azn:               Math.round(f.price_azn),
@@ -330,9 +331,9 @@ export async function analyzePrices(params: {
 
   const summary = [
     `${destination} · ${checkin}–${checkout} · ${nights} gecə · ${guests} nəfər`,
-    cheapFlight ? `✈️ Ən ucuz: ${cheapFlight.airline} — ${cheapFlight.price_azn} AZN` : null,
-    cheapHotel  ? `🏨 Ən ucuz: ${cheapHotel.hotel_name} (${cheapHotel.star_label}) — ${cheapHotel.price_azn} AZN` : null,
-    budgetPkg   ? `💰 Büdcə paketi: ${budgetPkg.per_person_azn} AZN/nəfər` : null,
+    cheapFlight ? `✈️ Ən ucuz: ${cheapFlight.airline} — $${aznToUsd(cheapFlight.price_azn)}` : null,
+    cheapHotel  ? `🏨 Ən ucuz: ${cheapHotel.hotel_name} (${cheapHotel.star_label}) — $${aznToUsd(cheapHotel.price_azn)}` : null,
+    budgetPkg   ? `💰 Büdcə paketi: $${aznToUsd(budgetPkg.per_person_azn)}/nəfər` : null,
   ].filter(Boolean).join("\n");
 
   const report: PriceReport = {

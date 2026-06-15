@@ -456,10 +456,21 @@ function PrebookForm() {
                   <span>Otaq qiyməti ({adultsCount} böyük):</span>
                   <span>{markedPrice} USD</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a", fontWeight: 700 }}>
-                  <span>Servis və vergilər:</span>
-                  <span>Daxildir</span>
-                </div>
+                {Array.isArray(prebookData?.taxes) && prebookData.taxes.length > 0 ? (
+                  prebookData.taxes.map((t: { name: string; amount: number; currency: string; included: boolean }, i: number) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", color: t.included ? "#16a34a" : "#475569" }}>
+                      <span>{t.name} {t.included ? "(qiymətə daxil)" : "(əlavə ödəniş)"}:</span>
+                      <span style={{ fontWeight: 600 }}>
+                        {t.amount > 0 ? `${t.amount.toFixed(2)} ${t.currency}` : (t.included ? "Daxildir" : "—")}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a", fontWeight: 700 }}>
+                    <span>Servis və vergilər:</span>
+                    <span>Qiymətə daxildir</span>
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Yekun məbləğ:</span>
@@ -468,6 +479,37 @@ function PrebookForm() {
                   <p style={{ margin: 0, fontSize: 10, color: "#94a3b8" }}>bütün vergilər daxil</p>
                 </div>
               </div>
+            </div>
+
+            {/* Cancellation Policy Card — ETG tələbi: tarix + saat + UTC+0 */}
+            <div style={{ background: "white", borderRadius: 20, border: "1px solid #e2e8f0", padding: 20 }}>
+              <h4 style={{ margin: "0 0 10px", fontSize: 11, color: "#94a3b8", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>Ləğv Siyasəti</h4>
+              {prebookData?.non_refundable ? (
+                <p style={{ margin: 0, fontSize: 13, color: "#dc2626", fontWeight: 700, lineHeight: 1.5 }}>
+                  ⚠️ Geri qaytarılmayan tarif — ləğv və ya dəyişiklik mümkün deyil.
+                </p>
+              ) : prebookData?.cancellation_deadline ? (
+                <>
+                  <p style={{ margin: "0 0 6px", fontSize: 13, color: "#16a34a", fontWeight: 700, lineHeight: 1.5 }}>
+                    ✓ Pulsuz ləğv: {fmtUtc(prebookData.cancellation_deadline)} tarixinə qədər
+                  </p>
+                  {Array.isArray(prebookData?.cancellation_policies) && prebookData.cancellation_policies.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8, fontSize: 12, color: "#64748b" }}>
+                      {prebookData.cancellation_policies.map((p: { end_at: string; charge: number }, i: number) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span>{fmtUtc(p.end_at)} tarixinədək ləğv:</span>
+                          <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                            {p.charge > 0 ? `${p.charge.toFixed(2)} USD cərimə` : "Pulsuz"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p style={{ margin: "10px 0 0", fontSize: 10, color: "#94a3b8" }}>Bütün vaxtlar UTC+0 (Qrinviç orta vaxtı) zaman qurşağındadır.</p>
+                </>
+              ) : (
+                <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>Ləğv şərtləri rezervasiya təsdiqi zamanı göstəriləcək.</p>
+              )}
             </div>
           </div>
         </div>
@@ -495,6 +537,21 @@ const lbl: React.CSSProperties = {
   display: "block", fontSize: 10, fontWeight: 600,
   color: "#94a3b8", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5,
 };
+
+// ETG ləğv/vergi vaxtları UTC-dədir. Müştəriyə tam tarix + saat + UTC+0 göstərilir.
+function fmtUtc(iso?: string): string {
+  if (!iso) return "";
+  // ETG timestamp-ları çox vaxt zona suffiksi olmadan gəlir, amma UTC-dir → "Z" əlavə et
+  const normalized = /[Zz]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return iso;
+  const formatted = d.toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "UTC", hour12: false,
+  });
+  return `${formatted} (UTC+0)`;
+}
 
 export default function BookingPrebookPage() {
   return (

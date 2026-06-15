@@ -114,7 +114,7 @@ export const DICTIONARIES: Record<Locale, TranslationDictionary> = {
     searchNow: "Axtar",
     searching: "Axtarılır...",
     orPrompt: "Və ya Təbii Dildə Axtarın",
-    placeholderPrompt: "Məsələn: Gələn ay yoldaşımla romantik bir yerə getmək istəyirik, büdcəmiz 2000 AZN-dir...",
+    placeholderPrompt: "Məsələn: Gələn ay yoldaşımla romantik bir yerə getmək istəyirik, büdcəmiz $2000-dır...",
     aiAskButton: "AI Soruş",
 
     dnaTitle: "Səyahət DNT-niz analiz edildi",

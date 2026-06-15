@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { waLink } from "@/lib/whatsapp";
 import WishlistButton from "@/components/WishlistButton";
 import { Heart, ArrowLeft, Inbox, Clock, Building2 } from "lucide-react";
+import { aznToUsd } from "@/lib/markup";
 
 const KEY = "natoure_wishlist";
 
@@ -209,7 +210,7 @@ export default function WishlistPage() {
                         borderTop: "1px solid #f1f5f9", paddingTop: 12, marginBottom: 12,
                       }}>
                         <span style={{ fontSize: 18, fontWeight: 800, color: "#0284c7" }}>
-                          {tour.price_azn} AZN
+                          {`$${aznToUsd(tour.price_azn)}`}
                         </span>
                         <span style={{ fontSize: 11, color: "#94a3b8" }}>/nəfər</span>
                       </div>

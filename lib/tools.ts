@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "./supabase";
+import { aznToUsd } from "./markup";
 
 // ─── 1. TUR MÖVCUDLUĞu ────────────────────────────────────────────────────────
 export async function checkTourAvailability(
@@ -51,7 +52,7 @@ export async function checkTourAvailability(
         ? `${t.start_date}${t.end_date ? " – " + t.end_date : ""}`
         : "tarix açıq";
       const hotel = t.hotel ? ` | ${t.hotel}` : "";
-      return `[TUR_ID:${t.id}] ${t.name} | ${t.price_azn} AZN${hotel} | ${dates} | ${seatsLeft} yer`;
+      return `[TUR_ID:${t.id}] ${t.name} | $${aznToUsd(t.price_azn)} USD${hotel} | ${dates} | ${seatsLeft} yer`;
     }).join("\n");
   } catch (e) {
     return `Tur məlumatı alınarkən xəta: ${e instanceof Error ? e.message : String(e)}`;
@@ -121,58 +122,6 @@ function getStaticClimate(city: string, date?: string): string {
   return `${city} üçün hava məlumatı hazırda əlçatan deyil.`;
 }
 
-// ─── 3. VALYUTA MƏZƏNNƏSİ ────────────────────────────────────────────────────
-export async function getExchangeRate(): Promise<string> {
-  try {
-    const res = await fetch(
-      "https://api.frankfurter.app/latest?from=USD&to=AZN,EUR,GBP,TRY",
-      { signal: AbortSignal.timeout(5000) }
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    const azn = data.rates?.AZN?.toFixed(2) ?? "1.70";
-    const eur = data.rates?.EUR?.toFixed(3) ?? "0.92";
-    const eurAzn = data.rates?.AZN && data.rates?.EUR
-      ? (data.rates.AZN / data.rates.EUR).toFixed(2)
-      : "1.85";
-
-    return [
-      `Cari məzənnə (Frankfurt):`,
-      `• $1 = ${azn} AZN`,
-      `• €1 = ${eurAzn} AZN`,
-      `• £1 = ${data.rates?.GBP ? (data.rates.AZN / data.rates.GBP).toFixed(2) : "2.15"} AZN`,
-    ].join("\n");
-  } catch {
-    return "$1 = 1.70 AZN | €1 = 1.85 AZN (təxmini məzənnə)";
-  }
-}
-
-// ─── 4. PAKET QİYMƏT HESABLAMA ───────────────────────────────────────────────
-export function calculatePackage(params: {
-  flight_total_azn: number;       // Duffel total qiyməti (bütün nəfərlər, markup daxil)
-  hotel_total_azn: number;        // Otel total qiyməti (bütün gecələr, markup daxil)
-  passengers: number;
-  nights: number;
-  include_transfer?: boolean;
-}): string {
-  const { flight_total_azn, hotel_total_azn, nights, passengers, include_transfer } = params;
-
-  const transferAzn = include_transfer ? 50 * passengers : 0;
-  const totalAzn = Math.ceil(flight_total_azn + hotel_total_azn + transferAzn);
-  const perPersonAzn = Math.ceil(totalAzn / passengers);
-
-  return [
-    `Paket hesablaması (${passengers} nəfər, ${nights} gecə):`,
-    `• Uçuş (${passengers} nəfər, cəmi): ${flight_total_azn} AZN`,
-    `• Otel (${nights} gecə, cəmi): ${hotel_total_azn} AZN`,
-    include_transfer ? `• Transfer: ${transferAzn} AZN` : null,
-    `─────────────────`,
-    `Cəmi: ${totalAzn} AZN`,
-    `Nəfər başına: ${perPersonAzn} AZN`,
-    `(Bütün qiymətlərə xidmət haqqı daxildir)`,
-  ].filter(Boolean).join("\n");
-}
 
 // ─── 5. CRM-Ə LEAD SAXLA ─────────────────────────────────────────────────────
 export async function saveLeadToCRM(params: {

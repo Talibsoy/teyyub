@@ -8,7 +8,7 @@ interface TourPackage {
   tour_id: string;
   tour_name: string;
   destination: string;
-  price_azn: number;
+  price_usd: number;
   start_date: string | null;
   end_date: string | null;
   hotel: string | null;
@@ -18,7 +18,7 @@ interface TourPackage {
 interface FlightPackage {
   offer_id:    string;
   airline:     string;
-  price_azn:   number;
+  price_usd:   number;
   departure:   string;
   arrival:     string;
   duration_min: number;
@@ -35,7 +35,7 @@ interface HotelPackage {
   checkin:     string;
   checkout:    string;
   nights:      number;
-  price_azn:   number;
+  price_usd:   number;
   rating:      number | null;
   stars:       number | null;
   booking_url: string;
@@ -63,9 +63,9 @@ function getWelcomeMessage(language: string): Message {
 
 function getQuickReplies(language: string) {
   return language === "az"
-    ? ["Bakıdan Antalyaya tur var?", "Ailə ilə Dubaya 5 gün", "1500 AZN büdcəyə uyğun tur"]
+    ? ["Bakıdan Antalyaya tur var?", "Ailə ilə Dubaya 5 gün", "$1500 büdcəyə uyğun tur"]
     : language === "tr"
-    ? ["Bakü'den Antalya'ya tur var mı?", "Aile ile Dubai'ye 5 gün", "1500 AZN bütçeli turlar"]
+    ? ["Bakü'den Antalya'ya tur var mı?", "Aile ile Dubai'ye 5 gün", "$1500 bütçeli turlar"]
     : ["Tours from Baku to Antalya?", "5 days in Dubai with family", "Budget tour under $1500"];
 }
 
@@ -100,10 +100,10 @@ function TourPackageCard({
 
   const waText = encodeURIComponent(
     language === "az"
-      ? `Salam! "${pkg.tour_name}" turu ilə maraqlanıram.\nTarix: ${pkg.start_date || "açıq"}\nQiymət: ${pkg.price_azn} AZN\nRezervasiya etmək istəyirəm.`
+      ? `Salam! "${pkg.tour_name}" turu ilə maraqlanıram.\nTarix: ${pkg.start_date || "açıq"}\nQiymət: $${pkg.price_usd}\nRezervasiya etmək istəyirəm.`
       : language === "tr"
-      ? `Merhaba! "${pkg.tour_name}" turu ile ilgileniyorum.\nTarih: ${pkg.start_date || "açık"}\nFiyat: ${pkg.price_azn} AZN\nRezervasyon yapmak istiyorum.`
-      : `Hello! I am interested in the "${pkg.tour_name}" tour.\nDate: ${pkg.start_date || "flexible"}\nPrice: ${pkg.price_azn} AZN\nI would like to make a reservation.`
+      ? `Merhaba! "${pkg.tour_name}" turu ile ilgileniyorum.\nTarih: ${pkg.start_date || "açık"}\nFiyat: $${pkg.price_usd}\nRezervasyon yapmak istiyorum.`
+      : `Hello! I am interested in the "${pkg.tour_name}" tour.\nDate: ${pkg.start_date || "flexible"}\nPrice: $${pkg.price_usd}\nI would like to make a reservation.`
   );
 
   return (
@@ -128,7 +128,7 @@ function TourPackageCard({
           <Row icon="📅" text={`${formatDate(pkg.start_date, language)}${pkg.end_date ? " – " + formatDate(pkg.end_date, language) : ""}${nights ? ` (${nights} ${language === "az" ? "gecə" : language === "tr" ? "gece" : "nights"})` : ""}`} />
         )}
         {pkg.hotel && <Row icon="🏨" text={pkg.hotel} />}
-        <Row icon="💰" text={`${pkg.price_azn.toLocaleString()} AZN / ${language === "az" ? "nəfər" : language === "tr" ? "kişi" : "person"}`} bold />
+        <Row icon="💰" text={`$${pkg.price_usd.toLocaleString()} / ${language === "az" ? "nəfər" : language === "tr" ? "kişi" : "person"}`} bold />
         {pkg.seats_left > 0 && pkg.seats_left <= 5 && (
           <Row icon="⚠️" text={language === "az" ? `Son ${pkg.seats_left} yer qalıb!` : language === "tr" ? `Son ${pkg.seats_left} koltuk kaldı!` : `Only ${pkg.seats_left} seats left!`} red />
         )}
@@ -194,10 +194,10 @@ function FlightPackageCard({
     : "";
   const waText = encodeURIComponent(
     language === "az"
-      ? `Salam! ${pkg.from} → ${pkg.to} uçuşu ilə maraqlanıram.\nAviaşirkət: ${pkg.airline}\nTarix: ${depDate} | ${dep} – ${arr}${pkg.is_return ? " (gediş-dönüş)" : ""}\nQiymət: ${pkg.price_azn.toLocaleString()} AZN\nBilet almaq istəyirəm.`
+      ? `Salam! ${pkg.from} → ${pkg.to} uçuşu ilə maraqlanıram.\nAviaşirkət: ${pkg.airline}\nTarix: ${depDate} | ${dep} – ${arr}${pkg.is_return ? " (gediş-dönüş)" : ""}\nQiymət: $${pkg.price_usd.toLocaleString()}\nBilet almaq istəyirəm.`
       : language === "tr"
-      ? `Merhaba! ${pkg.from} → ${pkg.to} uçuşu ile ilgileniyorum.\nHava yolu: ${pkg.airline}\nTarih: ${depDate} | ${dep} – ${arr}${pkg.is_return ? " (gidiş-dönüş)" : ""}\nFiyat: ${pkg.price_azn.toLocaleString()} AZN\nBilet almak istiyorum.`
-      : `Hello! I am interested in the flight from ${pkg.from} to ${pkg.to}.\nAirline: ${pkg.airline}\nDate: ${depDate} | ${dep} – ${arr}${pkg.is_return ? " (round-trip)" : ""}\nPrice: ${pkg.price_azn.toLocaleString()} AZN\nI would like to book tickets.`
+      ? `Merhaba! ${pkg.from} → ${pkg.to} uçuşu ile ilgileniyorum.\nHava yolu: ${pkg.airline}\nTarih: ${depDate} | ${dep} – ${arr}${pkg.is_return ? " (gidiş-dönüş)" : ""}\nFiyat: $${pkg.price_usd.toLocaleString()}\nBilet almak istiyorum.`
+      : `Hello! I am interested in the flight from ${pkg.from} to ${pkg.to}.\nAirline: ${pkg.airline}\nDate: ${depDate} | ${dep} – ${arr}${pkg.is_return ? " (round-trip)" : ""}\nPrice: $${pkg.price_usd.toLocaleString()}\nI would like to book tickets.`
   );
 
   return (
@@ -220,7 +220,7 @@ function FlightPackageCard({
         <Row icon="🕐" text={`${dep} → ${arr}${dur ? ` (${dur})` : ""}`} />
         <Row icon="🔄" text={pkg.is_return ? (language === "az" ? "Gediş-dönüş" : language === "tr" ? "Gidiş-Dönüş" : "Round-trip") : (language === "az" ? "Birtərəfli" : language === "tr" ? "Tek Yön" : "One-way")} />
         <Row icon="✈️" text={pkg.stops === 0 ? (language === "az" ? "Birbaşa uçuş" : language === "tr" ? "Aktarmasız uçuş" : "Direct flight") : `${pkg.stops} ${language === "az" ? "dayanacaq" : language === "tr" ? "aktarma" : "stops"}`} />
-        <Row icon="💰" text={`${pkg.price_azn.toLocaleString()} AZN · ${language === "az" ? "Xidmət haqqı daxil" : language === "tr" ? "Hizmet bedeli dahil" : "Service fee included"}`} bold />
+        <Row icon="💰" text={`$${pkg.price_usd.toLocaleString()} · ${language === "az" ? "Xidmət haqqı daxil" : language === "tr" ? "Hizmet bedeli dahil" : "Service fee included"}`} bold />
       </div>
       <div style={{ padding: "8px 14px 12px", display: "flex", flexDirection: "column", gap: 7 }}>
         <a
@@ -264,10 +264,10 @@ function HotelPackageCard({
 }) {
   const waText = encodeURIComponent(
     language === "az"
-      ? `Salam! "${pkg.hotel_name}" oteli ilə maraqlanıram.\nŞəhər: ${pkg.destination}\nGiriş: ${pkg.checkin} | Çıxış: ${pkg.checkout} (${pkg.nights} gecə)\nQiymət: ${pkg.price_azn.toLocaleString()} AZN\nRezervasiya etmək istəyirəm.`
+      ? `Salam! "${pkg.hotel_name}" oteli ilə maraqlanıram.\nŞəhər: ${pkg.destination}\nGiriş: ${pkg.checkin} | Çıxış: ${pkg.checkout} (${pkg.nights} gecə)\nQiymət: $${pkg.price_usd.toLocaleString()}\nRezervasiya etmək istəyirəm.`
       : language === "tr"
-      ? `Merhaba! "${pkg.hotel_name}" oteli ile ilgileniyorum.\nŞehir: ${pkg.destination}\nGiriş: ${pkg.checkin} | Çıkış: ${pkg.checkout} (${pkg.nights} gece)\nFiyat: ${pkg.price_azn.toLocaleString()} AZN\nRezervasyon yapmak istiyorum.`
-      : `Hello! I am interested in the "${pkg.hotel_name}" hotel.\nCity: ${pkg.destination}\nCheck-in: ${pkg.checkin} | Check-out: ${pkg.checkout} (${pkg.nights} nights)\nPrice: ${pkg.price_azn.toLocaleString()} AZN\nI would like to make a reservation.`
+      ? `Merhaba! "${pkg.hotel_name}" oteli ile ilgileniyorum.\nŞehir: ${pkg.destination}\nGiriş: ${pkg.checkin} | Çıkış: ${pkg.checkout} (${pkg.nights} gece)\nFiyat: $${pkg.price_usd.toLocaleString()}\nRezervasyon yapmak istiyorum.`
+      : `Hello! I am interested in the "${pkg.hotel_name}" hotel.\nCity: ${pkg.destination}\nCheck-in: ${pkg.checkin} | Check-out: ${pkg.checkout} (${pkg.nights} nights)\nPrice: $${pkg.price_usd.toLocaleString()}\nI would like to make a reservation.`
   );
 
   return (
@@ -288,7 +288,7 @@ function HotelPackageCard({
         <Row icon="📅" text={`${formatDate(pkg.checkin, language)} – ${formatDate(pkg.checkout, language)} (${pkg.nights} ${language === "az" ? "gecə" : language === "tr" ? "gece" : "nights"})`} />
         {pkg.stars && <Row icon="⭐" text={`${pkg.stars} ${language === "az" ? "ulduzlu otel" : language === "tr" ? "yıldızlı otel" : "star hotel"}`} />}
         {pkg.rating && <Row icon="📊" text={`${language === "az" ? "Reytinq" : language === "tr" ? "Puan" : "Rating"}: ${pkg.rating}/10`} />}
-        <Row icon="💰" text={`${pkg.price_azn.toLocaleString()} AZN · ${language === "az" ? "Xidmət haqqı daxil" : language === "tr" ? "Hizmet bedeli dahil" : "Service fee included"}`} bold />
+        <Row icon="💰" text={`$${pkg.price_usd.toLocaleString()} · ${language === "az" ? "Xidmət haqqı daxil" : language === "tr" ? "Hizmet bedeli dahil" : "Service fee included"}`} bold />
       </div>
       <div style={{ padding: "8px 14px 12px", display: "flex", flexDirection: "column", gap: 7 }}>
         <a

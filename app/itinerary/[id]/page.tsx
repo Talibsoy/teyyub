@@ -136,15 +136,16 @@ function DaySection({ dayData, index }: { dayData: ItineraryDay; index: number }
   );
 }
 
-function parseCostAzn(str: string | undefined): number | null {
+function parseCostUsd(str: string | undefined): number | null {
   if (!str) return null;
   const lower = str.toLowerCase();
   if (lower.includes("pulsuz") || lower.includes("free")) return 0;
   const match = lower.match(/(\d[\d\s]*(?:\.\d+)?)/);
   if (!match) return null;
   const val = parseFloat(match[1].replace(/\s/g, ""));
-  if (lower.includes("usd") || lower.includes("$")) return Math.round(val * 1.70);
-  if (lower.includes("eur") || lower.includes("€")) return Math.round(val * 1.87);
+  if (lower.includes("usd") || lower.includes("$")) return Math.round(val);
+  if (lower.includes("eur") || lower.includes("€")) return Math.round(val * 1.10);
+  if (lower.includes("azn") || lower.includes("₼") || lower.includes("manat")) return Math.round(val / 1.70);
   return Math.round(val);
 }
 
@@ -159,9 +160,9 @@ function BudgetCard({ days, guests }: { days: ItineraryDay[]; guests: number }) 
   };
 
   for (const act of all) {
-    const azn = parseCostAzn(act.cost_estimate);
-    if (azn !== null && azn > 0) {
-      groups[act.type].total += azn;
+    const usd = parseCostUsd(act.cost_estimate);
+    if (usd !== null && usd > 0) {
+      groups[act.type].total += usd;
       groups[act.type].count++;
     }
   }
@@ -183,16 +184,16 @@ function BudgetCard({ days, guests }: { days: ItineraryDay[]; guests: number }) 
           .map(([type, g]) => (
             <div key={type} className="flex items-center justify-between">
               <span className={`text-sm font-medium ${g.color}`}>{g.label}</span>
-              <span className="text-sm text-slate-700 font-semibold">~{g.total} AZN</span>
+              <span className="text-sm text-slate-700 font-semibold">~${g.total}</span>
             </div>
           ))}
       </div>
       <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
         <span className="text-sm font-bold text-slate-800">Cəmi</span>
-        <span className="text-base font-bold text-sky-600">~{grandTotal} AZN</span>
+        <span className="text-base font-bold text-sky-600">~${grandTotal}</span>
       </div>
       {guests > 1 && (
-        <p className="text-xs text-slate-400 mt-1 text-right">{guests} nəfərə ≈ {grandTotal * guests} AZN</p>
+        <p className="text-xs text-slate-400 mt-1 text-right">{guests} nəfərə ≈ ${grandTotal * guests}</p>
       )}
     </div>
   );

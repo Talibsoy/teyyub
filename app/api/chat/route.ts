@@ -4,6 +4,12 @@ import { getHistory, saveHistory } from "@/lib/conversation-store";
 import { getCRMProfileByUserId } from "@/lib/crm-profile";
 import { Redis } from "@upstash/redis";
 
+// Nigar's agentic loop (Claude rounds + Duffel flight search + baggage lookups)
+// routinely exceeds Vercel's 10s Hobby default. Without this the function is killed
+// mid-flight-search and the user sees Vercel's FUNCTION_INVOCATION_TIMEOUT page
+// before the try/catch below can return a friendly message. 60s = Hobby max.
+export const maxDuration = 60;
+
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
   ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
   : null;

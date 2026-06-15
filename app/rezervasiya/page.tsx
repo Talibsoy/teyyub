@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase, getSupabase } from "@/lib/supabase";
 import { Calendar, Users, Lock, AlertTriangle } from "lucide-react";
+import { aznToUsd } from "@/lib/markup";
 
 interface Tour {
   id: string;
@@ -320,7 +321,7 @@ function RezervasiyaForm() {
             )}
 
             <button type="submit" disabled={submitting} style={btn(submitting)}>
-              {submitting ? "Emal edilir..." : `Ödənişə Keç — ${totalPrice} ₼`}
+              {submitting ? "Emal edilir..." : `Ödənişə Keç — $${aznToUsd(totalPrice)}`}
             </button>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10 }}>
               <Lock size={12} color="#94a3b8" />
@@ -373,7 +374,7 @@ function PassengerRow({ label: lbl, sublabel, price, priceNote, count, min, max,
         <p style={{ color: "#0f172a", fontSize: 15, fontWeight: 600, margin: 0 }}>{lbl}</p>
         <p style={{ color: "#64748b", fontSize: 12, margin: "2px 0 0" }}>{sublabel}</p>
         <p style={{ color: "#0284c7", fontSize: 13, fontWeight: 700, margin: "4px 0 0" }}>
-          {price} ₼{priceNote && <span style={{ color: "#16a34a", fontSize: 11, marginLeft: 6 }}>{priceNote}</span>}
+          {`$${aznToUsd(price)}`}{priceNote && <span style={{ color: "#16a34a", fontSize: 11, marginLeft: 6 }}>{priceNote}</span>}
         </p>
       </div>
       <div style={{ display: "flex", alignItems: "center" }}>
@@ -396,17 +397,17 @@ function PriceSummary({ adults, children, adultPrice, childPrice, total }: {
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span style={{ color: "#64748b", fontSize: 13 }}>Böyük × {adults}</span>
-          <span style={{ color: "#0f172a", fontSize: 13 }}>{adultPrice * adults} ₼</span>
+          <span style={{ color: "#0f172a", fontSize: 13 }}>{`$${aznToUsd(adultPrice * adults)}`}</span>
         </div>
         {children > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ color: "#64748b", fontSize: 13 }}>Uşaq × {children}</span>
-            <span style={{ color: "#0f172a", fontSize: 13 }}>{childPrice * children} ₼</span>
+            <span style={{ color: "#0f172a", fontSize: 13 }}>{`$${aznToUsd(childPrice * children)}`}</span>
           </div>
         )}
         <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 10, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
           <span style={{ color: "#0f172a", fontWeight: 700 }}>Cəmi</span>
-          <span style={{ color: "#0284c7", fontSize: 22, fontWeight: 800 }}>{total} ₼</span>
+          <span style={{ color: "#0284c7", fontSize: 22, fontWeight: 800 }}>{`$${aznToUsd(total)}`}</span>
         </div>
       </div>
     </div>

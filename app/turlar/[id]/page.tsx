@@ -7,6 +7,7 @@ import ItineraryButton from "@/components/ItineraryButton";
 import BookingCTA from "@/components/BookingCTA";
 import ShareButtons from "@/components/ShareButtons";
 import { ArrowLeft, Building2, Check, X } from "lucide-react";
+import { aznToUsd } from "@/lib/markup";
 
 interface Tour {
   id: string;
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const dur = getDuration(data.start_date, data.end_date);
   const desc = data.description ||
-    `${data.destination} turu — ${dur ? `${dur.days} gün / ${dur.nights} gecə` : ""} ${data.price_azn} AZN-dən başlayan qiymətlərlə. Natoure ilə rezervasiya edin.`;
+    `${data.destination} turu — ${dur ? `${dur.days} gün / ${dur.nights} gecə` : ""} $${data.price_usd || aznToUsd(data.price_azn)}-dən başlayan qiymətlərlə. Natoure ilə rezervasiya edin.`;
 
   const canonical = `https://www.natourefly.com/turlar/${id}`;
   return {
@@ -145,8 +146,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
               <p style={{ color: "#64748b", fontSize: 11, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
                 {language === "az" ? "QİYMƏT" : language === "tr" ? "FİYAT" : "PRICE"}
               </p>
-              <p style={{ color: "#0284c7", fontSize: 22, fontWeight: 800 }}>{tour.price_azn} <span style={{ fontSize: 14 }}>AZN</span></p>
-              {tour.price_usd && <p style={{ color: "#94a3b8", fontSize: 12 }}>~${tour.price_usd}</p>}
+              <p style={{ color: "#0284c7", fontSize: 22, fontWeight: 800 }}>${tour.price_usd || aznToUsd(tour.price_azn)} <span style={{ fontSize: 14 }}>USD</span></p>
               <p style={{ color: "#94a3b8", fontSize: 11 }}>
                 {language === "az" ? "/nəfər" : language === "tr" ? "/kişi" : "/person"}
               </p>
@@ -312,7 +312,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Paylaş */}
-          <ShareButtons tourId={tour.id} tourName={tour.name} priceAzn={tour.price_azn} language={language} />
+          <ShareButtons tourId={tour.id} tourName={tour.name} priceUsd={tour.price_usd || aznToUsd(tour.price_azn)} language={language} />
 
         </div>
       </div>
@@ -341,8 +341,8 @@ export default async function TourDetailPage({ params }: { params: Promise<{ id:
             } : undefined,
             "offers": {
               "@type": "Offer",
-              "price": tour.price_azn,
-              "priceCurrency": "AZN",
+              "price": tour.price_usd || aznToUsd(tour.price_azn),
+              "priceCurrency": "USD",
               "availability": seatsLeft > 0
                 ? "https://schema.org/InStock"
                 : "https://schema.org/SoldOut",

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchHotels, searchHotelsByRegion, multicomplete, HotelOffer as RHHotelOffer } from "@/lib/ratehawk";
 
+// RateHawk region search (multicomplete + serp) has no internal fetch timeout and
+// can run well past Vercel's 10s Hobby default — especially for large cities via the
+// Contabo proxy. Without this the function is killed and the chatbot's self-fetch gets
+// an HTML error page instead of JSON, surfacing as "Hotel search encountered an issue".
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const { destination, checkin, checkout, adults, childAges, residency, rooms, stars } = await req.json();

@@ -56,7 +56,7 @@ const ITINERARY_PROMPT = `Sən peşəkar səyahət planlaşdırma ekspertisən. 
   "start_date": "2026-05-10",
   "end_date": "2026-05-14",
   "guests": 2,
-  "budget_estimate": "1.800–2.400 AZN/nəfər",
+  "budget_estimate": "$1,100–1,400/nəfər",
   "days": [
     {
       "day": 1,
@@ -88,7 +88,7 @@ QAYDALAR:
 - Hər gün üçün 5-8 aktivlik yaz (transport + nahar + şam + əsas aktivliklər)
 - Aktivlik tipləri: "transport", "accommodation", "food", "activity", "free"
 - Vaxtlar ardıcıl olsun (08:00-dan başla, 22:00-da bitir)
-- Qiymət qiymətləndirmələri AZN-də olsun
+- Qiymət qiymətləndirmələri ABŞ dolları ($/USD) ilə olsun
 - Azərbaycan ədəbi dilində yaz
 - Hər aktivlik üçün praktiki "tips" əlavə et
 - budget_estimate — nəfər başına ümumi xərc (otel + nahar + aktivliklər, uçuş daxil deyil)

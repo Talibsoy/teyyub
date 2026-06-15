@@ -20,6 +20,19 @@ interface HotelStatic {
   description: string; photos: string[]; amenities: string[];
 }
 
+// ETG ləğv vaxtları UTC-dədir → tam tarix + saat + UTC+0 göstər (lokal zona tarixi sürüşdürməsin)
+function fmtCancelUtc(iso: string): string {
+  const normalized = /[Zz]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return iso;
+  const formatted = d.toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "UTC", hour12: false,
+  });
+  return `${formatted} (UTC+0)`;
+}
+
 export default function HotelDetailPage() {
   const params = useParams();
   const sp = useSearchParams();
@@ -147,7 +160,7 @@ export default function HotelDetailPage() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#eff6ff", color: "#1d4ed8", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>🍽 {r.meal}</span>
                   {r.free_cancellation_until ? (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#f0fdf4", color: "#15803d", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}><ShieldCheck size={13} /> Pulsuz ləğv ({new Date(r.free_cancellation_until).toLocaleDateString("az-AZ", { day: "numeric", month: "short" })}-ə qədər)</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#f0fdf4", color: "#15803d", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}><ShieldCheck size={13} /> Pulsuz ləğv: {fmtCancelUtc(r.free_cancellation_until)}-ə qədər</span>
                   ) : (
                     <span style={{ background: "#fef2f2", color: "#b91c1c", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>Geri ödənişsiz{r.cancellation_penalty ? ` · ləğv cəzası ${r.cancellation_penalty}` : ""}</span>
                   )}
