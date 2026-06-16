@@ -318,17 +318,19 @@ export async function getBookingStatus(
     let orderId: string | undefined = undefined;
 
     if (partnerOrderId) {
-      // Checked by partner_order_id (B2B v3 returns root-level status)
+      // Checked by partner_order_id. ETG /finish/status/ envelope `status` "ok"-dur
+      // percent 0-dan etibarən (sadəcə sorğunun uğuru); BRON yalnız data.percent===100
+      // olanda tamamdır. percent<100 ikən "processing" qaytarıb poll-u davam etdiririk.
       const statusValue = res.status;
-      if (statusValue === "ok") {
-        finalStatus = "ok";
-        // ETG tövsiyəsi (Anna #7): yekun status YALNIZ /finish/status/-dən gəlir.
-        // order/info booking axınında İSTİFADƏ OLUNMUR (o, hesabın order tarixçəsidir).
-        // order_id finish cavabındakı order_ids-dən, ya da partner_order_id-dən götürülür.
-      } else if (statusValue === "error") {
+      const percent = (res.data as { percent?: number } | undefined)?.percent;
+      if (statusValue === "error") {
         finalStatus = (res.error as BookingStatus) || "unknown";
       } else if (statusValue === "3ds") {
         finalStatus = "3ds";
+      } else if (statusValue === "ok" && percent === 100) {
+        // Yekun status YALNIZ /finish/status/-dən; order_id finish order_ids-dən və ya
+        // partner_order_id-dən götürülür (order/info booking axınında istifadə olunmur).
+        finalStatus = "ok";
       } else {
         finalStatus = "processing";
       }
