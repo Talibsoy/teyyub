@@ -146,8 +146,12 @@ function PrebookForm() {
             citizenship: g.citizenship.toUpperCase(),
           })),
           partner_order_id,
+          // ETG payment_type üçün — prebook-dakı DƏQİQ net məbləğ/type/valyuta (markedPrice yox!)
+          amount: prebookData.price,
+          payment_type: prebookData.payment_type || "deposit",
+          currency: prebookData.currency || "USD",
+          // DB qeydi üçün müştəri qiyməti
           price: parseFloat(markedPrice),
-          currency: "USD",
           destination: hotelName,
           checkin,
         }),

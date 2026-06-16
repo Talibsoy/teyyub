@@ -91,8 +91,9 @@ export interface CancellationStep {
 export interface PrebookResult {
   ok:                    boolean;
   book_hash?:            string;
-  price?:                number;
+  price?:                number;        // ETG net məbləğ (payment_type.amount ilə eyni olmalıdır)
   currency?:             string;
+  payment_type?:         string;        // ETG payment type ("deposit"/"now"/"hotel") — finish-də eyni göndərilməlidir
   cancellation_deadline?: string;   // "2026-05-10T23:59:00" UTC — bu tarixə qədər pulsuz ləğv
   cancellation_policies?: CancellationStep[];
   taxes?:                TaxItem[];
@@ -164,6 +165,7 @@ export async function prebook(hash: string): Promise<PrebookResult> {
       book_hash:             bookHash,
       price:                 parseFloat(payType?.amount || "0"),
       currency:              payType?.currency_code || "USD",
+      payment_type:          payType?.type,
       cancellation_deadline: cancel?.free_cancellation_before,
       cancellation_policies: policies,
       taxes,
@@ -190,7 +192,8 @@ export interface BookingParams {
   phone:             string;
   comment?:          string;
   guests:            GuestInfo[];
-  payment_type?:     "deposit" | "now" | "hotel";
+  payment_type?:     string;   // prebook-dan gələn type (deposit/now/hotel)
+  amount?:           number;   // prebook-dan gələn ETG net məbləğ — payment_type.amount ilə eyni olmalıdır
   currency_code?:    string;
   partner_order_id?: string;  // Sandbox test ssenariləri üçün
 }
@@ -241,7 +244,13 @@ export async function bookingFinish(params: BookingParams): Promise<BookingFinis
           })),
         }
       ],
-      payment_type: { type: params.payment_type || "deposit", currency_code: params.currency_code || "USD" },
+      // ETG payment_type-da type + currency + DƏQİQ məbləğ tələb olunur. Məbləğ prebook-dakı
+      // payment_type.amount ilə eyni olmalıdır, əks halda "incorrect_chosen_payment_type" xətası.
+      payment_type: {
+        type:          params.payment_type || "deposit",
+        amount:        (params.amount ?? 0).toFixed(2),
+        currency_code: params.currency_code || "USD",
+      },
       partner: { partner_order_id },
     });
 

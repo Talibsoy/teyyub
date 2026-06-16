@@ -17,14 +17,19 @@ export async function POST(req: NextRequest) {
 
     const partner_order_id = body.partner_order_id || `natoure_${Date.now()}`;
 
-    // 1. Booking finish — bron yarat
+    // 1. Booking finish — bron yarat.
+    //    amount + payment_type prebook-dan gəlir; ETG payment_type.amount prebook-dakı ilə
+    //    EYNİ olmalıdır, yoxsa "incorrect_chosen_payment_type" (0.00 ≠ 177.00) xətası verir.
+    const etgAmount = typeof body.amount === "number" ? body.amount : parseFloat(body.amount || "0");
     const finishResult = await bookingFinish({
       book_hash,
       phone,
       email,
       comment,
       guests,
-      payment_type: "deposit",
+      payment_type:  body.payment_type || "deposit",
+      amount:        etgAmount,
+      currency_code: body.currency || "USD",
       partner_order_id,
     });
 
