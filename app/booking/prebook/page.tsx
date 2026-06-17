@@ -140,11 +140,17 @@ function PrebookForm() {
           phone,
           email: email || undefined,
           comment: comment || undefined,
-          guests: guests.map(g => ({
-            first_name: g.first_name.trim(),
-            last_name: g.last_name.trim(),
-            citizenship: g.citizenship.toUpperCase(),
-          })),
+          // İlk adultsCount qonaq böyük, qalanı uşaqdır — uşaqlar ETG üçün
+          // is_child+age ilə işarələnir (axtarışdakı child_ages ilə eyni yaş).
+          guests: guests.map((g, idx) => {
+            const isChild = idx >= adultsCount;
+            return {
+              first_name: g.first_name.trim(),
+              last_name: g.last_name.trim(),
+              citizenship: g.citizenship.toUpperCase(),
+              ...(isChild ? { is_child: true, age: childAges[idx - adultsCount] || 12 } : {}),
+            };
+          }),
           partner_order_id,
           // ETG payment_type üçün — prebook-dakı DƏQİQ net məbləğ/type/valyuta (markedPrice yox!)
           amount: prebookData.price,

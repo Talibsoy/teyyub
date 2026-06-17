@@ -184,6 +184,8 @@ export interface GuestInfo {
   first_name:  string;
   last_name:   string;
   citizenship: string;   // ISO 2-letter: "AZ", "RU", "TR", ...
+  is_child?:   boolean;  // uşaqdırsa true — ETG-də is_child+age tələb olunur
+  age?:        number;   // uşağın yaşı (axtarışdakı children yaşı ilə eyni)
 }
 
 export interface BookingParams {
@@ -226,21 +228,21 @@ export async function bookingFinish(params: BookingParams): Promise<BookingFinis
       book_hash: params.book_hash,
       language:  "en",
       user: {
-        email:   params.email || process.env.BOOKING_EMAIL || "booking@natourefly.com",
+        // ETG tələbi (Anna): YALNIZ korporativ booking e-poçtu göndərilir —
+        // qonağın şəxsi e-poçtu ETG sorğusuna qoyulmur (öz CRM/DB üçün ayrıca saxlanılır).
+        email:   process.env.BOOKING_EMAIL || "booking@natourefly.com",
         phone:   params.phone,
         comment: params.comment || "",
       },
-      guests: params.guests.map((g) => ({
-        first_name:  g.first_name,
-        last_name:   g.last_name,
-        citizenship: g.citizenship,
-      })),
+      // ETG: yalnız rooms[].guests istifadə olunur (top-level "guests" lazım deyil).
+      // Uşaqlar is_child+age ilə işarələnməlidir, əks halda "incorrect_guests_number".
       rooms: [
         {
           guests: params.guests.map((g) => ({
             first_name:  g.first_name,
             last_name:   g.last_name,
             citizenship: g.citizenship,
+            ...(g.is_child ? { is_child: true, age: g.age ?? 12 } : {}),
           })),
         }
       ],
