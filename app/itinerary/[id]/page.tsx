@@ -247,6 +247,17 @@ export default async function ItineraryPage(
         </div>
       </div>
 
+      {/* Faza 0 (Zero-Hallucination): AI estimate disclaimer */}
+      <div className="max-w-3xl mx-auto px-4 pt-6">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <span className="text-lg leading-none flex-shrink-0" aria-hidden>⚠️</span>
+          <p className="text-sm text-amber-800 leading-relaxed">
+            <b>Bu, AI tərəfindən hazırlanmış təxmini plandır.</b> Göstərilən qiymətlər, saatlar və mövcudluq təsdiqlənməyib —
+            rezervasiya mərhələsində hər xidmət canlı olaraq yoxlanılacaq və dəqiq qiymətlər göstəriləcək.
+          </p>
+        </div>
+      </div>
+
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-[1fr_260px] gap-8 items-start">
 
