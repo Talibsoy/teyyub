@@ -44,44 +44,44 @@ export interface ItineraryRequest {
   preferences?: string;
 }
 
-const ITINERARY_PROMPT = `Sən peşəkar səyahət planlaşdırma ekspertisən. İstifadəçi məlumatlarına əsasən detallı günlük səyahət proqramı hazırla.
+const ITINERARY_PROMPT = `You are a professional outdoor-travel planning expert. Based on the user's details, create a detailed day-by-day itinerary.
 
-ÇIXIŞ FORMATI: Yalnız JSON qaytarmalısan, başqa heç bir mətn yox. JSON strukturu:
+OUTPUT FORMAT: Return ONLY JSON, no other text. JSON structure:
 
 {
-  "destination": "İstanbul, Türkiyə",
-  "title": "İstanbul — Tarixi Şəhər Kəşfi",
-  "summary": "2-3 cümlə ümumi xülasə",
+  "destination": "Anchorage, Alaska",
+  "title": "Alaska — Wildlife & Glacier Adventure",
+  "summary": "2-3 sentence overview",
   "duration_days": 5,
-  "start_date": "2026-05-10",
-  "end_date": "2026-05-14",
+  "start_date": "2026-06-10",
+  "end_date": "2026-06-14",
   "guests": 2,
   "budget_estimate": "$1,100–1,400/nəfər",
   "days": [
     {
       "day": 1,
-      "date": "2026-05-10",
-      "title": "Sultanahmet — Tarixi Mərkəz",
-      "theme": "Tarixi kəşf",
+      "date": "2026-06-10",
+      "title": "Arrival & Coastal Trail",
+      "theme": "Easy start",
       "activities": [
         {
           "time": "09:00",
-          "title": "Ayasofya ziyarəti",
-          "description": "Bizans dövrünün möhtəşəm abidəsi. Səhər getmək tövsiyə edilir — adam az olur.",
+          "title": "Tony Knowles Coastal Trail walk",
+          "description": "Scenic waterfront trail with chances to spot moose and eagles. Best in the morning when it is quiet.",
           "type": "activity",
-          "duration": "1.5 saat",
-          "location": "Sultanahmet, Fatih",
-          "cost_estimate": "Pulsuz",
-          "tips": "Qadınlar üçün baş örtüsü lazımdır"
+          "duration": "1.5 hours",
+          "location": "Anchorage",
+          "cost_estimate": "Free",
+          "tips": "Bring layers — the coastal wind is cold even in summer"
         }
       ]
     }
   ],
   "travel_tips": [
-    "İstanbulkart alın — nəqliyyat 50% ucuzlaşır",
-    "Turistik restoranlarda qiymətlər yüksəkdir — Eminönü ətraflarda yerlilərin getdiyi yerləri tercih edin"
+    "Book wildlife and glacier tours early — summer slots fill fast",
+    "Daylight lasts ~19 hours in June — pack an eye mask"
   ],
-  "best_season": "Aprel–May və Sentyabr–Oktyabr"
+  "best_season": "June–August"
 }
 
 QAYDALAR:
@@ -93,7 +93,8 @@ QAYDALAR:
 - Hər aktivlik üçün praktiki "tips" əlavə et
 - budget_estimate — nəfər başına ümumi xərc (otel + nahar + aktivliklər, uçuş daxil deyil)
 - travel_tips — 4-6 praktiki məsləhət
-- Mövcud tarixlərə uyğun fəaliyyət saatları göstər (muzey vaxtları, namaz vaxtları, tətillər)`;
+- Mövcud tarixlərə uyğun fəaliyyət saatları göstər (muzey vaxtları, namaz vaxtları, tətillər)
+- Bu TƏXMİNİ plandır: real, tanınmış yerlərə üstünlük ver; qiymətləri zəmanətli kimi təqdim etmə — onlar rezervasiya mərhələsində canlı yoxlanılır`;
 
 export async function generateItinerary(req: ItineraryRequest): Promise<GeneratedItinerary> {
   const endDate = new Date(req.start_date);

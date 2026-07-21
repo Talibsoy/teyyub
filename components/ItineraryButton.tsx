@@ -113,6 +113,13 @@ export default function ItineraryButton({ destination, start_date, end_date, dur
       {error && (
         <p style={{ marginTop: 6, fontSize: 12, color: "#ef4444", textAlign: "center" }}>{error}</p>
       )}
+      <p style={{ marginTop: 6, fontSize: 11, color: "#94a3b8", textAlign: "center" }}>
+        {language === "az"
+          ? "AI təxmini plan yaradır — qiymət və mövcudluq rezervasiyada təsdiqlənir."
+          : language === "tr"
+          ? "AI tahmini plan oluşturur — fiyat ve uygunluk rezervasyonda doğrulanır."
+          : "AI generates an estimated plan — price & availability confirmed at booking."}
+      </p>
     </div>
   );
 }

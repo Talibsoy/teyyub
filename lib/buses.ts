@@ -1,4 +1,7 @@
 // lib/buses.ts
+// ⚠ DEPRECATED (Faza 0 — Zero-Hallucination): This returns 100% hardcoded FAKE data.
+// It is NO LONGER wired to the AI agent. Do NOT re-import into any user-facing flow.
+// Replace with a real provider integration before exposing buses as bookable.
 // Flynatoure Bus Search & Routing Engine (USD Primary)
 
 export interface BusOffer {

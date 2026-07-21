@@ -4,9 +4,6 @@ import { getExamples, formatExamplesForPrompt } from "./ai-memory";
 import { searchFlights, formatOffersForAI } from "./duffel";
 import { analyzePrices } from "./price-agent";
 import { CRMProfile, formatProfileForAI } from "./crm-profile";
-import { searchCruises } from "./cruises";
-import { searchTrains } from "./trains";
-import { searchBuses } from "./buses";
 
 import {
   checkTourAvailability,
@@ -20,7 +17,7 @@ const client = new Anthropic({
 });
 
 const SYSTEM_PROMPT = `You are "Nigar xanım", the premium, professional, and elite Global AI Travel Concierge for Natoure.
-Your goal is to guide every conversation into a successful booking (flights, hotels, cruises, trains, buses, and tours).
+Your goal is to guide every conversation into a successful booking (flights, hotels, and tours). Cruises, trains, and buses are NOT bookable online yet — never invent options, prices, or schedules for them; if asked, say so honestly and offer the human concierge.
 
 === KİMLİYİN / IDENTITY ===
 - You are a real human travel concierge — sophisticated, short, clear, and sales-oriented.
@@ -172,7 +169,7 @@ const ALL_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "search_cruises",
-    description: "Searches premium cruise voyages. Call when the user requests a cruise, liner, or sea voyage.",
+    description: "Cruise availability check. Cruises are NOT bookable online yet — this returns an honest 'not available' notice, never real options. Call only if the user explicitly asks about cruises.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -184,7 +181,7 @@ const ALL_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "search_trains",
-    description: "Searches high-speed or express rail connections. Call when the user requests train or rail travel.",
+    description: "Rail availability check. Trains are NOT bookable online yet — this returns an honest 'not available' notice, never real options. Call only if the user explicitly asks about trains.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -198,7 +195,7 @@ const ALL_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "search_buses",
-    description: "Searches express intercity bus connections. Call when the user requests bus travel.",
+    description: "Bus availability check. Buses are NOT bookable online yet — this returns an honest 'not available' notice, never real options. Call only if the user explicitly asks about buses.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -343,41 +340,16 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       }
     }
 
-    case "search_cruises": {
-      try {
-        const cruises = await searchCruises(input.destination as string, input.date as string);
-        if (cruises.length === 0) return `No cruise packages found for ${input.destination}.`;
-        return cruises.map(c => 
-          `[CRUISE_ID:${c.id}] ${c.name} aboard ${c.shipName} (${c.cruiseLine}) | Departs: ${c.departurePort} | ${c.durationNights} nights | Total Price: $${c.priceUsd} USD | Rating: ${c.rating}/5`
-        ).join("\n");
-      } catch (e) {
-        return "Cruise search error. Please try again.";
-      }
-    }
+    // Faza 0 (Zero-Hallucination): cruise/train/bus are NOT bookable online yet.
+    // Never return invented options — respond honestly and offer the human concierge.
+    case "search_cruises":
+      return "Cruise booking is NOT available online on Natoure yet. Do NOT invent any cruise, ship, price, or schedule. Tell the user honestly that cruises are not currently bookable through the platform, and offer to connect them with a Natoure travel coordinator on WhatsApp (+44 7828 721748) if they are interested.";
 
-    case "search_trains": {
-      try {
-        const trains = await searchTrains(input.origin as string, input.destination as string, input.date as string, (input.passengers as number) || 1);
-        if (trains.length === 0) return `No rail connections found between ${input.origin} and ${input.destination}.`;
-        return trains.map(t =>
-          `[TRAIN_ID:${t.id}] ${t.trainNumber} (${t.operator}) - ${t.trainType} | ${t.origin} -> ${t.destination} | Departs: ${t.departureTime} | Duration: ${t.durationMinutes} min | Price: $${t.priceUsd} USD | Green Rating: Saved ${t.co2SavedKg}kg CO2`
-        ).join("\n");
-      } catch (e) {
-        return "Rail search error. Please try again.";
-      }
-    }
+    case "search_trains":
+      return "Train/rail booking is NOT available online on Natoure yet. Do NOT invent any train, route, price, or schedule. Tell the user honestly that rail travel is not currently bookable through the platform, and offer to connect them with a Natoure travel coordinator on WhatsApp (+44 7828 721748) if they are interested.";
 
-    case "search_buses": {
-      try {
-        const buses = await searchBuses(input.origin as string, input.destination as string, input.date as string, (input.passengers as number) || 1);
-        if (buses.length === 0) return `No bus connections found between ${input.origin} and ${input.destination}.`;
-        return buses.map(b =>
-          `[BUS_ID:${b.id}] Bus ${b.busNumber} (${b.operator}) | ${b.origin} -> ${b.destination} | Departs: ${b.departureTime} | Duration: ${b.durationMinutes} min | Price: $${b.priceUsd} USD | Amenities: ${b.amenities.join(", ")}`
-        ).join("\n");
-      } catch (e) {
-        return "Bus search error. Please try again.";
-      }
-    }
+    case "search_buses":
+      return "Bus booking is NOT available online on Natoure yet. Do NOT invent any bus, route, price, or schedule. Tell the user honestly that intercity buses are not currently bookable through the platform, and offer to connect them with a Natoure travel coordinator on WhatsApp (+44 7828 721748) if they are interested.";
 
     case "check_tour_availability":
       return checkTourAvailability(
