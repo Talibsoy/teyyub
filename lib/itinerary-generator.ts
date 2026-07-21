@@ -44,71 +44,72 @@ export interface ItineraryRequest {
   preferences?: string;
 }
 
-const ITINERARY_PROMPT = `Sən peşəkar səyahət planlaşdırma ekspertisən. İstifadəçi məlumatlarına əsasən detallı günlük səyahət proqramı hazırla.
+const ITINERARY_PROMPT = `You are a professional outdoor-travel planning expert. Based on the user's details, create a detailed day-by-day itinerary.
 
-ÇIXIŞ FORMATI: Yalnız JSON qaytarmalısan, başqa heç bir mətn yox. JSON strukturu:
+OUTPUT FORMAT: Return ONLY JSON, no other text. JSON structure:
 
 {
-  "destination": "İstanbul, Türkiyə",
-  "title": "İstanbul — Tarixi Şəhər Kəşfi",
-  "summary": "2-3 cümlə ümumi xülasə",
+  "destination": "Anchorage, Alaska",
+  "title": "Alaska — Wildlife & Glacier Adventure",
+  "summary": "2-3 sentence overview",
   "duration_days": 5,
-  "start_date": "2026-05-10",
-  "end_date": "2026-05-14",
+  "start_date": "2026-06-10",
+  "end_date": "2026-06-14",
   "guests": 2,
-  "budget_estimate": "1.800–2.400 AZN/nəfər",
+  "budget_estimate": "$1,800–2,400 per person",
   "days": [
     {
       "day": 1,
-      "date": "2026-05-10",
-      "title": "Sultanahmet — Tarixi Mərkəz",
-      "theme": "Tarixi kəşf",
+      "date": "2026-06-10",
+      "title": "Arrival & Coastal Trail",
+      "theme": "Easy start",
       "activities": [
         {
           "time": "09:00",
-          "title": "Ayasofya ziyarəti",
-          "description": "Bizans dövrünün möhtəşəm abidəsi. Səhər getmək tövsiyə edilir — adam az olur.",
+          "title": "Tony Knowles Coastal Trail walk",
+          "description": "Scenic waterfront trail with chances to spot moose and eagles. Best in the morning when it is quiet.",
           "type": "activity",
-          "duration": "1.5 saat",
-          "location": "Sultanahmet, Fatih",
-          "cost_estimate": "Pulsuz",
-          "tips": "Qadınlar üçün baş örtüsü lazımdır"
+          "duration": "1.5 hours",
+          "location": "Anchorage",
+          "cost_estimate": "Free",
+          "tips": "Bring layers — the coastal wind is cold even in summer"
         }
       ]
     }
   ],
   "travel_tips": [
-    "İstanbulkart alın — nəqliyyat 50% ucuzlaşır",
-    "Turistik restoranlarda qiymətlər yüksəkdir — Eminönü ətraflarda yerlilərin getdiyi yerləri tercih edin"
+    "Book wildlife and glacier tours early — summer slots fill fast",
+    "Daylight lasts ~19 hours in June — pack an eye mask"
   ],
-  "best_season": "Aprel–May və Sentyabr–Oktyabr"
+  "best_season": "June–August"
 }
 
-QAYDALAR:
-- Hər gün üçün 5-8 aktivlik yaz (transport + nahar + şam + əsas aktivliklər)
-- Aktivlik tipləri: "transport", "accommodation", "food", "activity", "free"
-- Vaxtlar ardıcıl olsun (08:00-dan başla, 22:00-da bitir)
-- Qiymət qiymətləndirmələri AZN-də olsun
-- Azərbaycan ədəbi dilində yaz
-- Hər aktivlik üçün praktiki "tips" əlavə et
-- budget_estimate — nəfər başına ümumi xərc (otel + nahar + aktivliklər, uçuş daxil deyil)
-- travel_tips — 4-6 praktiki məsləhət
-- Mövcud tarixlərə uyğun fəaliyyət saatları göstər (muzey vaxtları, namaz vaxtları, tətillər)`;
+RULES:
+- 5-8 activities per day (transport + lunch + dinner + main activities)
+- Activity types: "transport", "accommodation", "food", "activity", "free"
+- Times in order (start at 08:00, end by 22:00)
+- Cost estimates in USD ($)
+- Write in clear, natural English
+- Add a practical "tips" note for each activity
+- budget_estimate — total per-person cost (hotel + meals + activities; flights NOT included)
+- travel_tips — 4-6 practical tips
+- Reflect realistic opening hours and seasonality (park hours, tour seasons, closures)
+- This is an ESTIMATED plan: prefer real, well-known places; do NOT present prices as guaranteed — they are estimates confirmed at booking`;
 
 export async function generateItinerary(req: ItineraryRequest): Promise<GeneratedItinerary> {
   const endDate = new Date(req.start_date);
   endDate.setDate(endDate.getDate() + req.duration_days - 1);
   const end_date = endDate.toISOString().split("T")[0];
 
-  const userPrompt = `Məqsəd: ${req.destination}
-Başlanğıc tarixi: ${req.start_date}
-Son tarix: ${end_date}
-Gün sayı: ${req.duration_days}
-Qonaq sayı: ${req.guests} nəfər
-${req.budget ? `Büdcə: ${req.budget}` : ""}
-${req.preferences ? `Seçimlər: ${req.preferences}` : ""}
+  const userPrompt = `Destination: ${req.destination}
+Start date: ${req.start_date}
+End date: ${end_date}
+Days: ${req.duration_days}
+Guests: ${req.guests}
+${req.budget ? `Budget: ${req.budget}` : ""}
+${req.preferences ? `Preferences: ${req.preferences}` : ""}
 
-Bu məlumatlara əsasən tam günlük proqram hazırla. Yalnız JSON qaytart.`;
+Create a full day-by-day itinerary from these details. Return ONLY JSON.`;
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",

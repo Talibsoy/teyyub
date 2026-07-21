@@ -13,9 +13,17 @@ npm run dev        # Start dev server (localhost:3000)
 npm run build      # Production build
 npm run typecheck  # TypeScript check (tsc --noEmit) — run before committing
 npm run lint       # ESLint
+npm test           # Unit tests (node:test + --experimental-strip-types, no deps)
 ```
 
-No test suite exists. Validate with `typecheck` + manual testing.
+Tests live in `tests/*.test.ts` and run on Node's built-in runner with TypeScript
+type-stripping — **no test framework is installed and none should be added** unless
+there's a reason the built-in runner can't cover.
+
+They deliberately cover only the pure, money-critical logic: the confirmation-gate
+state machine, the booking saga's compensation rules, Stripe webhook signature
+verification, the retry policy, and the Viator response parser. Anything needing a
+live provider is validated by `typecheck` + manual sandbox testing instead.
 
 ---
 

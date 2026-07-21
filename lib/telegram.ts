@@ -56,3 +56,13 @@ export async function sendConversationSummary(meta: ConvMeta) {
 
   await tgSend(lines);
 }
+
+/**
+ * Operator escalation channel — used when a PAID booking ends up in a state a
+ * human must resolve (e.g. an issued ticket that could not be cancelled after a
+ * later step failed). The durable record is the booking_sagas row; this is the
+ * fast ping so staff see it in minutes rather than at the next queue check.
+ */
+export async function sendOperatorAlert(text: string): Promise<void> {
+  await tgSend(text);
+}

@@ -22,6 +22,7 @@ import {
   Star,
   PackageIcon,
   MessageSquare,
+  Mountain,
 } from "lucide-react";
 
 const nav = [
@@ -31,6 +32,7 @@ const nav = [
   { href: "/crm/customers",  label: "Müştərilər",       icon: Users },
   { href: "/crm/bookings",   label: "Rezervasiyalar",   icon: CalendarCheck },
   { href: "/crm/tours",      label: "Turlar",           icon: MapPin },
+  { href: "/crm/experiences", label: "Experience Paketləri", icon: Mountain },
   { href: "/crm/packages",   label: "Gizli Paketlər",   icon: PackageIcon },
   { href: "/crm/payments",   label: "Ödənişlər",        icon: CreditCard },
   { href: "/crm/staff",      label: "İşçilər",          icon: UsersRound },

@@ -9,7 +9,6 @@ import {
   checkTourAvailability,
   getWeatherForecast,
   getExchangeRate,
-  calculatePackage,
   saveLeadToCRM,
   getVisaInfo,
 } from "./tools";

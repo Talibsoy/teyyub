@@ -29,7 +29,7 @@ export async function generateMetadata(
     .select("title, summary, destination")
     .eq("id", id)
     .single();
-  if (!data) return { title: "Proqram tapılmadı" };
+  if (!data) return { title: "Itinerary not found" };
   return {
     title: `${data.title} | Natoure`,
     description: data.summary?.slice(0, 160),
@@ -37,11 +37,11 @@ export async function generateMetadata(
 }
 
 const TYPE_CONFIG: Record<Activity["type"], { label: string; color: string; dot: string }> = {
-  transport:     { label: "Nəqliyyat",  color: "bg-blue-50 text-blue-700 border-blue-200",    dot: "bg-blue-400" },
-  accommodation: { label: "Otel",       color: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-400" },
-  food:          { label: "Yemək",      color: "bg-orange-50 text-orange-700 border-orange-200", dot: "bg-orange-400" },
-  activity:      { label: "Aktivlik",   color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-400" },
-  free:          { label: "Sərbəst",    color: "bg-slate-50 text-slate-600 border-slate-200",  dot: "bg-slate-400" },
+  transport:     { label: "Transport", color: "bg-blue-50 text-blue-700 border-blue-200",    dot: "bg-blue-400" },
+  accommodation: { label: "Hotel",     color: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-400" },
+  food:          { label: "Food",      color: "bg-orange-50 text-orange-700 border-orange-200", dot: "bg-orange-400" },
+  activity:      { label: "Activity",  color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-400" },
+  free:          { label: "Free time", color: "bg-slate-50 text-slate-600 border-slate-200",  dot: "bg-slate-400" },
 };
 
 function ActivityCard({ act }: { act: Activity }) {
@@ -105,8 +105,8 @@ function ActivityCard({ act }: { act: Activity }) {
 
 function DaySection({ dayData, index }: { dayData: ItineraryDay; index: number }) {
   const dateObj = new Date(dayData.date);
-  const weekday = dateObj.toLocaleDateString("az-AZ", { weekday: "long" });
-  const dateStr = dateObj.toLocaleDateString("az-AZ", { day: "numeric", month: "long" });
+  const weekday = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+  const dateStr = dateObj.toLocaleDateString("en-US", { day: "numeric", month: "long" });
 
   return (
     <section className="mb-10">
@@ -136,32 +136,33 @@ function DaySection({ dayData, index }: { dayData: ItineraryDay; index: number }
   );
 }
 
-function parseCostAzn(str: string | undefined): number | null {
+function parseCostUsd(str: string | undefined): number | null {
   if (!str) return null;
   const lower = str.toLowerCase();
-  if (lower.includes("pulsuz") || lower.includes("free")) return 0;
-  const match = lower.match(/(\d[\d\s]*(?:\.\d+)?)/);
+  if (lower.includes("free") || lower.includes("included")) return 0;
+  const match = lower.match(/(\d[\d,]*(?:\.\d+)?)/);
   if (!match) return null;
-  const val = parseFloat(match[1].replace(/\s/g, ""));
-  if (lower.includes("usd") || lower.includes("$")) return Math.round(val * 1.70);
-  if (lower.includes("eur") || lower.includes("€")) return Math.round(val * 1.87);
+  const val = parseFloat(match[1].replace(/,/g, ""));
+  if (isNaN(val)) return null;
+  // Rough EUR -> USD normalization; everything else treated as USD.
+  if (lower.includes("eur") || lower.includes("€")) return Math.round(val * 1.08);
   return Math.round(val);
 }
 
 function BudgetCard({ days, guests }: { days: ItineraryDay[]; guests: number }) {
   const all = days.flatMap(d => d.activities);
   const groups: Record<Activity["type"], { label: string; color: string; total: number; count: number }> = {
-    transport:     { label: "Nəqliyyat",  color: "text-blue-600",   total: 0, count: 0 },
-    accommodation: { label: "Qalacaq",    color: "text-purple-600", total: 0, count: 0 },
-    food:          { label: "Yemək",      color: "text-orange-600", total: 0, count: 0 },
-    activity:      { label: "Fəaliyyət",  color: "text-emerald-600",total: 0, count: 0 },
-    free:          { label: "Digər",      color: "text-slate-500",  total: 0, count: 0 },
+    transport:     { label: "Transport",   color: "text-blue-600",   total: 0, count: 0 },
+    accommodation: { label: "Stay",        color: "text-purple-600", total: 0, count: 0 },
+    food:          { label: "Food",        color: "text-orange-600", total: 0, count: 0 },
+    activity:      { label: "Activities",  color: "text-emerald-600",total: 0, count: 0 },
+    free:          { label: "Other",       color: "text-slate-500",  total: 0, count: 0 },
   };
 
   for (const act of all) {
-    const azn = parseCostAzn(act.cost_estimate);
-    if (azn !== null && azn > 0) {
-      groups[act.type].total += azn;
+    const usd = parseCostUsd(act.cost_estimate);
+    if (usd !== null && usd > 0) {
+      groups[act.type].total += usd;
       groups[act.type].count++;
     }
   }
@@ -175,7 +176,7 @@ function BudgetCard({ days, guests }: { days: ItineraryDay[]; guests: number }) 
         <svg className="w-4 h-4 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
         </svg>
-        Büdcə Bölgüsü
+        Estimated Budget
       </h3>
       <div className="space-y-2.5 mb-4">
         {(Object.entries(groups) as [Activity["type"], typeof groups[Activity["type"]]][])
@@ -183,17 +184,18 @@ function BudgetCard({ days, guests }: { days: ItineraryDay[]; guests: number }) 
           .map(([type, g]) => (
             <div key={type} className="flex items-center justify-between">
               <span className={`text-sm font-medium ${g.color}`}>{g.label}</span>
-              <span className="text-sm text-slate-700 font-semibold">~{g.total} AZN</span>
+              <span className="text-sm text-slate-700 font-semibold tabular-nums">~${g.total}</span>
             </div>
           ))}
       </div>
       <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
-        <span className="text-sm font-bold text-slate-800">Cəmi</span>
-        <span className="text-base font-bold text-sky-600">~{grandTotal} AZN</span>
+        <span className="text-sm font-bold text-slate-800">Total</span>
+        <span className="text-base font-bold text-sky-600 tabular-nums">~${grandTotal}</span>
       </div>
       {guests > 1 && (
-        <p className="text-xs text-slate-400 mt-1 text-right">{guests} nəfərə ≈ {grandTotal * guests} AZN</p>
+        <p className="text-xs text-slate-400 mt-1 text-right tabular-nums">For {guests} travelers ≈ ${grandTotal * guests}</p>
       )}
+      <p className="text-[11px] text-slate-400 mt-2">Estimate only — flights not included. Final prices confirmed at booking.</p>
     </div>
   );
 }
@@ -210,15 +212,15 @@ export default async function ItineraryPage(
 
   if (!itin) notFound();
 
-  const startDate = new Date(itin.start_date).toLocaleDateString("az-AZ", {
+  const startDate = new Date(itin.start_date).toLocaleDateString("en-US", {
     day: "numeric", month: "long", year: "numeric",
   });
-  const endDate = new Date(itin.end_date).toLocaleDateString("az-AZ", {
+  const endDate = new Date(itin.end_date).toLocaleDateString("en-US", {
     day: "numeric", month: "long", year: "numeric",
   });
 
   const waMsg = encodeURIComponent(
-    `Salam! "${itin.title}" proqramı ilə maraqlananıram. Rezervasiya üçün kömək edə bilərsinizmi?`
+    `Hi! I'm interested in the "${itin.title}" itinerary. Could you help me book it?`
   );
 
   return (
@@ -230,7 +232,7 @@ export default async function ItineraryPage(
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
-            Turlara qayıt
+            Back to experiences
           </Link>
 
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{itin.title}</h1>
@@ -239,21 +241,21 @@ export default async function ItineraryPage(
           {/* Stats row */}
           <div className="flex flex-wrap gap-3">
             <Pill icon="📅" label={`${startDate} — ${endDate}`} />
-            <Pill icon="🗓️" label={`${itin.duration_days} gün`} />
-            <Pill icon="👥" label={`${itin.guests} nəfər`} />
+            <Pill icon="🗓️" label={`${itin.duration_days} days`} />
+            <Pill icon="👥" label={`${itin.guests} travelers`} />
             <Pill icon="💰" label={itin.budget_estimate} />
             {itin.best_season && <Pill icon="🌤️" label={itin.best_season} />}
           </div>
         </div>
       </div>
 
-      {/* Faza 0 (Zero-Hallucination): AI estimate disclaimer */}
+      {/* AI estimate disclaimer (Zero-Hallucination) */}
       <div className="max-w-3xl mx-auto px-4 pt-6">
         <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
           <span className="text-lg leading-none flex-shrink-0" aria-hidden>⚠️</span>
           <p className="text-sm text-amber-800 leading-relaxed">
-            <b>Bu, AI tərəfindən hazırlanmış təxmini plandır.</b> Göstərilən qiymətlər, saatlar və mövcudluq təsdiqlənməyib —
-            rezervasiya mərhələsində hər xidmət canlı olaraq yoxlanılacaq və dəqiq qiymətlər göstəriləcək.
+            <b>This is an AI-generated draft plan.</b> Prices, times, and availability are estimates and not yet confirmed —
+            every service is checked live at the booking stage, where you&apos;ll see exact prices before paying.
           </p>
         </div>
       </div>
@@ -265,7 +267,7 @@ export default async function ItineraryPage(
           <div>
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
               <span className="w-1 h-5 bg-sky-500 rounded-full inline-block"/>
-              Günlük Proqram
+              Daily Itinerary
             </h2>
             {itin.days.map((day, i) => (
               <DaySection key={i} dayData={day} index={i} />
@@ -276,8 +278,8 @@ export default async function ItineraryPage(
           <aside className="lg:sticky lg:top-24 space-y-4">
             {/* CTA card */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <h3 className="font-semibold text-slate-800 mb-1">Bu proqramı bəyəndiniz?</h3>
-              <p className="text-sm text-slate-500 mb-4">Rezervasiya üçün bizə yazın — hər şeyi biz həll edirik.</p>
+              <h3 className="font-semibold text-slate-800 mb-1">Like this plan?</h3>
+              <p className="text-sm text-slate-500 mb-4">Message us to book — we handle every detail for you.</p>
               <a
                 href={`https://wa.me/447828721748?text=${waMsg}`}
                 target="_blank"
@@ -287,13 +289,13 @@ export default async function ItineraryPage(
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.49"/>
                 </svg>
-                WhatsApp-da Yaz
+                Message on WhatsApp
               </a>
               <Link
                 href="/turlar"
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm mt-2 transition-colors"
               >
-                Bütün turları gör
+                Browse all experiences
               </Link>
             </div>
 
@@ -304,7 +306,7 @@ export default async function ItineraryPage(
             {itin.travel_tips?.length > 0 && (
               <div className="bg-amber-50 rounded-2xl border border-amber-200 p-5">
                 <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-1.5">
-                  <span>💡</span> Faydalı məsləhətlər
+                  <span>💡</span> Travel tips
                 </h3>
                 <ul className="space-y-2">
                   {itin.travel_tips.map((tip, i) => (
@@ -319,12 +321,12 @@ export default async function ItineraryPage(
 
             {/* Generate new */}
             <div className="bg-sky-50 rounded-2xl border border-sky-200 p-5 text-center">
-              <p className="text-sm text-sky-700 mb-3">Fərqli bir proqram istəyirsiniz?</p>
+              <p className="text-sm text-sky-700 mb-3">Want a different plan?</p>
               <Link
                 href="/"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-600 hover:text-sky-700"
               >
-                Yeni proqram yarat →
+                Plan a new trip →
               </Link>
             </div>
           </aside>
